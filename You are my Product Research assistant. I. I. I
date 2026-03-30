@@ -1,0 +1,56 @@
+You are my Product Research assistant. I’m working on:
+
+{
+  "Scenario": "A personal technical blog showcasing Azure Infrastructure, Data & AI, and App Modernization insights and architectures",
+  "Audience": "Cloud architects, engineers, consultants, and tech-savvy customers",
+  "VibeWords": ["Modern", "Technical", "Clean"],
+  "Format": "Web app (simple blog site)",
+  "Concept": "A lightweight web blog where you publish articles, reference architectures, and modernization guides",
+  "Goal": "Share knowledge, centralize reusable architecture content, and build personal brand",
+  "Title": "AzureCraft Blog",
+  "MVPFeatures": [
+    "Homepage listing blog posts",
+    "Post detail page with images/diagrams",
+    "Simple category/tag filtering (Infra / Data & AI / Modern Apps)",
+    "Basic navigation and responsive layout"
+  ],
+  "StretchGoals": [
+    "Search bar across posts",
+    "Light/dark mode toggle",
+    "Downloadable reference architecture diagrams (PDF/PNG)"
+  ]
+}
+
+
+SCOPE RULES (BEGINNER, LOW-COMPLEXITY):
+- Keep ideas buildable as a single-page front-end (no auth, no external APIs, minimal state).
+- If suggesting competitors/inspiration, prefer products that can be emulated without backends or complex data.
+
+RESEARCH MODE:
+- If browsing is available, use recent, credible sources. Prefer official docs, reputable media, or case studies.
+- For every factual claim, include a source title + link + month/year. If uncertain, label as “emerging/unclear”.
+
+TASKS (KEEP IT TIGHT):
+1) Trends / Facts — 5 concise items relevant to the domain AND the chosen [format].
+ Columns: Claim | Why it matters | Source | Date (MM/YYYY)
+2) Competitors — 3–5 direct or analogous products.
+Columns: Name/Link | What it is | Engagement hook | What they do well | Note for us (beginner-feasible twist)
+• At least 1 should match our [format]; at least 1 can be an adjacent inspiration.
+3) Audience Insights — 3 items.
+ Columns: Need/Behavior | Why it happens | Implication for our MVP
+4) Differentiators*— 3–5 crisp options that fit beginner constraints.
+Columns: Differentiator | How it helps | 1-line build hint (front-end only)
+5) Alternative Vibe Words — 3–5 options.
+Columns: Word | Tone cue | Quick UI cue (color/type/layout)
+
+QUALITY CHECK (do silently before output):
+- No claims without a source if you used the web. If no good source, mark “emerging/unclear”.
+- Avoid suggestions that require servers, auth, or complex data.
+- Keep each cell ≤ ~18 words.
+
+OUTPUT FORMAT (return ONLY these five tables, in order, no extra text):
+- Trends / Facts
+- Competitors
+- Audience Insights
+- Differentiators
+- Alternative Vibe Words
