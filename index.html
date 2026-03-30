@@ -1,41 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>AzureCraft Blog – Home</title>
-  <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <title>AzureCraft Blog</title>
+  <link rel="stylesheet" href="css/styles.css" />
 </head>
-
 <body>
+
 <header>
-  <div class="nav">
-    <div class="brand">
-      <div class="brand-mark"><span>AC</span></div>
-      <div>
-        <div class="brand-text-title">AzureCraft Blog</div>
-        <div class="brand-text-sub">Infra · Data & AI · Modern Apps</div>
-      </div>
-    </div>
-  </div>
+  <h1>AzureCraft</h1>
+  <p>Practical Azure Architecture, Without the Noise</p>
 </header>
 
-<div class="shell">
-  <h1 class="page-title">AzureCraft Blog</h1>
-  <p class="page-subtitle">Azure architectures, Data & AI, and app modernization patterns.</p>
+<nav>
+  <a href="index.html">Home</a>
+</nav>
 
-  <div class="post-list">
+<main>
+  <article class="post-preview">
+    <h2><a href="post.html?post=post-1-welcome">Welcome to AzureCraft</a></h2>
+    <p>Why this blog exists and what it will cover.</p>
+  </article>
 
-    <div class="post-card">
-      <h2 class="post-title"><a href="ai-workloads-alz.html">AI Workloads in Azure Landing Zones</a></h2>
-      <p class="post-desc">Secure, GPU-ready landing zones for OpenAI, vector search, and modern AI apps.</p>
-    </div>
+  <article class="post-preview">
+    <h2><a href="post.html?post=post-2-landing-zone">Azure Landing Zones: A Practical Architect’s View</a></h2>
+    <p>A diagram‑first explanation of landing zones.</p>
+  </article>
+</main>
 
-    <div class="post-card">
-      <h2 class="post-title"><a href="azure-landing-zones.html">Azure Landing Zones — Enterprise Foundation</a></h2>
-      <p class="post-desc">Identity, network, governance, and platform patterns for enterprise cloud estates.</p>
-    </div>
+<footer>
+  <p>© 2026 AzureCraft</p>
+</footer>
 
-  </div>
-</div>
+<script src="js/main.js"></script>
 </body>
 </html>
