@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script>
+  (() => {
+    const param = new URLSearchParams(window.location.search).get("clawpilotTheme");
+    const theme =
+      param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    document.documentElement.setAttribute("data-theme", theme);
+  })();
+</script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GenAIOps for Cloud Solution Architects | rbcloud</title>
+<meta name="description" content="A practical public guide for new Cloud Solution Architects learning how to build, evaluate, deploy, monitor, govern, and optimise generative AI solutions on Azure." />
+<style>
+:root {
+  color-scheme: light;
+  --cp-bg: #f7f4ef;
+  --cp-bg-elevated: #fcfbf8;
+  --cp-surface: #ffffff;
+  --cp-surface-soft: #f5f5f5;
+  --cp-border: #dedede;
+  --cp-border-strong: #919191;
+  --cp-text: #242424;
+  --cp-text-muted: #5c5c5c;
+  --cp-text-soft: #6f6f6f;
+  --cp-accent: #b11f4b;
+  --cp-accent-hover: #9a1a41;
+  --cp-accent-soft: rgba(177, 31, 75, 0.08);
+  --cp-accent-fg: #ffffff;
+  --cp-success: #16a34a;
+  --cp-danger: #dc2626;
+  --cp-warning: #f59e0b;
+  --cp-link: #0078d4;
+  --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
+  --cp-overlay: rgba(255, 255, 255, 0.8);
+  --cp-panel: rgba(255, 255, 255, 0.86);
+  --cp-panel-strong: rgba(255, 255, 255, 0.96);
+  --cp-sheen: rgba(255, 255, 255, 0.55);
+  --cp-highlight: rgba(177, 31, 75, 0.12);
+}
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --cp-bg: #3d3b3a;
+  --cp-bg-elevated: #343231;
+  --cp-surface: #292929;
+  --cp-surface-soft: #2e2e2e;
+  --cp-border: #474747;
+  --cp-border-strong: #5f5f5f;
+  --cp-text: #dedede;
+  --cp-text-muted: #919191;
+  --cp-text-soft: #b0b0b0;
+  --cp-accent: #fd8ea1;
+  --cp-accent-hover: #fb7b91;
+  --cp-accent-soft: rgba(253, 142, 161, 0.14);
+  --cp-accent-fg: #1a1a1a;
+  --cp-success: #4ade80;
+  --cp-danger: #f87171;
+  --cp-warning: #fbbf24;
+  --cp-link: #4da6ff;
+  --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+  --cp-overlay: rgba(41, 41, 41, 0.88);
+  --cp-panel: rgba(41, 41, 41, 0.72);
+  --cp-panel-strong: rgba(41, 41, 41, 0.96);
+  --cp-sheen: rgba(255, 255, 255, 0.04);
+  --cp-highlight: rgba(253, 142, 161, 0.12);
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--cp-bg); color: var(--cp-text); font-family: "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; }
+a { color: var(--cp-link); }
+header { border-bottom: 1px solid var(--cp-border); background: var(--cp-bg-elevated); }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 32px 24px; }
+.terminal { font-family: Consolas, "Courier New", Courier, monospace; color: var(--cp-success); letter-spacing: .04em; font-weight: 700; }
+.hero { display: grid; grid-template-columns: 1.25fr .75fr; gap: 32px; align-items: center; padding: 56px 0; }
+.eyebrow { color: var(--cp-accent); font-weight: 700; text-transform: uppercase; letter-spacing: .12em; font-size: .85rem; }
+h1 { font-size: clamp(2.2rem, 5vw, 4.8rem); line-height: 1; margin: 12px 0 16px; letter-spacing: -.04em; }
+h2 { font-size: clamp(1.6rem, 3vw, 2.4rem); margin: 0 0 12px; }
+h3 { margin: 0 0 8px; }
+.lead { font-size: 1.2rem; color: var(--cp-text-muted); max-width: 720px; }
+.card { background: var(--cp-surface); border: 1px solid var(--cp-border); border-radius: 16px; padding: 24px; box-shadow: 0 0 2px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.14); }
+.grid { display: grid; gap: 16px; }
+.grid.three { grid-template-columns: repeat(3, 1fr); }
+.grid.two { grid-template-columns: repeat(2, 1fr); }
+.actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px; }
+.btn { display: inline-block; text-decoration: none; border-radius: 0.625rem; padding: 12px 16px; border: 1px solid var(--cp-border); color: var(--cp-text); background: var(--cp-surface); font-weight: 700; }
+.btn.primary { background: var(--cp-accent); color: var(--cp-accent-fg); border-color: var(--cp-accent); }
+.stage { border-left: 4px solid var(--cp-accent); }
+.badge { display: inline-block; background: var(--cp-accent-soft); color: var(--cp-accent); border: 1px solid var(--cp-border); border-radius: 999px; padding: 4px 10px; font-size: .85rem; font-weight: 700; }
+section { padding: 36px 0; border-top: 1px solid var(--cp-border); }
+ul { padding-left: 20px; }
+.disclaimer { color: var(--cp-text-muted); font-size: .95rem; }
+footer { border-top: 1px solid var(--cp-border); color: var(--cp-text-muted); }
+@media (max-width: 860px) { .hero, .grid.three, .grid.two { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="terminal">$ rbcloud / genaiops-csa-starter</div>
+    <div class="hero">
+      <div>
+        <div class="eyebrow">Public learning project</div>
+        <h1>GenAIOps for Cloud Solution Architects</h1>
+        <p class="lead">A practical guide for new CSAs learning how to move generative AI from prompt experiments into safe, governed, cost-aware Azure solutions.</p>
+        <div class="actions">
+          <a class="btn primary" href="downloads/Public%20GenAIOps%20CSA%20Starter%20Guide.pdf">Download the guide</a>
+          <a class="btn" href="downloads/Public%20GenAIOps%20One%20Page%20Crib%20Sheet.pdf">Download the crib sheet</a>
+          <a class="btn" href="#video">Video plan</a>
+        </div>
+      </div>
+      <div class="card">
+        <span class="badge">Core idea</span>
+        <p><strong>GenAIOps turns GenAI from experiments into operated enterprise services.</strong></p>
+        <p class="disclaimer">This is personal educational content. It uses public-safe examples only and does not include customer confidential material.</p>
+      </div>
+    </div>
+  </div>
+</header>
+<main class="wrap">
+  <section>
+    <h2>The lifecycle</h2>
+    <div class="grid three">
+      <div class="card stage"><h3>Build</h3><p>Prompts, agents, retrieval, orchestration and tools.</p></div>
+      <div class="card stage"><h3>Evaluate</h3><p>Groundedness, relevance, coherence, safety and task success.</p></div>
+      <div class="card stage"><h3>Deploy</h3><p>Managed endpoints, CI/CD, gateway and release controls.</p></div>
+      <div class="card stage"><h3>Monitor</h3><p>System health, answer health, token use, safety events and feedback.</p></div>
+      <div class="card stage"><h3>Govern</h3><p>Identity, RBAC, audit, responsible AI and project isolation.</p></div>
+      <div class="card stage"><h3>Optimise</h3><p>Cost, model choice, context design, caching and continuous improvement.</p></div>
+    </div>
+  </section>
+  <section>
+    <h2>What you will learn</h2>
+    <div class="grid two">
+      <div class="card"><h3>Architecture thinking</h3><p>How to frame a production GenAI pattern with app, gateway, orchestrator, retrieval, model, safety and telemetry.</p></div>
+      <div class="card"><h3>Customer conversations</h3><p>How to ask better discovery questions about value, data, quality, risk, ownership and cost.</p></div>
+      <div class="card"><h3>Evaluation and monitoring</h3><p>Why production AI needs quality gates and observability for both system behaviour and answer behaviour.</p></div>
+      <div class="card"><h3>Governance and FinOps</h3><p>How identity, access, audit, quotas and model selection help teams scale safely.</p></div>
+    </div>
+  </section>
+  <section>
+    <h2>Downloads</h2>
+    <div class="grid two">
+      <div class="card"><h3>Starter guide</h3><p>Long-form public guide for reading and sharing.</p><a href="downloads/Public%20GenAIOps%20CSA%20Starter%20Guide.pdf">PDF</a> | <a href="downloads/Public%20GenAIOps%20CSA%20Starter%20Guide.docx">Word</a> | <a href="downloads/genaiops-csa-starter-guide.md">Markdown</a></div>
+      <div class="card"><h3>One-page crib sheet</h3><p>A concise reference for revision and live sessions.</p><a href="downloads/Public%20GenAIOps%20One%20Page%20Crib%20Sheet.pdf">PDF</a> | <a href="downloads/Public%20GenAIOps%20One%20Page%20Crib%20Sheet.docx">Word</a> | <a href="downloads/genaiops-one-page-crib-sheet.md">Markdown</a></div>
+      <div class="card"><h3>Facilitator guide</h3><p>Run a community lunch-and-learn or starter session.</p><a href="downloads/community-facilitator-guide.md">Markdown</a></div>
+      <div class="card"><h3>Q&A bank</h3><p>Reusable answers for common GenAIOps questions.</p><a href="downloads/q-and-a-bank.md">Markdown</a></div>
+    </div>
+  </section>
+  <section id="video">
+    <h2>Video concept</h2>
+    <div class="card">
+      <p><strong>Working title:</strong> GenAIOps for Cloud Solution Architects: From Prompt to Production</p>
+      <p><strong>Format:</strong> 8-10 minute public explainer using generated diagrams, public-safe examples and an AI-generated version of your own voice.</p>
+      <p><strong>Disclosure:</strong> Narration uses an AI-generated version of my own voice, created with my consent.</p>
+      <div class="actions">
+        <a class="btn" href="video/voiceover-script.md">Voiceover script</a>
+        <a class="btn" href="video/ai-voice-workflow.md">AI voice workflow</a>
+        <a class="btn" href="video/shot-list.md">Shot list</a>
+      </div>
+    </div>
+  </section>
+</main>
+<footer>
+  <div class="wrap">
+    <p>Personal educational project for rbcloud.co.uk. Public-safe examples only. Not customer confidential.</p>
+  </div>
+</footer>
+</body>
+</html>
