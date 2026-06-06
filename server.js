@@ -29,7 +29,13 @@ function isInsideRoot(filePath) {
 }
 
 function resolveRequestPath(requestUrl) {
-  const url = new URL(requestUrl, "http://localhost");
+  let url;
+  try {
+    url = new URL(requestUrl, "http://localhost");
+  } catch {
+    return null;
+  }
+
   let pathname = decodeURIComponent(url.pathname);
 
   if (pathname === "/genaiops-csa-starter") {
@@ -43,26 +49,42 @@ function resolveRequestPath(requestUrl) {
   return path.join(rootPath, pathname);
 }
 
-function sendFile(response, filePath, statusCode = 200) {
+function sendFile(response, filePath, headOnly, statusCode = 200) {
   fs.stat(filePath, (statError, stats) => {
     if (statError || !stats.isFile() || !isInsideRoot(filePath)) {
-      sendNotFound(response);
+      sendNotFound(response, headOnly);
       return;
     }
 
     response.writeHead(statusCode, {
       "Content-Type": getContentType(filePath)
     });
-    fs.createReadStream(filePath).pipe(response);
+
+    if (headOnly) {
+      response.end();
+      return;
+    }
+
+    fs.createReadStream(filePath)
+      .on("error", () => sendNotFound(response, false))
+      .pipe(response);
   });
 }
 
-function sendNotFound(response) {
+function sendNotFound(response, headOnly) {
   const notFoundPath = path.join(rootPath, "404.html");
   response.writeHead(404, {
     "Content-Type": getContentType(notFoundPath)
   });
-  fs.createReadStream(notFoundPath).pipe(response);
+
+  if (headOnly) {
+    response.end();
+    return;
+  }
+
+  fs.createReadStream(notFoundPath)
+    .on("error", () => response.end())
+    .pipe(response);
 }
 
 const server = http.createServer((request, response) => {
@@ -73,7 +95,14 @@ const server = http.createServer((request, response) => {
   }
 
   const filePath = resolveRequestPath(request.url);
-  sendFile(response, filePath);
+
+  if (!filePath) {
+    response.writeHead(400, { "Content-Type": "text/plain; charset=utf-8" });
+    response.end("Bad request");
+    return;
+  }
+
+  sendFile(response, filePath, request.method === "HEAD");
 });
 
 server.listen(port, () => {
