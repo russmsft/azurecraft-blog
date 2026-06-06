@@ -3,6 +3,11 @@
   <h1>Multi-Agent Patterns on Azure</h1>
   <p class="intro">Multi-agent architectures solve specific problems well and create unnecessary complexity for everything else. Before you design a system with five specialist agents and a coordinator, verify that a single agent with a well-defined tool set would not solve the problem more reliably, at lower latency, with fewer failure modes. This post covers when multi-agent is justified, the five patterns that cover most production designs, and how Azure wires them up.</p>
 
+  <figure>
+    <img src="assets/diagrams/multi-agent-patterns.svg" alt="Five multi-agent orchestration patterns: sequential pipeline, concurrent fan-out, group chat maker-checker, handoff routing, and Magentic open-ended planning" />
+    <figcaption>Five patterns cover most production multi-agent requirements. Start simple and only add coordination when a specific requirement demands it.</figcaption>
+  </figure>
+
   <h2>When Multi-Agent Is Actually Justified</h2>
   <p>A single agent with a broad tool set handles most assistant and automation use cases. Multi-agent adds coordination overhead - message passing, context handoffs, failure propagation across agent boundaries. These are the real justifications:</p>
   <ul>

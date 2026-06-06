@@ -3,6 +3,11 @@
   <h1>Zero Trust for AI Workloads</h1>
   <p class="intro">AI workloads introduce an attack surface that perimeter-based security was never designed to cover. Models process sensitive data, pipelines call endpoints through automated identities, and access patterns are harder to baseline than anything in a conventional application. The only reliable answer is to apply Zero Trust controls across every layer of the AI stack, not just the edges.</p>
 
+  <figure>
+    <img src="assets/diagrams/zero-trust-ai.svg" alt="Zero Trust AI stack showing four layers: network controls, identity controls, data controls, and gateway controls protecting Azure AI Foundry" />
+    <figcaption>Every request must pass through all four control layers before reaching the model. No layer is optional.</figcaption>
+  </figure>
+
   <h2>Three Principles, Four Layers</h2>
   <p>Zero Trust is not an Azure feature. It is a design posture built on three principles that map directly to controls you configure today.</p>
   <ul>
