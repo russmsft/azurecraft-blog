@@ -51,125 +51,147 @@
     <div class="section-heading">
       <p class="eyebrow">All articles</p>
       <h2>Browse the library</h2>
-      <p>Use the tags to find posts by architecture area.</p>
     </div>
-    <div class="article-list">
-      <article class="post-card">
+
+    <div class="filter-controls">
+      <input class="filter-search" id="filter-search" type="search" placeholder="Search articles..." aria-label="Search articles" />
+      <div class="filter-bar" id="filter-bar" role="group" aria-label="Filter by category">
+        <button class="filter-btn active" data-filter="">All</button>
+        <button class="filter-btn" data-filter="ai platform">AI platform</button>
+        <button class="filter-btn" data-filter="ai agents">AI agents</button>
+        <button class="filter-btn" data-filter="ai architecture">AI architecture</button>
+        <button class="filter-btn" data-filter="ai safety">AI safety</button>
+        <button class="filter-btn" data-filter="genaiops">GenAIOps</button>
+        <button class="filter-btn" data-filter="ai gateway">AI gateway</button>
+        <button class="filter-btn" data-filter="landing zones">Landing zones</button>
+        <button class="filter-btn" data-filter="networking">Networking</button>
+        <button class="filter-btn" data-filter="private access">Private access</button>
+        <button class="filter-btn" data-filter="compute">Compute</button>
+        <button class="filter-btn" data-filter="security">Security</button>
+        <button class="filter-btn" data-filter="governance">Governance</button>
+        <button class="filter-btn" data-filter="operations">Operations</button>
+      </div>
+    </div>
+
+    <div class="article-list" id="article-list">
+      <article class="post-card" data-category="start here">
         <p class="meta">Start here</p>
         <h3><a href="../post.html?post=post-1-welcome">Welcome to AzureCraft</a></h3>
         <p>Why the site exists and how to use it as a field-notes library.</p>
       </article>
-      <article class="post-card">
+      <article class="post-card" data-category="landing zones">
         <p class="meta">Landing zones</p>
         <h3><a href="../post.html?post=post-2-landing-zone">Azure Landing Zones: A Practical Architect's View</a></h3>
         <p>Platform guardrails, workload autonomy, and governance boundaries.</p>
       </article>
-      <article class="post-card">
+      <article class="post-card" data-category="ai architecture">
         <p class="meta">AI architecture</p>
         <h3><a href="../post.html?post=post-3-ai-landing-zone">AI Workloads Inside an Azure Landing Zone</a></h3>
         <p>Production AI patterns inside governed Azure foundations.</p>
       </article>
-      <article class="post-card">
+      <article class="post-card" data-category="genaiops">
         <p class="meta">GenAIOps</p>
         <h3><a href="../post.html?post=post-4-evaluation-sets">Evaluation Sets: The Missing Layer in GenAI Pilots</a></h3>
         <p>Use eval sets to turn demo confidence into release confidence.</p>
       </article>
-      <article class="post-card">
+      <article class="post-card" data-category="ai gateway">
         <p class="meta">AI gateway</p>
         <h3><a href="../post.html?post=post-5-apim-ai-gateway">APIM as an AI Gateway</a></h3>
         <p>Centralized policy, routing, quotas, logging, and usage visibility.</p>
       </article>
-      <article class="post-card">
+      <article class="post-card" data-category="networking">
         <p class="meta">Networking</p>
         <h3><a href="../post.html?post=post-6-hub-spoke-vwan">Hub-Spoke vs Virtual WAN: A Practical Decision</a></h3>
         <p>Choose the topology your team can operate reliably.</p>
       </article>
-      <article class="post-card">
+      <article class="post-card" data-category="private access">
         <p class="meta">Private access</p>
         <h3><a href="../post.html?post=post-7-private-endpoints-dns">Private Endpoints and DNS Without the Drama</a></h3>
         <p>Make private access repeatable by clarifying DNS ownership.</p>
       </article>
-      <article class="post-card">
+      <article class="post-card" data-category="operations">
         <p class="meta">Operations</p>
         <h3><a href="../post.html?post=post-8-answer-health-monitoring">Answer Health Monitoring for GenAI Workloads</a></h3>
         <p>Monitor answer quality as well as uptime.</p>
       </article>
-      <article class="post-card">
+      <article class="post-card" data-category="governance">
         <p class="meta">Governance</p>
         <h3><a href="../post.html?post=post-9-minimum-viable-governance">Minimum Viable Governance for Azure</a></h3>
         <p>Start with the smallest useful baseline that prevents common mistakes.</p>
       </article>
-      <article class="post-card">
+      <article class="post-card" data-category="ai platform">
         <p class="meta">AI platform</p>
         <h3><a href="../post.html?post=post-10-microsoft-foundry">Microsoft Foundry: The New AI Platform Model</a></h3>
         <p>Hubs, projects, deployment types, and why standalone Azure OpenAI is now an anti-pattern.</p>
       </article>
-      <article class="post-card">
+      <article class="post-card" data-category="ai agents">
         <p class="meta">AI agents</p>
         <h3><a href="../post.html?post=post-11-foundry-agent-service">Foundry Agent Service: Prompt Agents vs Hosted Agents</a></h3>
         <p>How to choose between no-code prompt agents and containerized hosted agents.</p>
       </article>
-      <article class="post-card">
+      <article class="post-card" data-category="ai agents">
         <p class="meta">AI agents</p>
         <h3><a href="../post.html?post=post-12-multi-agent-patterns">Multi-Agent Patterns on Azure</a></h3>
         <p>Sequential, concurrent, group chat, handoff, and Magentic - when each applies.</p>
       </article>
-      <article class="post-card">
+      <article class="post-card" data-category="ai architecture">
         <p class="meta">AI architecture</p>
         <h3><a href="../post.html?post=post-13-rag-vs-finetuning">RAG vs Fine-Tuning vs Prompt Engineering: A Decision Framework</a></h3>
         <p>A practical decision table for when to use retrieval, fine-tuning, or prompts.</p>
       </article>
-      <article class="post-card">
+      <article class="post-card" data-category="ai architecture">
         <p class="meta">AI architecture</p>
         <h3><a href="../post.html?post=post-14-vector-search-options">Vector Search on Azure: AI Search vs Cosmos DB vs PostgreSQL</a></h3>
         <p>Compare the three Azure vector search options for RAG grounding workloads.</p>
       </article>
-      <article class="post-card">
+      <article class="post-card" data-category="ai safety">
         <p class="meta">AI safety</p>
         <h3><a href="../post.html?post=post-15-content-safety">AI Content Safety in Production</a></h3>
         <p>Harm categories, Prompt Shields, groundedness detection, and integration patterns.</p>
       </article>
-      <article class="post-card">
+      <article class="post-card" data-category="security">
         <p class="meta">Security</p>
         <h3><a href="../post.html?post=post-16-managed-identity-ai">Managed Identity for AI: No API Keys, Ever</a></h3>
         <p>DefaultAzureCredential, RBAC roles, and wiring managed identity across AI workloads.</p>
       </article>
-      <article class="post-card">
+      <article class="post-card" data-category="compute">
         <p class="meta">Compute</p>
         <h3><a href="../post.html?post=post-17-container-apps-vs-aks">Container Apps vs AKS: A Practical Decision</a></h3>
         <p>When to use Container Apps and when AKS is actually justified.</p>
       </article>
-      <article class="post-card">
+      <article class="post-card" data-category="compute">
         <p class="meta">Compute</p>
         <h3><a href="../post.html?post=post-18-flex-consumption">Azure Functions Flex Consumption: The New Default for Event-Driven AI</a></h3>
         <p>VNet integration without Premium, configurable concurrency, and AI pipeline fit.</p>
       </article>
-      <article class="post-card">
+      <article class="post-card" data-category="genaiops">
         <p class="meta">GenAIOps</p>
         <h3><a href="../post.html?post=post-19-prompt-versioning">Prompt Versioning and Deployment Gates</a></h3>
         <p>Treat prompts as code with Foundry catalog versioning and eval-gated deployments.</p>
       </article>
-      <article class="post-card">
+      <article class="post-card" data-category="genaiops">
         <p class="meta">GenAIOps</p>
         <h3><a href="../post.html?post=post-20-ai-cost-management">AI Cost Management: Token Budgets, PTU vs Consumption, and Model Tiering</a></h3>
         <p>Control AI spend with model tiering, token limits, and APIM-based attribution.</p>
       </article>
-      <article class="post-card">
+      <article class="post-card" data-category="genaiops">
         <p class="meta">GenAIOps</p>
         <h3><a href="../post.html?post=post-21-continuous-evaluation">Continuous Evaluation Pipelines</a></h3>
         <p>Automate AI quality gates with the Azure AI Evaluation SDK and GitHub Actions.</p>
       </article>
-      <article class="post-card">
+      <article class="post-card" data-category="security">
         <p class="meta">Security</p>
         <h3><a href="../post.html?post=post-22-zero-trust-ai">Zero Trust for AI Workloads</a></h3>
         <p>Network, identity, data, and gateway controls for the complete AI Zero Trust stack.</p>
       </article>
-      <article class="post-card">
+      <article class="post-card" data-category="governance">
         <p class="meta">Governance</p>
         <h3><a href="../post.html?post=post-23-azure-policy-ai">Azure Policy for AI Governance</a></h3>
         <p>Enforce managed identity, disable public access, and govern model deployments at scale.</p>
       </article>
     </div>
+
+    <p class="filter-empty" id="filter-empty" hidden>No articles match this filter. <button class="filter-reset" id="filter-reset">Clear filter</button></p>
   </section>
 </main>
 
@@ -178,5 +200,47 @@
   <a href="../index.html">Home</a>
   <a href="../patterns/">Patterns</a>
 </footer>
+
+<script>
+  const filterSearch = document.getElementById("filter-search");
+  const filterBar = document.getElementById("filter-bar");
+  const filterEmpty = document.getElementById("filter-empty");
+  const filterReset = document.getElementById("filter-reset");
+  const cards = Array.from(document.querySelectorAll(".post-card"));
+
+  function applyFilters() {
+    const query = filterSearch.value.trim().toLowerCase();
+    const activeBtn = filterBar.querySelector(".filter-btn.active");
+    const category = activeBtn ? activeBtn.dataset.filter : "";
+
+    let visible = 0;
+    cards.forEach((card) => {
+      const matchesCategory = !category || card.dataset.category === category;
+      const title = card.querySelector("h3").textContent.toLowerCase();
+      const desc = card.querySelector("p:not(.meta)").textContent.toLowerCase();
+      const matchesSearch = !query || title.includes(query) || desc.includes(query);
+      const show = matchesCategory && matchesSearch;
+      card.hidden = !show;
+      if (show) visible++;
+    });
+
+    filterEmpty.hidden = visible > 0;
+  }
+
+  filterSearch.addEventListener("input", applyFilters);
+
+  filterBar.addEventListener("click", (e) => {
+    const btn = e.target.closest(".filter-btn");
+    if (!btn) return;
+    filterBar.querySelectorAll(".filter-btn").forEach((b) => b.classList.toggle("active", b === btn));
+    applyFilters();
+  });
+
+  filterReset.addEventListener("click", () => {
+    filterSearch.value = "";
+    filterBar.querySelectorAll(".filter-btn").forEach((b) => b.classList.toggle("active", b.dataset.filter === ""));
+    applyFilters();
+  });
+</script>
 </body>
 </html>

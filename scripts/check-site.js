@@ -109,12 +109,37 @@ for (const file of htmlFiles) {
   }
 }
 
+// Validate posts/catalog.json: every slug must have a matching post file
+const catalogPath = path.join(root, "posts", "catalog.json");
+if (fs.existsSync(catalogPath)) {
+  let catalog;
+  try {
+    catalog = JSON.parse(fs.readFileSync(catalogPath, "utf8"));
+  } catch (parseError) {
+    failures.push(`posts/catalog.json: invalid JSON - ${parseError.message}`);
+    catalog = [];
+  }
+
+  for (const entry of catalog) {
+    if (!entry.slug) {
+      failures.push(`posts/catalog.json: entry missing slug field`);
+      continue;
+    }
+    const postPath = path.join(root, "posts", `${entry.slug}.html`);
+    if (!fs.existsSync(postPath)) {
+      failures.push(`posts/catalog.json: slug "${entry.slug}" has no matching posts/${entry.slug}.html`);
+    }
+  }
+} else {
+  failures.push("posts/catalog.json: file not found");
+}
+
 if (failures.length > 0) {
-  console.error("Broken internal links or missing assets:");
+  console.error("Broken internal links, missing assets, or catalog errors:");
   for (const failure of failures) {
     console.error(`- ${failure}`);
   }
   process.exit(1);
 }
 
-console.log(`Checked ${htmlFiles.length} HTML files. No broken internal links or missing assets found.`);
+console.log(`Checked ${htmlFiles.length} HTML files and posts/catalog.json. No broken internal links, missing assets, or catalog errors found.`);

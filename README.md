@@ -8,17 +8,18 @@ The site is focused on practical, diagram-first Azure architecture content: land
 
 - `index.html`: Main AzureCraft homepage and content hub.
 - `post.html`: Article shell that loads posts from `posts/`.
-- `articles/`: Article index for browsing all posts.
+- `posts/catalog.json`: Article metadata (titles, descriptions, categories, OG image paths).
+- `articles/`: Article index with text search and category filter.
 - `posts/`: Static article snippets.
 - `patterns/`: Architecture pattern library and downloadable pattern checklists.
 - `genaiops-csa-starter/`: Public GenAIOps starter guide and downloadable assets.
 - `assets/diagrams/`: SVG architecture diagrams.
 - `assets/social/`: 1200x630 Open Graph PNG images for sharing.
-- `css/styles.css`: Shared site styling for the main site.
-- `js/main.js`: Post loader and article metadata handling.
+- `css/styles.css`: Shared site styling including print styles.
+- `js/main.js`: Post loader - fetches catalog.json then loads the requested post.
 - `server.js`: Dependency-free Node.js static server for Azure App Service.
-- `scripts/check-site.js`: Local internal link and asset checker.
-- `scripts/generate-og-images.ps1`: Regenerates the Open Graph PNG assets.
+- `scripts/check-site.js`: Local internal link, asset, and catalog validator.
+- `scripts/generate-og-images.ps1`: Generates shared and per-article Open Graph PNG assets.
 
 ## Run Locally
 
@@ -32,13 +33,13 @@ Then browse to `http://localhost:8080`. No external runtime dependencies are req
 
 ## Check the Site
 
-Run the static link and asset checker:
+Run the static link, asset, and catalog checker:
 
 ```powershell
 npm run check
 ```
 
-The checker validates internal `href` and `src` references across the HTML pages and verifies that post slugs resolve to files in `posts/`.
+The checker validates internal `href` and `src` references across all HTML pages, verifies that post slugs resolve to files in `posts/`, and validates that every entry in `posts/catalog.json` has a matching post file.
 
 ## Generate Social Images
 
@@ -48,16 +49,22 @@ Regenerate the Open Graph images used for LinkedIn and social previews:
 npm run generate:og
 ```
 
+This generates the shared site images plus a per-article image for every post. After running, commit the new files in `assets/social/`. To use per-article images, update the `image` field for each entry in `posts/catalog.json` to point to `https://www.rbcloud.co.uk/assets/social/<slug>-og.png`.
+
+## Print Articles
+
+Any article page can be printed or saved as a PDF using the browser print dialog (Ctrl+P / Cmd+P). The print stylesheet removes navigation, hides non-content elements, and formats tables and callout blocks for clean output.
+
 ## Content Model
 
-The current article model is intentionally simple:
+The current article model:
 
 1. Add an HTML snippet under `posts/`.
-2. Add its title and description to `js/main.js`.
+2. Add an entry to `posts/catalog.json` with `slug`, `title`, `description`, `category`, and `image`.
 3. Link to it with `post.html?post=your-post-slug`.
-4. Add any diagrams under `assets/diagrams/`.
-
-This keeps the site easy to edit while it is still small. If the article library grows, the next useful step would be moving post metadata into a JSON file or adopting a small static-site generator.
+4. Add the post card to `articles/index.html`.
+5. Add any diagrams under `assets/diagrams/`.
+6. Run `npm run check` to validate links and catalog integrity.
 
 ## Implemented Improvements
 
@@ -66,10 +73,8 @@ This keeps the site easy to edit while it is still small. If the article library
 - Added downloadable Markdown checklists for each pattern.
 - Added a full article index.
 - Added automated static link and asset validation to the GitHub Actions deployment workflow.
-
-## Suggested Next Improvements
-
-- Move post metadata into a JSON file once the article library grows further.
-- Add per-article social images for high-value posts.
-- Add printable PDF versions of the pattern checklists.
-- Add a lightweight search/filter experience for articles and patterns.
+- Moved post metadata into `posts/catalog.json` (separate from application code).
+- Added per-article Open Graph image generation to `generate-og-images.ps1`.
+- Added print stylesheet for clean browser print and PDF export of articles.
+- Added text search and category filter to the article index.
+- Added catalog integrity validation to `scripts/check-site.js`.
