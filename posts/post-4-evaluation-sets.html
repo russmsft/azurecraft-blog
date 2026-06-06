@@ -1,0 +1,57 @@
+<article class="article">
+  <p class="meta">GenAIOps | Published June 2026</p>
+  <h1>Evaluation Sets: The Missing Layer in GenAI Pilots</h1>
+  <p class="intro">A GenAI demo can feel impressive and still be impossible to trust in production. Evaluation sets are the bridge between subjective demo confidence and repeatable release confidence.</p>
+
+  <h2>What an evaluation set is</h2>
+  <p>An evaluation set is a curated collection of prompts, expected behaviours, source expectations, safety cases, and scoring criteria. It gives teams a way to compare prompts, models, retrieval changes, and orchestration changes without relying on memory or vibes.</p>
+
+  <h2>What to include</h2>
+  <ul>
+    <li>Common user questions that represent normal usage.</li>
+    <li>Edge cases where the system should ask for clarification.</li>
+    <li>Known failure examples from testing and support.</li>
+    <li>Questions that require source grounding and citations.</li>
+    <li>Unsafe, sensitive, or policy-relevant prompts.</li>
+    <li>Task-success examples where the user needs a specific outcome.</li>
+  </ul>
+
+  <h2>Useful scoring dimensions</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Dimension</th>
+        <th>Question to ask</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Groundedness</td>
+        <td>Is the answer supported by approved sources?</td>
+      </tr>
+      <tr>
+        <td>Relevance</td>
+        <td>Does the answer address the user's actual question?</td>
+      </tr>
+      <tr>
+        <td>Completeness</td>
+        <td>Does it include enough detail to be useful?</td>
+      </tr>
+      <tr>
+        <td>Safety</td>
+        <td>Does it avoid unsafe, inappropriate, or policy-violating output?</td>
+      </tr>
+      <tr>
+        <td>Task success</td>
+        <td>Did the user get closer to the intended outcome?</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Where to start</h2>
+  <p>Begin with 25 to 50 examples for one bounded use case. Add examples every time testing discovers a new failure mode. Over time, the eval set becomes a living quality contract for the product.</p>
+
+  <div class="article-callout">
+    <strong>Release gate:</strong> do not ask "did the latest prompt feel better?" Ask "did it improve or regress against the agreed evaluation set?"
+  </div>
+</article>

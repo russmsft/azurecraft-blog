@@ -1,27 +1,80 @@
-const express = require("express");
+const fs = require("fs");
+const http = require("http");
 const path = require("path");
 
-const app = express();
+const rootPath = __dirname;
 const port = process.env.PORT || 8080;
-const genAiOpsPath = path.join(__dirname, "genaiops-csa-starter");
 
-app.get(["/genaiops-csa-starter", "/genaiops-csa-starter/"], (req, res) => {
-  res.sendFile(path.join(genAiOpsPath, "index.html"));
+const mimeTypes = {
+  ".css": "text/css; charset=utf-8",
+  ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ".html": "text/html; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".md": "text/markdown; charset=utf-8",
+  ".pdf": "application/pdf",
+  ".svg": "image/svg+xml; charset=utf-8",
+  ".txt": "text/plain; charset=utf-8",
+  ".xml": "application/xml; charset=utf-8"
+};
+
+function getContentType(filePath) {
+  return mimeTypes[path.extname(filePath).toLowerCase()] || "application/octet-stream";
+}
+
+function isInsideRoot(filePath) {
+  const relativePath = path.relative(rootPath, filePath);
+  return relativePath && !relativePath.startsWith("..") && !path.isAbsolute(relativePath);
+}
+
+function resolveRequestPath(requestUrl) {
+  const url = new URL(requestUrl, "http://localhost");
+  let pathname = decodeURIComponent(url.pathname);
+
+  if (pathname === "/genaiops-csa-starter") {
+    pathname = "/genaiops-csa-starter/";
+  }
+
+  if (pathname.endsWith("/")) {
+    pathname = `${pathname}index.html`;
+  }
+
+  return path.join(rootPath, pathname);
+}
+
+function sendFile(response, filePath, statusCode = 200) {
+  fs.stat(filePath, (statError, stats) => {
+    if (statError || !stats.isFile() || !isInsideRoot(filePath)) {
+      sendNotFound(response);
+      return;
+    }
+
+    response.writeHead(statusCode, {
+      "Content-Type": getContentType(filePath)
+    });
+    fs.createReadStream(filePath).pipe(response);
+  });
+}
+
+function sendNotFound(response) {
+  const notFoundPath = path.join(rootPath, "404.html");
+  response.writeHead(404, {
+    "Content-Type": getContentType(notFoundPath)
+  });
+  fs.createReadStream(notFoundPath).pipe(response);
+}
+
+const server = http.createServer((request, response) => {
+  if (!["GET", "HEAD"].includes(request.method)) {
+    response.writeHead(405, { "Content-Type": "text/plain; charset=utf-8" });
+    response.end("Method not allowed");
+    return;
+  }
+
+  const filePath = resolveRequestPath(request.url);
+  sendFile(response, filePath);
 });
 
-app.use("/genaiops-csa-starter", express.static(genAiOpsPath));
-
-// Serve everything in the repo root as static content
-app.use(express.static(path.join(__dirname)));
-
-// SPA-style fallback is NOT required for your site,
-// but we do want /post.html?post=... to work, which it will.
-
-// Default to index.html
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
-});
-
-app.listen(port, () => {
+server.listen(port, () => {
   console.log(`AzureCraft listening on port ${port}`);
 });

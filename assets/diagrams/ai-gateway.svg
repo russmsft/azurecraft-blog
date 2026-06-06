@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" role="img" aria-labelledby="title desc">
+  <title id="title">Azure API Management as an AI gateway</title>
+  <desc id="desc">Diagram showing multiple applications routed through Azure API Management to model deployments, with policy, quotas, logging, resilience, and cost visibility.</desc>
+  <defs>
+    <style>
+      .bg { fill: #f8fafc; }
+      .box { fill: #ffffff; stroke: #cbd5e1; stroke-width: 2; rx: 8; }
+      .app { fill: #e0f2fe; stroke: #0284c7; }
+      .gateway { fill: #fdf2f8; stroke: #b83280; }
+      .model { fill: #ecfdf5; stroke: #0f766e; }
+      .ops { fill: #fff7ed; stroke: #c2410c; }
+      .title { fill: #0f172a; font: 700 24px Segoe UI, Arial, sans-serif; }
+      .label { fill: #1f2937; font: 700 17px Segoe UI, Arial, sans-serif; }
+      .small { fill: #475569; font: 14px Segoe UI, Arial, sans-serif; }
+      .arrow { stroke: #64748b; stroke-width: 2.5; fill: none; marker-end: url(#arrow); }
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
+    </marker>
+  </defs>
+  <rect class="bg" width="960" height="560" rx="12"/>
+  <text class="title" x="48" y="52">APIM as an AI Gateway</text>
+  <text class="small" x="48" y="80">Centralize reusable controls for AI traffic while applications keep their product logic.</text>
+
+  <rect class="box app" x="54" y="124" width="170" height="70"/>
+  <text class="label" x="94" y="156">App A</text>
+  <text class="small" x="84" y="178">Knowledge assistant</text>
+  <rect class="box app" x="54" y="244" width="170" height="70"/>
+  <text class="label" x="94" y="276">App B</text>
+  <text class="small" x="86" y="298">Service desk agent</text>
+  <rect class="box app" x="54" y="364" width="170" height="70"/>
+  <text class="label" x="94" y="396">App C</text>
+  <text class="small" x="86" y="418">Summarisation API</text>
+
+  <rect class="box gateway" x="330" y="168" width="250" height="250"/>
+  <text class="label" x="408" y="204">Azure API</text>
+  <text class="label" x="394" y="228">Management</text>
+  <text class="small" x="366" y="268">Auth and authorization</text>
+  <text class="small" x="366" y="296">Quotas and rate limits</text>
+  <text class="small" x="366" y="324">Policy and routing</text>
+  <text class="small" x="366" y="352">Logging and analytics</text>
+  <text class="small" x="366" y="380">Failover and resilience</text>
+
+  <rect class="box model" x="700" y="124" width="190" height="70"/>
+  <text class="label" x="746" y="156">Model 1</text>
+  <text class="small" x="724" y="178">Fast, low-cost tasks</text>
+  <rect class="box model" x="700" y="244" width="190" height="70"/>
+  <text class="label" x="746" y="276">Model 2</text>
+  <text class="small" x="722" y="298">Reasoning tasks</text>
+  <rect class="box model" x="700" y="364" width="190" height="70"/>
+  <text class="label" x="746" y="396">Region B</text>
+  <text class="small" x="724" y="418">Fallback deployment</text>
+
+  <path class="arrow" d="M224 159 C270 159 292 220 330 242"/>
+  <path class="arrow" d="M224 279 H330"/>
+  <path class="arrow" d="M224 399 C270 399 292 340 330 318"/>
+  <path class="arrow" d="M580 242 C630 220 658 159 700 159"/>
+  <path class="arrow" d="M580 292 H700"/>
+  <path class="arrow" d="M580 318 C630 340 658 399 700 399"/>
+
+  <rect class="box ops" x="310" y="462" width="290" height="58"/>
+  <text class="label" x="362" y="497">Cost and usage visibility</text>
+  <path class="arrow" d="M455 418 V462"/>
+</svg>

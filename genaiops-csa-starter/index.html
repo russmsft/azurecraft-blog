@@ -72,6 +72,9 @@ a { color: var(--cp-link); }
 header { border-bottom: 1px solid var(--cp-border); background: var(--cp-bg-elevated); }
 .wrap { max-width: 1120px; margin: 0 auto; padding: 32px 24px; }
 .terminal { font-family: Consolas, "Courier New", Courier, monospace; color: var(--cp-success); letter-spacing: .04em; font-weight: 700; }
+.toplinks { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 14px; }
+.toplinks a { color: var(--cp-text); border: 1px solid var(--cp-border); border-radius: 0.5rem; padding: 6px 10px; text-decoration: none; font-weight: 700; }
+.toplinks a:hover { border-color: var(--cp-accent); color: var(--cp-accent); }
 .hero { display: grid; grid-template-columns: 1.25fr .75fr; gap: 32px; align-items: center; padding: 56px 0; }
 .eyebrow { color: var(--cp-accent); font-weight: 700; text-transform: uppercase; letter-spacing: .12em; font-size: .85rem; }
 h1 { font-size: clamp(2.2rem, 5vw, 4.8rem); line-height: 1; margin: 12px 0 16px; letter-spacing: -.04em; }
@@ -98,6 +101,11 @@ footer { border-top: 1px solid var(--cp-border); color: var(--cp-text-muted); }
 <header>
   <div class="wrap">
     <div class="terminal">$ rbcloud / genaiops-csa-starter</div>
+    <nav class="toplinks" aria-label="AzureCraft navigation">
+      <a href="../index.html">AzureCraft home</a>
+      <a href="../patterns/">Pattern library</a>
+      <a href="../index.html#articles">Articles</a>
+    </nav>
     <div class="hero">
       <div>
         <div class="eyebrow">Public learning project</div>

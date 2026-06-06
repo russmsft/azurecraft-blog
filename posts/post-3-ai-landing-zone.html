@@ -1,0 +1,53 @@
+<article class="article">
+  <p class="meta">AI architecture | Published June 2026</p>
+  <h1>AI Workloads Inside an Azure Landing Zone</h1>
+  <p class="intro">AI workloads are no longer special cases. Once they move beyond a demo, they need the same platform thinking as any other production workload, plus additional controls for model access, retrieval, safety, evaluation, and cost.</p>
+
+  <figure>
+    <img src="assets/diagrams/rag-on-azure.svg" alt="RAG workload pattern inside an Azure landing zone" />
+    <figcaption>A production AI workload often combines application, gateway, orchestration, retrieval, model access, safety, telemetry, and feedback.</figcaption>
+  </figure>
+
+  <h2>What changes for AI workloads</h2>
+  <p>The baseline landing zone gives you identity, network, policy, observability, and subscription structure. AI workloads add concerns that are easy to miss in early pilots.</p>
+
+  <ul>
+    <li>Model and deployment access must be explicit and auditable.</li>
+    <li>Retrieval needs trusted sources, freshness checks, and access boundaries.</li>
+    <li>Private connectivity matters when enterprise data is involved.</li>
+    <li>Evaluation and monitoring need to cover answer quality, not only system uptime.</li>
+    <li>Token usage and model choice become part of FinOps design.</li>
+  </ul>
+
+  <h2>Landing zone decisions to make early</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Decision</th>
+        <th>Why it matters</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Where will AI shared services live?</td>
+        <td>Shared model access, search, gateways, and observability may need platform-level ownership.</td>
+      </tr>
+      <tr>
+        <td>How will private endpoints and DNS be handled?</td>
+        <td>AI services often sit behind private access patterns once real enterprise data is used.</td>
+      </tr>
+      <tr>
+        <td>Who owns quality after go-live?</td>
+        <td>Production AI needs a named owner for evaluation, feedback, regressions, and risk acceptance.</td>
+      </tr>
+      <tr>
+        <td>How will usage be attributed?</td>
+        <td>Teams need cost visibility by application, product, environment, or use case.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="article-callout">
+    <strong>Useful rule:</strong> treat the AI model as one component in a governed application architecture, not as the whole solution.
+  </div>
+</article>

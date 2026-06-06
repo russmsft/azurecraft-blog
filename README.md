@@ -1,35 +1,57 @@
 # AzureCraft Blog
 
-AzureCraft is a static HTML/CSS project for publishing Azure-focused blog content.
-It currently includes a homepage and two article pages focused on Azure Landing Zones and AI workloads.
+AzureCraft is a lightweight Azure architecture publishing site. It is built with static HTML, CSS, and JavaScript, with a small dependency-free Node.js wrapper for Azure App Service hosting.
+
+The site is focused on practical, diagram-first Azure architecture content: landing zones, AI workloads, GenAIOps, governance, FinOps, and reusable patterns for Cloud Solution Architects.
 
 ## What Is Included
 
-- `index.html`: Home page with links to blog posts.
-- `ai-workloads-alz.html`: Post about AI workloads in Azure Landing Zones.
-- `azure-landing-zones.html`: Post about enterprise Azure Landing Zone foundations.
-- `styles.css`: Shared site styling.
+- `index.html`: Main AzureCraft homepage and content hub.
+- `post.html`: Article shell that loads posts from `posts/`.
+- `posts/`: Static article snippets.
+- `patterns/`: Architecture pattern library.
+- `genaiops-csa-starter/`: Public GenAIOps starter guide and downloadable assets.
+- `assets/diagrams/`: SVG architecture diagrams.
+- `css/styles.css`: Shared site styling for the main site.
+- `js/main.js`: Post loader and article metadata handling.
+- `server.js`: Dependency-free Node.js static server for Azure App Service.
+- `scripts/check-site.js`: Local internal link and asset checker.
 
 ## Run Locally
 
-Because this is a static site, you can open `index.html` directly in a browser.
-
-If you prefer running a local server, from this folder run:
+Start the local server:
 
 ```powershell
-python -m http.server 8080
+npm start
 ```
 
-Then browse to `http://localhost:8080`.
+Then browse to `http://localhost:8080`. No external runtime dependencies are required.
 
-## Project Notes
+## Check the Site
 
-- No build step is required.
-- No external dependencies are required.
-- Styling and content are intentionally lightweight for easy editing.
+Run the static link and asset checker:
 
-## Next Improvements
+```powershell
+npm run check
+```
 
-- Complete and expand article content.
-- Add navigation links between article pages and the home page.
-- Add metadata and social preview tags for sharing.
+The checker validates internal `href` and `src` references across the HTML pages and verifies that post slugs resolve to files in `posts/`.
+
+## Content Model
+
+The current article model is intentionally simple:
+
+1. Add an HTML snippet under `posts/`.
+2. Add its title and description to `js/main.js`.
+3. Link to it with `post.html?post=your-post-slug`.
+4. Add any diagrams under `assets/diagrams/`.
+
+This keeps the site easy to edit while it is still small. If the article library grows, the next useful step would be moving post metadata into a JSON file or adopting a small static-site generator.
+
+## Suggested Next Improvements
+
+- Add Open Graph images for LinkedIn sharing.
+- Expand the pattern library with private endpoint, hub-spoke, Virtual WAN, and monitoring patterns.
+- Add article transcripts or downloadable checklists for each pattern.
+- Add automated link checking to the GitHub Actions workflow.
+- Add a proper content index once the article count grows beyond a handful of posts.

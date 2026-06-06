@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Architecture Pattern Library | AzureCraft</title>
+  <meta name="description" content="Reusable Azure architecture pattern diagrams for landing zones, RAG workloads, AI gateways, governance, and production-ready cloud design." />
+  <link rel="stylesheet" href="../css/styles.css" />
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <nav class="site-nav" aria-label="Primary navigation">
+    <a class="brand" href="../index.html" aria-label="AzureCraft home">
+      <span class="brand-mark">AC</span>
+      <span>
+        <strong>AzureCraft</strong>
+        <small>Practical Azure architecture</small>
+      </span>
+    </a>
+    <div class="nav-links">
+      <a href="../index.html#articles">Articles</a>
+      <a href="index.html">Patterns</a>
+      <a href="../genaiops-csa-starter/">GenAIOps</a>
+      <a href="../index.html#resources">Resources</a>
+    </div>
+  </nav>
+</header>
+
+<main id="main">
+  <section class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow">Architecture pattern library</p>
+      <h1>Reusable Azure diagrams for practical conversations.</h1>
+      <p class="lead">Use these pattern cards as starting points for blog posts, community sessions, design reviews, and customer-safe architecture discussions.</p>
+    </div>
+    <figure class="hero-visual">
+      <img src="../assets/diagrams/rag-on-azure.svg" alt="RAG on Azure reference architecture pattern" />
+      <figcaption>Each pattern pairs a visual model with the decisions architects need to discuss.</figcaption>
+    </figure>
+  </section>
+
+  <section class="content-section">
+    <div class="section-heading">
+      <p class="eyebrow">Core patterns</p>
+      <h2>Production-ready starting points</h2>
+      <p>These are intentionally high-level. The goal is to make tradeoffs visible before deep implementation work begins.</p>
+    </div>
+
+    <div class="pattern-grid">
+      <article class="pattern-card">
+        <img src="../assets/diagrams/azure-landing-zone.svg" alt="Enterprise Azure Landing Zone diagram" />
+        <h3>Enterprise Landing Zone</h3>
+        <p>Use when a team needs a governed foundation with subscription structure, identity, network, policy, and monitoring boundaries.</p>
+      </article>
+      <article class="pattern-card">
+        <img src="../assets/diagrams/rag-on-azure.svg" alt="Retrieval augmented generation on Azure diagram" />
+        <h3>RAG on Azure</h3>
+        <p>Use when an AI workload needs trusted retrieval, source grounding, safety controls, telemetry, and feedback loops.</p>
+      </article>
+      <article class="pattern-card">
+        <img src="../assets/diagrams/ai-gateway.svg" alt="AI gateway with Azure API Management diagram" />
+        <h3>AI Gateway</h3>
+        <p>Use when multiple apps or teams need centralized authentication, policy, quotas, routing, logging, resilience, and usage visibility.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="section-band">
+    <div class="section-heading">
+      <p class="eyebrow">Next pattern backlog</p>
+      <h2>Good candidates to add next</h2>
+      <p>These fit the AzureCraft theme and can each become a diagram, post, and downloadable checklist.</p>
+    </div>
+    <div class="article-grid">
+      <article class="post-card">
+        <p class="meta">Networking</p>
+        <h3>Hub-Spoke vs Virtual WAN</h3>
+        <p>Decision criteria for enterprise network topology, routing, firewalling, and regional growth.</p>
+      </article>
+      <article class="post-card">
+        <p class="meta">Governance</p>
+        <h3>Minimum Viable Governance</h3>
+        <p>The smallest useful set of policies, tags, budgets, alerts, and ownership boundaries.</p>
+      </article>
+      <article class="post-card">
+        <p class="meta">Private access</p>
+        <h3>Private Endpoints and DNS</h3>
+        <p>A practical pattern for private connectivity without creating avoidable operational friction.</p>
+      </article>
+      <article class="post-card">
+        <p class="meta">Operations</p>
+        <h3>Answer Health Monitoring</h3>
+        <p>How GenAI observability differs from standard service health monitoring.</p>
+      </article>
+      <article class="post-card">
+        <p class="meta">Delivery</p>
+        <h3>Prompt and Eval Release Flow</h3>
+        <p>A release pattern for prompts, retrieval changes, model upgrades, and evaluation gates.</p>
+      </article>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <p>AzureCraft, 2026. Practical Azure architecture, without the noise.</p>
+  <a href="../index.html">Home</a>
+  <a href="../genaiops-csa-starter/">GenAIOps</a>
+</footer>
+</body>
+</html>

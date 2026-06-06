@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" role="img" aria-labelledby="title desc">
+  <title id="title">Azure Landing Zone reference pattern</title>
+  <desc id="desc">Diagram showing management groups, platform subscriptions, workload subscriptions, policy, identity, networking, security, and monitoring.</desc>
+  <defs>
+    <style>
+      .bg { fill: #f8fafc; }
+      .box { fill: #ffffff; stroke: #cbd5e1; stroke-width: 2; rx: 8; }
+      .platform { fill: #e0f2fe; stroke: #0284c7; }
+      .workload { fill: #ecfdf5; stroke: #0f766e; }
+      .governance { fill: #fdf2f8; stroke: #b83280; }
+      .shared { fill: #fff7ed; stroke: #c2410c; }
+      .title { fill: #0f172a; font: 700 24px Segoe UI, Arial, sans-serif; }
+      .label { fill: #1f2937; font: 700 17px Segoe UI, Arial, sans-serif; }
+      .small { fill: #475569; font: 14px Segoe UI, Arial, sans-serif; }
+      .line { stroke: #64748b; stroke-width: 2; stroke-dasharray: 6 6; }
+    </style>
+  </defs>
+  <rect class="bg" width="960" height="560" rx="12"/>
+  <text class="title" x="48" y="52">Enterprise Azure Landing Zone</text>
+  <text class="small" x="48" y="80">Platform guardrails and reusable services enable workload teams to move faster.</text>
+
+  <rect class="box governance" x="48" y="118" width="864" height="92"/>
+  <text class="label" x="72" y="152">Tenant and Management Groups</text>
+  <text class="small" x="72" y="178">Policy assignments, RBAC guardrails, naming, tags, budgets, and compliance scope</text>
+
+  <line class="line" x1="480" y1="210" x2="480" y2="246"/>
+
+  <rect class="box platform" x="48" y="246" width="410" height="230"/>
+  <text class="label" x="72" y="282">Platform Subscriptions</text>
+  <rect class="box" x="72" y="310" width="160" height="58"/>
+  <text class="small" x="92" y="344">Identity</text>
+  <rect class="box" x="254" y="310" width="160" height="58"/>
+  <text class="small" x="274" y="344">Hub Network</text>
+  <rect class="box" x="72" y="388" width="160" height="58"/>
+  <text class="small" x="92" y="422">Security</text>
+  <rect class="box" x="254" y="388" width="160" height="58"/>
+  <text class="small" x="274" y="422">Monitoring</text>
+
+  <rect class="box workload" x="502" y="246" width="410" height="230"/>
+  <text class="label" x="526" y="282">Workload Subscriptions</text>
+  <rect class="box" x="526" y="310" width="160" height="58"/>
+  <text class="small" x="546" y="344">App Spoke</text>
+  <rect class="box" x="708" y="310" width="160" height="58"/>
+  <text class="small" x="728" y="344">Data Spoke</text>
+  <rect class="box shared" x="526" y="388" width="160" height="58"/>
+  <text class="small" x="546" y="422">AI Workload</text>
+  <rect class="box" x="708" y="388" width="160" height="58"/>
+  <text class="small" x="728" y="422">Shared Ops</text>
+
+  <line class="line" x1="458" y1="360" x2="502" y2="360"/>
+  <text class="small" x="404" y="512">Clear ownership: platform teams operate shared controls; workload teams build inside the guardrails.</text>
+</svg>

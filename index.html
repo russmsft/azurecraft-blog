@@ -2,39 +2,157 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>AzureCraft Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AzureCraft | Practical Azure Architecture</title>
+  <meta name="description" content="Diagram-first Azure architecture notes on landing zones, AI workloads, GenAIOps, governance, and production-ready cloud patterns." />
+  <meta property="og:title" content="AzureCraft | Practical Azure Architecture" />
+  <meta property="og:description" content="Practical Azure field notes for architects building governed, production-ready cloud and AI solutions." />
+  <meta property="og:type" content="website" />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
+<a class="skip-link" href="#main">Skip to content</a>
 
-<header>
-  <h1>AzureCraft</h1>
-  <p>Practical Azure Architecture, Without the Noise</p>
+<header class="site-header">
+  <nav class="site-nav" aria-label="Primary navigation">
+    <a class="brand" href="index.html" aria-label="AzureCraft home">
+      <span class="brand-mark">AC</span>
+      <span>
+        <strong>AzureCraft</strong>
+        <small>Practical Azure architecture</small>
+      </span>
+    </a>
+    <div class="nav-links">
+      <a href="#articles">Articles</a>
+      <a href="patterns/">Patterns</a>
+      <a href="genaiops-csa-starter/">GenAIOps</a>
+      <a href="#resources">Resources</a>
+    </div>
+  </nav>
 </header>
 
-<nav>
-  <a href="index.html">Home</a>
-</nav>
+<main id="main">
+  <section class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow">Diagram-first field notes</p>
+      <h1>Azure architecture without the noise.</h1>
+      <p class="lead">AzureCraft captures reusable patterns for landing zones, AI workloads, governance, and GenAIOps so architects can move from idea to production with fewer unknowns.</p>
+      <div class="actions" aria-label="Primary actions">
+        <a class="button primary" href="genaiops-csa-starter/">Explore GenAIOps</a>
+        <a class="button" href="patterns/">View pattern library</a>
+      </div>
+    </div>
+    <figure class="hero-visual">
+      <img src="assets/diagrams/azure-landing-zone.svg" alt="Azure Landing Zone reference pattern with platform and workload subscriptions" />
+      <figcaption>Reusable Azure patterns, explained with clear diagrams and practical tradeoffs.</figcaption>
+    </figure>
+  </section>
 
-<main>
-  <article class="post-preview">
-    <h2><a href="post.html?post=post-1-welcome">Welcome to AzureCraft</a></h2>
-    <p>Why this blog exists and what it will cover.</p>
-  </article>
+  <section class="section-band featured">
+    <div class="section-heading">
+      <p class="eyebrow">Flagship guide</p>
+      <h2>GenAIOps for Cloud Solution Architects</h2>
+      <p>Move GenAI from prompt experiments into evaluated, governed, cost-aware Azure services.</p>
+    </div>
+    <div class="feature-grid">
+      <article class="feature-panel">
+        <h3>From prompt to production</h3>
+        <p>The guide maps the full lifecycle: build, evaluate, deploy, monitor, govern, and optimise.</p>
+        <a class="text-link" href="genaiops-csa-starter/">Open the guide</a>
+      </article>
+      <article class="feature-panel">
+        <h3>CSA-ready assets</h3>
+        <p>Includes a starter guide, crib sheet, facilitator notes, Q&A bank, and video plan.</p>
+        <a class="text-link" href="genaiops-csa-starter/#video">View the video plan</a>
+      </article>
+      <article class="feature-panel">
+        <h3>Public-safe framing</h3>
+        <p>Designed for community sharing without customer names, private workshop content, or confidential material.</p>
+        <a class="text-link" href="genaiops-csa-starter/CONTENT_GOVERNANCE_CHECKLIST.md">Review governance checklist</a>
+      </article>
+    </div>
+  </section>
 
-  <article class="post-preview">
-    <h2><a href="post.html?post=post-2-landing-zone">Azure Landing Zones: A Practical Architect’s View</a></h2>
-    <p>A diagram‑first explanation of landing zones.</p>
-  </article>
+  <section id="articles" class="content-section">
+    <div class="section-heading">
+      <p class="eyebrow">Latest field notes</p>
+      <h2>Articles</h2>
+      <p>Short, practical posts for architecture conversations and reusable design decisions.</p>
+    </div>
+    <div class="article-grid">
+      <article class="post-card">
+        <p class="meta">Start here</p>
+        <h3><a href="post.html?post=post-1-welcome">Welcome to AzureCraft</a></h3>
+        <p>Why the site exists and how to use it as a field-notes library.</p>
+      </article>
+      <article class="post-card">
+        <p class="meta">Landing zones</p>
+        <h3><a href="post.html?post=post-2-landing-zone">Azure Landing Zones: A Practical Architect's View</a></h3>
+        <p>A pragmatic view of management groups, platform subscriptions, workload separation, and governance.</p>
+      </article>
+      <article class="post-card">
+        <p class="meta">AI architecture</p>
+        <h3><a href="post.html?post=post-3-ai-landing-zone">AI Workloads Inside an Azure Landing Zone</a></h3>
+        <p>How private access, identity, monitoring, safety, and shared services shape production AI workloads.</p>
+      </article>
+      <article class="post-card">
+        <p class="meta">GenAIOps</p>
+        <h3><a href="post.html?post=post-4-evaluation-sets">Evaluation Sets: The Missing Layer in GenAI Pilots</a></h3>
+        <p>Turn demo confidence into release confidence with practical eval sets and quality gates.</p>
+      </article>
+      <article class="post-card">
+        <p class="meta">AI gateway</p>
+        <h3><a href="post.html?post=post-5-apim-ai-gateway">APIM as an AI Gateway</a></h3>
+        <p>When Azure API Management helps with AI traffic control, observability, quotas, and routing.</p>
+      </article>
+    </div>
+  </section>
 
-  <article class="post-preview">
-    <h2><a href="genaiops-csa-starter/">GenAIOps for Cloud Solution Architects</a></h2>
-    <p>A public starter guide for moving GenAI from prompt experiments to governed, production-ready Azure solutions.</p>
-  </article>
+  <section id="patterns" class="section-band">
+    <div class="section-heading">
+      <p class="eyebrow">Reusable diagrams</p>
+      <h2>Pattern library</h2>
+      <p>Architecture cards that can grow into full articles, decks, and customer-safe whiteboard sessions.</p>
+    </div>
+    <div class="pattern-grid">
+      <article class="pattern-card">
+        <img src="assets/diagrams/azure-landing-zone.svg" alt="Azure Landing Zone pattern preview" />
+        <h3>Enterprise Landing Zone</h3>
+        <p>Management groups, platform subscriptions, policy, identity, network, and workload separation.</p>
+      </article>
+      <article class="pattern-card">
+        <img src="assets/diagrams/rag-on-azure.svg" alt="Retrieval augmented generation on Azure pattern preview" />
+        <h3>RAG on Azure</h3>
+        <p>Application, gateway, orchestrator, search, model, safety controls, telemetry, and feedback.</p>
+      </article>
+      <article class="pattern-card">
+        <img src="assets/diagrams/ai-gateway.svg" alt="AI gateway pattern preview" />
+        <h3>AI Gateway</h3>
+        <p>Centralized policy, authentication, quotas, routing, logging, resilience, and cost visibility.</p>
+      </article>
+    </div>
+    <a class="button secondary" href="patterns/">Open all patterns</a>
+  </section>
+
+  <section id="resources" class="content-section">
+    <div class="section-heading">
+      <p class="eyebrow">Downloadable assets</p>
+      <h2>CSA resources</h2>
+      <p>Reusable, public-safe material for learning sessions, architecture conversations, and first-pass customer discovery.</p>
+    </div>
+    <div class="resource-list">
+      <a href="genaiops-csa-starter/downloads/genaiops-csa-starter-guide.md">GenAIOps starter guide</a>
+      <a href="genaiops-csa-starter/downloads/genaiops-one-page-crib-sheet.md">One-page crib sheet</a>
+      <a href="genaiops-csa-starter/downloads/community-facilitator-guide.md">Community facilitator guide</a>
+      <a href="genaiops-csa-starter/downloads/q-and-a-bank.md">Public Q&A bank</a>
+    </div>
+  </section>
 </main>
 
-<footer>
-  <p>© 2026 AzureCraft</p>
+<footer class="site-footer">
+  <p>AzureCraft, 2026. Practical Azure architecture, without the noise.</p>
+  <a href="patterns/">Patterns</a>
+  <a href="genaiops-csa-starter/">GenAIOps</a>
 </footer>
 
 <script src="js/main.js"></script>
