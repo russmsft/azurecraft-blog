@@ -1,0 +1,47 @@
+<article class="article">
+  <p class="meta">AI architecture | Published June 2026</p>
+  <h1>RAG vs Fine-Tuning vs Prompt Engineering: A Decision Framework</h1>
+  <p class="intro">Most teams reach for fine-tuning too early. Before spending weeks preparing training data and running Microsoft Foundry fine-tuning jobs, it is worth being precise about what each technique actually does, what it costs, and where it fits. Prompt engineering, retrieval-augmented generation, and fine-tuning solve different problems, and picking the wrong one wastes time and money on a problem that did not exist.</p>
+
+  <h2>The Three Techniques Defined</h2>
+  <p>Prompt engineering shapes model behavior through instructions in the context window. No training is involved. System prompts, few-shot examples, and chain-of-thought patterns all fall here. Changes take seconds and cost nothing beyond inference, but you are limited to what fits in the context window and what the base model already knows.</p>
+  <p>RAG adds a retrieval step at inference time. A query is used to fetch relevant document chunks from an index, those chunks are injected into the prompt as grounding context, and the model responds based on them. The model weights do not change. The knowledge comes from your index, which you control and update independently of any model release cycle.</p>
+  <p>Fine-tuning updates the actual model weights by training on a curated dataset. The model learns a new behavioral pattern. It does not reliably learn new facts.</p>
+
+  <h2>Decision Table</h2>
+  <table>
+    <thead><tr><th>Scenario</th><th>Recommended Approach</th></tr></thead>
+    <tbody>
+      <tr><td>Need answers grounded in current or frequently updated data</td><td>RAG</td></tr>
+      <tr><td>Need private enterprise knowledge (internal docs, policies, tickets)</td><td>RAG</td></tr>
+      <tr><td>Need consistent structured output format (JSON, fixed schema)</td><td>System prompt first; fine-tuning if prompt alone is inconsistent</td></tr>
+      <tr><td>Need a specific tone or communication style</td><td>System prompt first; fine-tuning if style is highly specialized</td></tr>
+      <tr><td>Need the model to reason differently on a narrow domain task</td><td>Fine-tuning (SFT or DPO in Foundry)</td></tr>
+      <tr><td>Need domain vocabulary understood correctly and consistently</td><td>Fine-tuning</td></tr>
+      <tr><td>Need the fastest iteration with the lowest upfront cost</td><td>Prompt engineering</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Why RAG Is the Right Default for Enterprise</h2>
+  <p>Most enterprise AI use cases involve private knowledge that changes over time: internal documentation, product catalogs, support tickets, compliance policies. RAG addresses this directly. You index the knowledge, update the index as content changes, and the model always retrieves the current version at query time. No retraining required when a policy document is updated.</p>
+  <p>On Azure, this pattern is well-supported: Azure AI Search handles the vector and keyword index, Microsoft Foundry manages the model deployment, and the two connect through Foundry grounding configuration. When a RAG system gives a wrong answer, you can inspect what the retriever returned. That traceability matters for production support.</p>
+
+  <h2>When Fine-Tuning Genuinely Helps</h2>
+  <p>Fine-tuning is for behavioral change, not knowledge storage. The cases where it earns its cost are:</p>
+  <ul>
+    <li>Format compliance - when every response must follow a strict schema and prompt instructions alone produce inconsistent results even with examples</li>
+    <li>Domain vocabulary - when the base model consistently misreads specialized terminology specific to your field</li>
+    <li>Task specialization - classification, extraction, or transformation tasks where you have thousands of labeled examples</li>
+    <li>Latency reduction - a smaller fine-tuned model can match a larger prompted model on a narrow task at lower cost per call</li>
+  </ul>
+
+  <h2>The Anti-Pattern: Fine-Tuning to Inject Knowledge</h2>
+  <p>A common mistake is training a model on internal documents and expecting it to memorize and reliably recall specific facts. This does not work well. Models trained this way often produce fluent-sounding but factually incorrect responses, with no retrieval trace to inspect. The training process compresses information into weights in ways that do not preserve exact facts reliably. For knowledge retrieval, use RAG. Use fine-tuning only for behavior and style.</p>
+
+  <h2>Cost Comparison</h2>
+  <p>Prompt engineering has no upfront infrastructure cost. RAG adds the cost of Azure AI Search indexing, embedding compute to vectorize your documents, and a modest latency overhead per query for retrieval. Fine-tuning adds training compute billed per token processed during the training run, a separate fine-tuned model deployment to manage and version, and retraining costs each time the base model is updated or your behavioral requirements change. Microsoft Foundry fine-tuning jobs support both SFT and DPO workflows; factor in dataset preparation time, which typically exceeds the training time itself.</p>
+
+  <div class="article-callout">
+    <strong>Key principle:</strong> Fine-tune for style and format. Use RAG for facts and knowledge. Use prompts for everything else first.
+  </div>
+</article>

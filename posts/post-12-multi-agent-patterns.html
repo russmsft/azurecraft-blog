@@ -1,0 +1,48 @@
+<article class="article">
+  <p class="meta">AI agents | Published June 2026</p>
+  <h1>Multi-Agent Patterns on Azure</h1>
+  <p class="intro">Multi-agent architectures solve specific problems well and create unnecessary complexity for everything else. Before you design a system with five specialist agents and a coordinator, verify that a single agent with a well-defined tool set would not solve the problem more reliably, at lower latency, with fewer failure modes. This post covers when multi-agent is justified, the five patterns that cover most production designs, and how Azure wires them up.</p>
+
+  <h2>When Multi-Agent Is Actually Justified</h2>
+  <p>A single agent with a broad tool set handles most assistant and automation use cases. Multi-agent adds coordination overhead - message passing, context handoffs, failure propagation across agent boundaries. These are the real justifications:</p>
+  <ul>
+    <li>Context window pressure: the combined system prompt, tools, and conversation history for all required domains exceeds what a single agent handles reliably</li>
+    <li>Domain isolation: different agent instances need different knowledge sources, tool permissions, or model configurations that cannot safely coexist in one context</li>
+    <li>Parallel execution: genuinely independent subtasks where concurrent processing produces a measurable latency improvement</li>
+    <li>Accountability: regulated environments where each decision step needs an auditable, scoped owner</li>
+    <li>Model specialization: a subdomain requires a different model - a vision model alongside a reasoning model, for example</li>
+  </ul>
+  <p>If none of those apply, you have a prompting or tool configuration problem. Solve that first.</p>
+
+  <h2>The Five Patterns</h2>
+  <table>
+    <thead><tr><th>Pattern</th><th>How It Works</th><th>Typical Use Case</th><th>Azure Wiring</th></tr></thead>
+    <tbody>
+      <tr><td>Sequential (pipeline)</td><td>Output of agent A becomes input of agent B, in order</td><td>Document processing: extract, classify, enrich in stages</td><td>Microsoft Agent Framework or Azure Functions orchestration</td></tr>
+      <tr><td>Concurrent (fan-out/fan-in)</td><td>Coordinator dispatches to N agents in parallel, aggregates results</td><td>Research tasks requiring multiple independent data source lookups</td><td>Microsoft Agent Framework with async dispatch</td></tr>
+      <tr><td>Group Chat (maker-checker)</td><td>Multiple agents contribute to a shared context; one agent validates or critiques</td><td>Code generation with a separate review agent</td><td>Microsoft Agent Framework group chat</td></tr>
+      <tr><td>Handoff (dynamic delegation)</td><td>Routing agent detects intent and delegates to the appropriate specialist</td><td>Unified entry point for multi-domain assistants</td><td>Foundry connected agents</td></tr>
+      <tr><td>Magentic (open-ended planning)</td><td>Orchestrator maintains a task ledger, plans steps, replans based on progress</td><td>Autonomous research, long-horizon task execution</td><td>Magentic-One via Microsoft Agent Framework</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Matching Patterns to Requirements</h2>
+  <table>
+    <thead><tr><th>Requirement</th><th>Recommended Pattern</th></tr></thead>
+    <tbody>
+      <tr><td>Users reach a single endpoint across multiple domains - HR, IT, Finance, Legal</td><td>Handoff via Foundry connected agents</td></tr>
+      <tr><td>A document must be extracted, then classified, then enriched in a fixed sequence</td><td>Sequential pipeline</td></tr>
+      <tr><td>An analysis requires pulling from five independent data sources simultaneously</td><td>Concurrent fan-out/fan-in</td></tr>
+      <tr><td>Generated content needs a separate quality or compliance review before delivery</td><td>Group Chat with a validator agent</td></tr>
+      <tr><td>Task scope is unknown upfront and the agent must plan its own steps dynamically</td><td>Magentic with task ledger</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Wiring It on Azure</h2>
+  <p>Foundry connected agents handle handoff patterns without custom code. Register specialist agents as tools on a coordinator agent in the Foundry portal. The coordinator dispatches based on conversation context - no intent classifier, no routing rules file, no custom message bus.</p>
+  <p>For sequential pipelines, concurrent fan-out, group chat, and Magentic patterns, the Microsoft Agent Framework is the SDK layer. Start with Foundry connected agents and only drop to custom code when you hit a specific capability gap.</p>
+
+  <div class="article-callout">
+    <strong>Key principle:</strong> Multi-agent adds coordination overhead. Justify it with a concrete requirement, not architectural ambition.
+  </div>
+</article>

@@ -1,0 +1,47 @@
+<article class="article">
+  <p class="meta">AI agents | Published June 2026</p>
+  <h1>Foundry Agent Service: Prompt Agents vs Hosted Agents</h1>
+  <p class="intro">Foundry Agent Service gives you two fundamentally different agent types, and picking the wrong one costs weeks of engineering time. Prompt-based agents need no custom code and cover the majority of real-world use cases. Hosted agents run your containerized logic with full control over the agent loop. Here is how to decide which one you actually need - and when not to reach for the more complex option.</p>
+
+  <h2>The Core Distinction</h2>
+  <p>A <strong>prompt-based agent</strong> is configured entirely in the Foundry portal. You write a system prompt, attach tools, point it at a knowledge source, and deploy. No container. No SDK code. The Foundry runtime handles conversation state, tool dispatch, and response assembly. The model decides which tools to call and in what order.</p>
+  <p>A <strong>hosted agent</strong> runs your code in a container. You use the Microsoft Agent Framework, LangGraph, or any framework you choose. Foundry manages the hosting, scaling, and observability surface. You own the agent loop: tool call sequencing, retry logic, branching, human-in-the-loop checkpoints.</p>
+  <p>The decision is simpler than most teams make it: if you are writing code to control when and how tools get called, you need a hosted agent. Everything else is a prompt-based agent.</p>
+
+  <h2>When Prompt-Based Is the Right Call</h2>
+  <p>Prompt-based agents handle the vast majority of production assistant use cases. They are not training wheels for beginners - they are the production-grade choice when nondeterministic orchestration is acceptable:</p>
+  <ul>
+    <li>RAG-backed Q&amp;A assistants over internal documentation with Azure AI Search</li>
+    <li>Customer support agents with Bing grounding for current product and pricing information</li>
+    <li>Structured extraction workflows where the model decides which tools to invoke based on context</li>
+    <li>Multi-turn conversational assistants with file upload and analysis capability</li>
+    <li>Agents that call Azure Functions or third-party REST APIs via OpenAPI specs</li>
+  </ul>
+
+  <h2>When Hosted Agents Are Worth the Overhead</h2>
+  <p>Hosted agents add real complexity. Three situations justify that tradeoff:</p>
+  <ul>
+    <li>Deterministic pipelines where tool call sequence must be explicit, auditable, and reproducible across runs</li>
+    <li>Custom orchestration frameworks you are already committed to - LangGraph, custom state machines</li>
+    <li>Agent loops that need embedded business logic: retry thresholds, conditional branching, or mandatory human approval before continuing</li>
+  </ul>
+  <p>If your justification is "we want more control," that is not a hosted agent requirement. That is a system prompt and evaluation problem.</p>
+
+  <h2>Standard vs Basic Setup</h2>
+  <table>
+    <thead><tr><th>Configuration</th><th>Who Manages Storage</th><th>Best For</th><th>Key Limitation</th></tr></thead>
+    <tbody>
+      <tr><td>Basic (Foundry-managed)</td><td>Foundry manages thread storage, file storage, and vector indexes</td><td>Dev/test, prototypes, proof of concept</td><td>Limited data control; not appropriate for regulated or customer data</td></tr>
+      <tr><td>Standard (Bring Your Own)</td><td>Your Azure Storage, Azure AI Search index, Cosmos DB for thread state</td><td>Production workloads, compliance-constrained environments</td><td>More initial setup; you own backup, retention, and access policy</td></tr>
+    </tbody>
+  </table>
+  <p>If your agents will handle customer data, proprietary documents, or anything under a compliance framework, start with Standard. The setup cost is an afternoon. Retrofitting it after you have live thread history is significantly more.</p>
+
+  <h2>Connected Agents: Wiring Specialists Without an Orchestrator</h2>
+  <p>Foundry connected agents let you wire multiple prompt-based agents together without custom routing code. One agent acts as the coordinator. Specialist agents register as tools it can delegate to. The coordinator routes based on conversation context - no intent classifier, no routing rules file, no custom message bus.</p>
+  <p>Tools available to any Foundry agent: code interpreter, file search, Bing grounding, Azure Functions, and OpenAPI specs for third-party REST APIs.</p>
+
+  <div class="article-callout">
+    <strong>Key principle:</strong> Start with a prompt-based agent. Only reach for hosted agents when you need code-level control over the agent loop.
+  </div>
+</article>

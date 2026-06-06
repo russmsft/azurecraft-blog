@@ -1,0 +1,35 @@
+<article class="article">
+  <p class="meta">AI architecture | Published June 2026</p>
+  <h1>Vector Search on Azure: AI Search vs Cosmos DB vs PostgreSQL</h1>
+  <p class="intro">Three Azure services support vector search in production today, and the right choice is not always the most powerful one. Azure AI Search is purpose-built for search workloads and the default for most RAG implementations. Cosmos DB and PostgreSQL with pgvector solve specific scenarios where you already have data in those stores and want to avoid building a separate sync pipeline. This post gives you the comparison you need to make the call confidently.</p>
+
+  <h2>The Three Options</h2>
+  <p><strong>Azure AI Search</strong> is a dedicated search service with native support for vector, keyword, and hybrid search across the same query. It includes integrated indexers that pull from Blob Storage, Cosmos DB, and SQL databases on a schedule, built-in chunking and embedding generation via integrated vectorization, rich filtering and faceting, and semantic ranking that reranks results using a language model. It is the service Microsoft's own reference architectures use for RAG grounding.</p>
+  <p><strong>Azure Cosmos DB</strong> added vector search support across its API variants. The value here is co-location: if your application data and vectors live in the same document, you avoid a separate index sync. Cosmos DB handles global distribution natively, which matters for multi-region AI applications where retrieval latency needs to stay local to the user.</p>
+  <p><strong>Azure Database for PostgreSQL</strong> with the pgvector extension stores embeddings in a PostgreSQL column and queries them with standard SQL. If your application already runs PostgreSQL and your vector dimensions and dataset size are moderate, pgvector adds vector search without introducing a new service to manage.</p>
+
+  <h2>Comparison</h2>
+  <table>
+    <thead><tr><th>Service</th><th>Best For</th><th>Hybrid Search</th><th>Integrated Chunking</th><th>Pricing Model</th></tr></thead>
+    <tbody>
+      <tr><td>Azure AI Search</td><td>New RAG workloads, complex search requirements, multi-source indexing</td><td>Yes - vector + keyword + semantic in one query</td><td>Yes - built-in skill pipeline</td><td>Per search unit; scales with index size and query volume</td></tr>
+      <tr><td>Azure Cosmos DB</td><td>Operational data and vectors in the same document; global distribution required</td><td>Limited - vector only or combined with NoSQL filters</td><td>No - manage your own chunking pipeline</td><td>RU-based; vector operations consume additional RUs</td></tr>
+      <tr><td>PostgreSQL + pgvector</td><td>Existing PostgreSQL investment; moderate dataset size; simple ops preference</td><td>No native hybrid - combine with full-text search manually</td><td>No - manage your own chunking pipeline</td><td>Compute-based; no separate per-query charge</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Decision Ladder</h2>
+  <p>Use this ladder top-to-bottom. Stop at the first option that fits your situation.</p>
+  <ul>
+    <li><strong>Azure AI Search first</strong> - if you are building a new RAG workload with no existing database constraint, this is the starting point. Hybrid search and integrated vectorization are harder to replicate elsewhere.</li>
+    <li><strong>Cosmos DB</strong> - if your source data already lives in Cosmos DB and you need vectors co-located with operational records, or if global multi-region retrieval with consistent latency is a hard requirement.</li>
+    <li><strong>PostgreSQL + pgvector</strong> - if the team already runs PostgreSQL in production, the dataset is under a few million vectors, and introducing another service creates unacceptable operational overhead.</li>
+  </ul>
+
+  <h2>Hybrid Search Is the Default for RAG</h2>
+  <p>Pure vector search retrieves semantically similar chunks but misses exact keyword matches that users expect. Pure keyword search misses semantically related content that does not share the same terms. Azure AI Search's hybrid mode runs both in parallel and uses Reciprocal Rank Fusion to combine the results. For most enterprise RAG workloads, this outperforms either approach alone without requiring any additional configuration. It is the main reason AI Search is the default recommendation rather than the simplest or cheapest option.</p>
+
+  <div class="article-callout">
+    <strong>Key principle:</strong> If you are building a new RAG workload on Azure with no existing database constraint, Azure AI Search is the right starting point.
+  </div>
+</article>

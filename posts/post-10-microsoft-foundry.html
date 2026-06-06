@@ -1,0 +1,55 @@
+<article class="article">
+  <p class="meta">AI platform | Published June 2026</p>
+  <h1>Microsoft Foundry: The New AI Platform Model</h1>
+  <p class="intro">Microsoft Foundry is the unified AI platform that replaces the old pattern of provisioning standalone Azure OpenAI resources. If you are building anything AI-related on Azure today, your starting point is a Foundry hub and project, not a raw OpenAI endpoint. This post walks through the resource model, what lives inside a project, and the deployment choices that matter for production workloads.</p>
+
+  <h2>Hubs and Projects: Get the Ownership Model Right Early</h2>
+  <p>Foundry introduces two resource tiers. Retrofitting the ownership model after deployment is painful, so sort this out before you write the first Bicep file.</p>
+  <p>A <strong>hub</strong> is the shared infrastructure layer: virtual network integration, managed identity, storage accounts, and Key Vault connections. One hub typically spans an entire platform team or business unit. Network security signs off once at the hub level, not per project team.</p>
+  <p>A <strong>project</strong> is a team workspace that lives inside a hub. Projects own deployments, agent configurations, evaluations, and connections to downstream services. A team of three building a customer support assistant gets their own project. They inherit the hub's network and identity without negotiating VNet peering themselves.</p>
+  <ul>
+    <li>Hub: shared network, managed identity, and storage - owned by the platform or ops team</li>
+    <li>Project: model deployments, Foundry Agent Service, connections, evaluations - owned by the product team</li>
+    <li>One hub supports many projects; projects cannot span hubs</li>
+    <li>Role assignments at hub level cascade to projects; project-level roles are additive</li>
+  </ul>
+
+  <h2>What a Foundry Project Contains</h2>
+  <p>A project is not just a namespace. It is the deployment unit for everything a team needs to ship an AI feature.</p>
+  <ul>
+    <li><strong>Model deployments</strong>: GPT-4.1, o4-mini, Phi-4, or any model available in your region and tier</li>
+    <li><strong>Foundry Agent Service</strong>: the runtime for prompt-based and hosted agents</li>
+    <li><strong>Connections</strong>: typed references to Azure AI Search indexes, storage accounts, Cosmos DB, and external APIs</li>
+    <li><strong>Evaluations</strong>: built-in eval pipelines tied to your deployed models and agent runs</li>
+    <li><strong>Prompt flows</strong>: for teams that need orchestration without writing SDK code</li>
+  </ul>
+  <p>Everything is scoped to the project. Your team's model deployment does not bleed into another team's quota. Evaluations run against the same deployment they were built for. Connections are reusable across agents in the same project without passing secrets through environment variables.</p>
+
+  <h2>Why Standalone Azure OpenAI Is an Anti-Pattern Now</h2>
+  <p>Standalone Azure OpenAI resources predate the Foundry model. They still work. But they were designed for a world where you needed one model and one API key. That world is gone.</p>
+  <p>Build outside a Foundry project today and you lose:</p>
+  <ul>
+    <li>Centralized connection management - each service manages its own secrets</li>
+    <li>Built-in evaluation hooks - you wire your own eval pipeline from scratch</li>
+    <li>Foundry Agent Service - it only operates within a project</li>
+    <li>Unified monitoring and tracing through the Foundry portal</li>
+  </ul>
+  <p>The migration path from standalone resources is straightforward: create a hub, create a project, move deployments into the project. Existing quota follows the subscription, not the resource. The harder part is updating every service that holds a direct AOAI endpoint URL.</p>
+
+  <h2>Deployment Types: The Decision That Affects Your Bill</h2>
+  <table>
+    <thead>
+      <tr><th>Deployment Type</th><th>Best For</th><th>Latency Profile</th><th>Cost Model</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Global Standard</td><td>Dev/test, variable workloads, burst traffic</td><td>Variable - traffic routes globally</td><td>Pay per token</td></tr>
+      <tr><td>Data Zone</td><td>EU or US data residency requirements, compliance constraints</td><td>Regional, more consistent than Global Standard</td><td>Pay per token, region-scoped</td></tr>
+      <tr><td>Provisioned</td><td>High-volume, predictable traffic, latency-sensitive paths</td><td>Lowest and most consistent</td><td>Reserved capacity billed in PTUs</td></tr>
+    </tbody>
+  </table>
+  <p>Provisioned throughput units make sense once you can justify the baseline commitment. Run the math: if your projected token volume at Global Standard rates exceeds the PTU reservation cost over 30 days, provision. Most teams start on Global Standard and move select deployments to Provisioned after they have real production traffic data to benchmark against.</p>
+
+  <div class="article-callout">
+    <strong>Key principle:</strong> If your architecture diagram still shows a standalone "Azure OpenAI resource", update the design.
+  </div>
+</article>

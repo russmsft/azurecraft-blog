@@ -1,0 +1,36 @@
+<article class="article">
+  <p class="meta">AI safety | Published June 2026</p>
+  <h1>AI Content Safety in Production</h1>
+  <p class="intro">Every production AI workload on Azure needs content safety controls. The question is not whether to add them but where in the architecture they belong, which controls are already covered by Foundry's built-in filtering, and when to reach for Azure AI Content Safety directly. Getting this wrong costs either unnecessary latency or an unprotected inference path that will eventually surface a problem.</p>
+
+  <h2>What Azure AI Content Safety Covers</h2>
+  <p>Azure AI Content Safety provides moderation across four harm categories: hate and fairness, violence, sexual content, and self-harm. Each category returns a severity score from 0 to 6 at multiple granularities. Beyond harm categories, the service provides two capabilities that are particularly relevant for AI applications:</p>
+  <ul>
+    <li><strong>Prompt Shields</strong>: detect direct prompt injection attacks in user input and indirect injection attacks embedded in documents retrieved during RAG</li>
+    <li><strong>Groundedness detection</strong>: verify that a model response is supported by the provided source material, which is the key safety check for RAG workloads where hallucinated answers look plausible</li>
+  </ul>
+
+  <h2>Foundry Built-In Filters vs Direct API</h2>
+  <p>Microsoft Foundry applies content filters to every model deployment by default. The default profile covers the four harm categories at medium severity threshold. You can configure custom profiles with different thresholds per category, annotation mode (log but do not block), or blocking mode. For most production deployments, Foundry's built-in filtering handles harm category detection without requiring a separate Content Safety API call, which keeps latency lower.</p>
+  <p>Call Azure AI Content Safety directly when you need capabilities the built-in Foundry filter does not cover: Prompt Shields for injection detection, groundedness detection for RAG answer validation, or content moderation on data paths that do not flow through Foundry - for example, user-generated content in a storage pipeline.</p>
+
+  <h2>Integration Points</h2>
+  <table>
+    <thead><tr><th>Where to Apply</th><th>What to Check</th><th>Integration Pattern</th></tr></thead>
+    <tbody>
+      <tr><td>User input (before model call)</td><td>Harm categories, Prompt Shields for injection</td><td>Direct Content Safety API call or APIM policy before routing to Foundry</td></tr>
+      <tr><td>Retrieved documents (RAG path)</td><td>Indirect injection via Prompt Shields</td><td>Content Safety API call on retrieved chunks before injecting into prompt</td></tr>
+      <tr><td>Model output (after completion)</td><td>Harm categories, groundedness for RAG</td><td>Foundry built-in filter covers harm categories; add groundedness check via Content Safety API for RAG responses</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Latency Budget</h2>
+  <p>Azure AI Content Safety API calls typically add 50 to 100 ms to a request path. Foundry's built-in filtering runs inline with the completion call and adds less overhead. For latency-sensitive paths, apply safety checks selectively: Prompt Shields on input, built-in Foundry filtering on completion, and groundedness detection only on high-risk answer types rather than on every call. Measure latency impact in your staging environment before configuring production thresholds.</p>
+
+  <h2>Severity Thresholds and Annotation Mode</h2>
+  <p>Do not ship the default content filter profile unchanged for regulated or consumer-facing workloads. The default thresholds are a starting point. Use annotation mode first: enable it for two weeks in production to observe the distribution of severity scores for your actual traffic. Then set blocking thresholds based on that data rather than on guesses about what your users will send. A threshold set too low blocks legitimate requests and degrades the user experience. A threshold set too high misses content you intended to catch.</p>
+
+  <div class="article-callout">
+    <strong>Key principle:</strong> Enable content filtering on every production Foundry deployment. The default settings are a starting point, not a finished safety posture.
+  </div>
+</article>
