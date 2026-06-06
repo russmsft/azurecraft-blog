@@ -1,0 +1,55 @@
+<article class="article">
+  <p class="meta">Governance | Published June 2026</p>
+  <h1>Minimum Viable Governance for Azure</h1>
+  <p class="intro">Good governance should make the right thing easier. The minimum viable version is not a wall of policy; it is the smallest useful baseline that prevents common mistakes and creates clear ownership.</p>
+
+  <figure>
+    <img src="assets/diagrams/minimum-viable-governance.svg" alt="Minimum viable Azure governance pattern" />
+    <figcaption>Start with ownership, policy, tagging, budgets, logging, access, and review cadence.</figcaption>
+  </figure>
+
+  <h2>The baseline</h2>
+  <ul>
+    <li>Every subscription has a named owner and support path.</li>
+    <li>Allowed regions and high-risk SKUs are controlled by policy.</li>
+    <li>Tags capture owner, environment, application, and cost context.</li>
+    <li>Budgets and alerts are active before spend surprises become escalations.</li>
+    <li>Diagnostics and audit logs are enabled for services that matter.</li>
+    <li>Privileged access has review and expiration expectations.</li>
+  </ul>
+
+  <h2>Keep it usable</h2>
+  <p>Governance fails when teams only experience it as blocked deployments. Pair each control with a documented exception path, a reason, and a support owner. Teams will accept guardrails when they can understand and navigate them.</p>
+
+  <h2>First review cadence</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Review</th>
+        <th>Question</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Cost</td>
+        <td>Are budgets and tags telling the story we need?</td>
+      </tr>
+      <tr>
+        <td>Access</td>
+        <td>Are privileged roles still needed and time-bound?</td>
+      </tr>
+      <tr>
+        <td>Policy</td>
+        <td>Which controls are preventing mistakes, and which are causing friction?</td>
+      </tr>
+      <tr>
+        <td>Risk</td>
+        <td>Which workloads need deeper review because of data, exposure, or business criticality?</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="article-callout">
+    <strong>Practical rule:</strong> if a governance control cannot be explained in one sentence, it probably needs a better owner or a better exception path.
+  </div>
+</article>

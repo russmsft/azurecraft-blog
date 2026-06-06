@@ -7,6 +7,9 @@
     <loc>https://www.rbcloud.co.uk/patterns/</loc>
   </url>
   <url>
+    <loc>https://www.rbcloud.co.uk/articles/</loc>
+  </url>
+  <url>
     <loc>https://www.rbcloud.co.uk/genaiops-csa-starter/</loc>
   </url>
   <url>
@@ -23,5 +26,17 @@
   </url>
   <url>
     <loc>https://www.rbcloud.co.uk/post.html?post=post-5-apim-ai-gateway</loc>
+  </url>
+  <url>
+    <loc>https://www.rbcloud.co.uk/post.html?post=post-6-hub-spoke-vwan</loc>
+  </url>
+  <url>
+    <loc>https://www.rbcloud.co.uk/post.html?post=post-7-private-endpoints-dns</loc>
+  </url>
+  <url>
+    <loc>https://www.rbcloud.co.uk/post.html?post=post-8-answer-health-monitoring</loc>
+  </url>
+  <url>
+    <loc>https://www.rbcloud.co.uk/post.html?post=post-9-minimum-viable-governance</loc>
   </url>
 </urlset>

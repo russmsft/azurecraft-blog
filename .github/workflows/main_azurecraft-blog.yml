@@ -23,11 +23,13 @@ jobs:
         with:
           node-version: '22.x'
 
-      - name: npm install, build, and test
+      - name: Install Node.js dependencies
         run: |
           npm install
-          npm run build --if-present
-          npm run test --if-present
+
+      - name: Validate static site links and assets
+        run: |
+          npm test
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -62,4 +64,3 @@ jobs:
           app-name: 'azurecraft-blog'
           slot-name: 'Production'
           package: .
-          

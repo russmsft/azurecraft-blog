@@ -4,7 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Architecture Pattern Library | AzureCraft</title>
-  <meta name="description" content="Reusable Azure architecture pattern diagrams for landing zones, RAG workloads, AI gateways, governance, and production-ready cloud design." />
+  <meta name="description" content="Reusable Azure architecture pattern diagrams and checklists for landing zones, RAG workloads, AI gateways, private endpoints, governance, and monitoring." />
+  <meta property="og:title" content="AzureCraft Architecture Pattern Library" />
+  <meta property="og:description" content="Reusable Azure diagrams and checklists for practical architecture conversations." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="https://www.rbcloud.co.uk/assets/social/azurecraft-og.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://www.rbcloud.co.uk/assets/social/azurecraft-og.png" />
   <link rel="stylesheet" href="../css/styles.css" />
 </head>
 <body>
@@ -20,7 +26,7 @@
       </span>
     </a>
     <div class="nav-links">
-      <a href="../index.html#articles">Articles</a>
+      <a href="../articles/">Articles</a>
       <a href="index.html">Patterns</a>
       <a href="../genaiops-csa-starter/">GenAIOps</a>
       <a href="../index.html#resources">Resources</a>
@@ -34,6 +40,10 @@
       <p class="eyebrow">Architecture pattern library</p>
       <h1>Reusable Azure diagrams for practical conversations.</h1>
       <p class="lead">Use these pattern cards as starting points for blog posts, community sessions, design reviews, and customer-safe architecture discussions.</p>
+      <div class="actions">
+        <a class="button primary" href="#patterns">Browse patterns</a>
+        <a class="button" href="#checklists">Download checklists</a>
+      </div>
     </div>
     <figure class="hero-visual">
       <img src="../assets/diagrams/rag-on-azure.svg" alt="RAG on Azure reference architecture pattern" />
@@ -41,64 +51,73 @@
     </figure>
   </section>
 
-  <section class="content-section">
+  <section id="patterns" class="content-section">
     <div class="section-heading">
       <p class="eyebrow">Core patterns</p>
       <h2>Production-ready starting points</h2>
       <p>These are intentionally high-level. The goal is to make tradeoffs visible before deep implementation work begins.</p>
     </div>
 
-    <div class="pattern-grid">
+    <div class="pattern-grid expanded">
       <article class="pattern-card">
         <img src="../assets/diagrams/azure-landing-zone.svg" alt="Enterprise Azure Landing Zone diagram" />
         <h3>Enterprise Landing Zone</h3>
-        <p>Use when a team needs a governed foundation with subscription structure, identity, network, policy, and monitoring boundaries.</p>
+        <p>Governed foundation with subscription structure, identity, network, policy, and monitoring boundaries.</p>
+        <a class="text-link" href="../post.html?post=post-2-landing-zone">Read article</a>
       </article>
       <article class="pattern-card">
         <img src="../assets/diagrams/rag-on-azure.svg" alt="Retrieval augmented generation on Azure diagram" />
         <h3>RAG on Azure</h3>
-        <p>Use when an AI workload needs trusted retrieval, source grounding, safety controls, telemetry, and feedback loops.</p>
+        <p>Trusted retrieval, source grounding, safety controls, telemetry, and feedback loops.</p>
+        <a class="text-link" href="../post.html?post=post-3-ai-landing-zone">Read article</a>
       </article>
       <article class="pattern-card">
         <img src="../assets/diagrams/ai-gateway.svg" alt="AI gateway with Azure API Management diagram" />
         <h3>AI Gateway</h3>
-        <p>Use when multiple apps or teams need centralized authentication, policy, quotas, routing, logging, resilience, and usage visibility.</p>
+        <p>Centralized authentication, policy, quotas, routing, logging, resilience, and usage visibility.</p>
+        <a class="text-link" href="../post.html?post=post-5-apim-ai-gateway">Read article</a>
+      </article>
+      <article class="pattern-card">
+        <img src="../assets/diagrams/hub-spoke-vwan.svg" alt="Hub-spoke and Azure Virtual WAN decision diagram" />
+        <h3>Hub-Spoke vs Virtual WAN</h3>
+        <p>Decision pattern for custom network control versus managed global connectivity scale.</p>
+        <a class="text-link" href="../post.html?post=post-6-hub-spoke-vwan">Read article</a>
+      </article>
+      <article class="pattern-card">
+        <img src="../assets/diagrams/private-endpoints-dns.svg" alt="Private endpoints and DNS pattern diagram" />
+        <h3>Private Endpoints and DNS</h3>
+        <p>Operational model for private access, zone ownership, forwarding, and troubleshooting.</p>
+        <a class="text-link" href="../post.html?post=post-7-private-endpoints-dns">Read article</a>
+      </article>
+      <article class="pattern-card">
+        <img src="../assets/diagrams/answer-health-monitoring.svg" alt="Answer health monitoring pattern diagram" />
+        <h3>Answer Health Monitoring</h3>
+        <p>Observe system health, answer quality, risk signals, feedback, and evaluation regressions.</p>
+        <a class="text-link" href="../post.html?post=post-8-answer-health-monitoring">Read article</a>
+      </article>
+      <article class="pattern-card">
+        <img src="../assets/diagrams/minimum-viable-governance.svg" alt="Minimum viable governance pattern diagram" />
+        <h3>Minimum Viable Governance</h3>
+        <p>The smallest useful baseline for ownership, policy, tagging, budgets, logging, and review.</p>
+        <a class="text-link" href="../post.html?post=post-9-minimum-viable-governance">Read article</a>
       </article>
     </div>
   </section>
 
-  <section class="section-band">
+  <section id="checklists" class="section-band">
     <div class="section-heading">
-      <p class="eyebrow">Next pattern backlog</p>
-      <h2>Good candidates to add next</h2>
-      <p>These fit the AzureCraft theme and can each become a diagram, post, and downloadable checklist.</p>
+      <p class="eyebrow">Downloadable assets</p>
+      <h2>Pattern checklists</h2>
+      <p>Use these as lightweight review prompts before design workshops, pilot reviews, or community sessions.</p>
     </div>
-    <div class="article-grid">
-      <article class="post-card">
-        <p class="meta">Networking</p>
-        <h3>Hub-Spoke vs Virtual WAN</h3>
-        <p>Decision criteria for enterprise network topology, routing, firewalling, and regional growth.</p>
-      </article>
-      <article class="post-card">
-        <p class="meta">Governance</p>
-        <h3>Minimum Viable Governance</h3>
-        <p>The smallest useful set of policies, tags, budgets, alerts, and ownership boundaries.</p>
-      </article>
-      <article class="post-card">
-        <p class="meta">Private access</p>
-        <h3>Private Endpoints and DNS</h3>
-        <p>A practical pattern for private connectivity without creating avoidable operational friction.</p>
-      </article>
-      <article class="post-card">
-        <p class="meta">Operations</p>
-        <h3>Answer Health Monitoring</h3>
-        <p>How GenAI observability differs from standard service health monitoring.</p>
-      </article>
-      <article class="post-card">
-        <p class="meta">Delivery</p>
-        <h3>Prompt and Eval Release Flow</h3>
-        <p>A release pattern for prompts, retrieval changes, model upgrades, and evaluation gates.</p>
-      </article>
+    <div class="resource-list">
+      <a href="checklists/enterprise-landing-zone-checklist.md">Landing zone checklist</a>
+      <a href="checklists/rag-on-azure-checklist.md">RAG checklist</a>
+      <a href="checklists/ai-gateway-checklist.md">AI gateway checklist</a>
+      <a href="checklists/hub-spoke-vwan-checklist.md">Hub-spoke vs vWAN checklist</a>
+      <a href="checklists/private-endpoints-dns-checklist.md">Private endpoints checklist</a>
+      <a href="checklists/answer-health-monitoring-checklist.md">Answer health checklist</a>
+      <a href="checklists/minimum-viable-governance-checklist.md">Governance checklist</a>
     </div>
   </section>
 </main>
@@ -106,6 +125,7 @@
 <footer class="site-footer">
   <p>AzureCraft, 2026. Practical Azure architecture, without the noise.</p>
   <a href="../index.html">Home</a>
+  <a href="../articles/">Articles</a>
   <a href="../genaiops-csa-starter/">GenAIOps</a>
 </footer>
 </body>

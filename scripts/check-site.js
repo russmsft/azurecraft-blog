@@ -9,6 +9,7 @@ const ignoredPrefixes = [
   "tel:",
   "javascript:"
 ];
+const siteOrigin = "https://www.rbcloud.co.uk";
 
 function walk(directory) {
   const entries = fs.readdirSync(directory, { withFileTypes: true });
@@ -32,6 +33,11 @@ function resolveTarget(fromFile, rawTarget) {
   const trimmed = rawTarget.trim();
   if (!trimmed || trimmed.startsWith("#")) {
     return null;
+  }
+
+  if (trimmed.startsWith(siteOrigin)) {
+    const url = new URL(trimmed);
+    return resolveTarget(fromFile, `${url.pathname}${url.search}${url.hash}`);
   }
 
   if (ignoredPrefixes.some((prefix) => trimmed.startsWith(prefix))) {
@@ -74,12 +80,24 @@ function resolveTarget(fromFile, rawTarget) {
 const htmlFiles = walk(root).filter((file) => file.endsWith(".html"));
 const failures = [];
 const attributePattern = /\b(?:href|src)=["']([^"']+)["']/g;
+const localUrlContentPattern = /\bcontent=["'](https:\/\/www\.rbcloud\.co\.uk\/[^"']+)["']/g;
 
 for (const file of htmlFiles) {
   const html = fs.readFileSync(file, "utf8");
   let match;
 
   while ((match = attributePattern.exec(html))) {
+    const target = resolveTarget(file, match[1]);
+    if (!target) {
+      continue;
+    }
+
+    if (!target.path.startsWith(root) || !fs.existsSync(target.path)) {
+      failures.push(`${toSitePath(file)} -> ${match[1]} (${target.display})`);
+    }
+  }
+
+  while ((match = localUrlContentPattern.exec(html))) {
     const target = resolveTarget(file, match[1]);
     if (!target) {
       continue;

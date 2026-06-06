@@ -13,6 +13,7 @@ const mimeTypes = {
   ".json": "application/json; charset=utf-8",
   ".md": "text/markdown; charset=utf-8",
   ".pdf": "application/pdf",
+  ".png": "image/png",
   ".svg": "image/svg+xml; charset=utf-8",
   ".txt": "text/plain; charset=utf-8",
   ".xml": "application/xml; charset=utf-8"

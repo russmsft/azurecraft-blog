@@ -1,0 +1,46 @@
+<article class="article">
+  <p class="meta">Operations | Published June 2026</p>
+  <h1>Answer Health Monitoring for GenAI Workloads</h1>
+  <p class="intro">Traditional monitoring tells you whether the service is alive. GenAI monitoring also needs to tell you whether the answers are useful, grounded, safe, and improving.</p>
+
+  <figure>
+    <img src="assets/diagrams/answer-health-monitoring.svg" alt="Answer health monitoring pattern for GenAI operations" />
+    <figcaption>GenAI operations need system health, answer health, and risk signals in one improvement loop.</figcaption>
+  </figure>
+
+  <h2>Two monitoring layers</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Layer</th>
+        <th>Typical signals</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>System health</td>
+        <td>Latency, errors, throughput, dependency failures, token usage, and cost trends.</td>
+      </tr>
+      <tr>
+        <td>Answer health</td>
+        <td>Groundedness, relevance, completeness, user corrections, negative feedback, and task success.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Signals worth tracking early</h2>
+  <ul>
+    <li>Questions with low confidence or missing retrieval context.</li>
+    <li>Answers that users immediately correct or regenerate.</li>
+    <li>Safety events and policy-sensitive prompts.</li>
+    <li>Spikes in token usage after prompt or retrieval changes.</li>
+    <li>Evaluation regressions after model, prompt, data, or orchestration changes.</li>
+  </ul>
+
+  <h2>How to start simply</h2>
+  <p>Begin with a small dashboard that separates uptime and latency from answer quality. Add a review cadence where product, engineering, and risk owners look at failures and decide what should improve next.</p>
+
+  <div class="article-callout">
+    <strong>Useful framing:</strong> production GenAI needs observability for both the machine path and the human outcome.
+  </div>
+</article>

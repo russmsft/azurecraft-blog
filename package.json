@@ -7,6 +7,7 @@
   "scripts": {
     "start": "node --preserve-symlinks-main server.js",
     "dev": "node --preserve-symlinks-main server.js",
+    "generate:og": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/generate-og-images.ps1",
     "check": "node --preserve-symlinks-main scripts/check-site.js",
     "test": "npm run check"
   },

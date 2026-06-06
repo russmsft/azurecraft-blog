@@ -1,0 +1,50 @@
+<article class="article">
+  <p class="meta">Private access | Published June 2026</p>
+  <h1>Private Endpoints and DNS Without the Drama</h1>
+  <p class="intro">Private endpoints are often introduced as a security feature, but the operational challenge is usually DNS. A clean pattern needs clear ownership for zones, links, forwarding, endpoint approvals, and troubleshooting.</p>
+
+  <figure>
+    <img src="assets/diagrams/private-endpoints-dns.svg" alt="Private endpoints and DNS architecture pattern" />
+    <figcaption>Private access works best when endpoint, zone, and forwarding responsibilities are explicit.</figcaption>
+  </figure>
+
+  <h2>What usually goes wrong</h2>
+  <ul>
+    <li>Workload teams create private endpoints but nobody owns the private DNS zone lifecycle.</li>
+    <li>Zone links are inconsistent across spokes, regions, and environments.</li>
+    <li>On-premises DNS forwarding is treated as an afterthought.</li>
+    <li>Teams cannot tell whether a failure is network routing, DNS resolution, or service configuration.</li>
+  </ul>
+
+  <h2>A useful operating contract</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Area</th>
+        <th>Decision to make</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Zone ownership</td>
+        <td>Decide whether private DNS zones are platform-owned, workload-owned, or vending-service managed.</td>
+      </tr>
+      <tr>
+        <td>Endpoint approval</td>
+        <td>Define who can create, approve, and remove private endpoint connections.</td>
+      </tr>
+      <tr>
+        <td>Forwarding</td>
+        <td>Document how Azure, on-premises, and branch clients resolve private names.</td>
+      </tr>
+      <tr>
+        <td>Support</td>
+        <td>Give teams a runbook for name resolution, route inspection, and service endpoint state.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="article-callout">
+    <strong>Architect's test:</strong> if a private endpoint breaks, the support path should identify the owning team before the outage bridge starts.
+  </div>
+</article>

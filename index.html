@@ -8,6 +8,9 @@
   <meta property="og:title" content="AzureCraft | Practical Azure Architecture" />
   <meta property="og:description" content="Practical Azure field notes for architects building governed, production-ready cloud and AI solutions." />
   <meta property="og:type" content="website" />
+  <meta property="og:image" content="https://www.rbcloud.co.uk/assets/social/azurecraft-og.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://www.rbcloud.co.uk/assets/social/azurecraft-og.png" />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
@@ -23,7 +26,7 @@
       </span>
     </a>
     <div class="nav-links">
-      <a href="#articles">Articles</a>
+      <a href="articles/">Articles</a>
       <a href="patterns/">Patterns</a>
       <a href="genaiops-csa-starter/">GenAIOps</a>
       <a href="#resources">Resources</a>
@@ -40,6 +43,7 @@
       <div class="actions" aria-label="Primary actions">
         <a class="button primary" href="genaiops-csa-starter/">Explore GenAIOps</a>
         <a class="button" href="patterns/">View pattern library</a>
+        <a class="button" href="articles/">Browse articles</a>
       </div>
     </div>
     <figure class="hero-visual">
@@ -81,24 +85,24 @@
     </div>
     <div class="article-grid">
       <article class="post-card">
-        <p class="meta">Start here</p>
-        <h3><a href="post.html?post=post-1-welcome">Welcome to AzureCraft</a></h3>
-        <p>Why the site exists and how to use it as a field-notes library.</p>
+        <p class="meta">Networking</p>
+        <h3><a href="post.html?post=post-6-hub-spoke-vwan">Hub-Spoke vs Virtual WAN</a></h3>
+        <p>Choose between custom control and managed connectivity scale.</p>
       </article>
       <article class="post-card">
-        <p class="meta">Landing zones</p>
-        <h3><a href="post.html?post=post-2-landing-zone">Azure Landing Zones: A Practical Architect's View</a></h3>
-        <p>A pragmatic view of management groups, platform subscriptions, workload separation, and governance.</p>
+        <p class="meta">Private access</p>
+        <h3><a href="post.html?post=post-7-private-endpoints-dns">Private Endpoints and DNS</a></h3>
+        <p>Make private access repeatable with clear DNS ownership.</p>
       </article>
       <article class="post-card">
-        <p class="meta">AI architecture</p>
-        <h3><a href="post.html?post=post-3-ai-landing-zone">AI Workloads Inside an Azure Landing Zone</a></h3>
-        <p>How private access, identity, monitoring, safety, and shared services shape production AI workloads.</p>
+        <p class="meta">Operations</p>
+        <h3><a href="post.html?post=post-8-answer-health-monitoring">Answer Health Monitoring</a></h3>
+        <p>Monitor answer quality as well as uptime.</p>
       </article>
       <article class="post-card">
-        <p class="meta">GenAIOps</p>
-        <h3><a href="post.html?post=post-4-evaluation-sets">Evaluation Sets: The Missing Layer in GenAI Pilots</a></h3>
-        <p>Turn demo confidence into release confidence with practical eval sets and quality gates.</p>
+        <p class="meta">Governance</p>
+        <h3><a href="post.html?post=post-9-minimum-viable-governance">Minimum Viable Governance</a></h3>
+        <p>Start with the smallest useful baseline.</p>
       </article>
       <article class="post-card">
         <p class="meta">AI gateway</p>
@@ -106,6 +110,7 @@
         <p>When Azure API Management helps with AI traffic control, observability, quotas, and routing.</p>
       </article>
     </div>
+    <a class="button secondary" href="articles/">Open article index</a>
   </section>
 
   <section id="patterns" class="section-band">
@@ -116,19 +121,19 @@
     </div>
     <div class="pattern-grid">
       <article class="pattern-card">
-        <img src="assets/diagrams/azure-landing-zone.svg" alt="Azure Landing Zone pattern preview" />
-        <h3>Enterprise Landing Zone</h3>
-        <p>Management groups, platform subscriptions, policy, identity, network, and workload separation.</p>
+        <img src="assets/diagrams/hub-spoke-vwan.svg" alt="Hub-spoke and Virtual WAN pattern preview" />
+        <h3>Hub-Spoke vs Virtual WAN</h3>
+        <p>Custom control versus managed global connectivity scale.</p>
       </article>
       <article class="pattern-card">
-        <img src="assets/diagrams/rag-on-azure.svg" alt="Retrieval augmented generation on Azure pattern preview" />
-        <h3>RAG on Azure</h3>
-        <p>Application, gateway, orchestrator, search, model, safety controls, telemetry, and feedback.</p>
+        <img src="assets/diagrams/private-endpoints-dns.svg" alt="Private endpoints and DNS pattern preview" />
+        <h3>Private Endpoints and DNS</h3>
+        <p>Endpoint ownership, private DNS zones, forwarding, and support paths.</p>
       </article>
       <article class="pattern-card">
-        <img src="assets/diagrams/ai-gateway.svg" alt="AI gateway pattern preview" />
-        <h3>AI Gateway</h3>
-        <p>Centralized policy, authentication, quotas, routing, logging, resilience, and cost visibility.</p>
+        <img src="assets/diagrams/answer-health-monitoring.svg" alt="Answer health monitoring pattern preview" />
+        <h3>Answer Health Monitoring</h3>
+        <p>System health, answer quality, risk signals, feedback, and eval regressions.</p>
       </article>
     </div>
     <a class="button secondary" href="patterns/">Open all patterns</a>
@@ -145,12 +150,15 @@
       <a href="genaiops-csa-starter/downloads/genaiops-one-page-crib-sheet.md">One-page crib sheet</a>
       <a href="genaiops-csa-starter/downloads/community-facilitator-guide.md">Community facilitator guide</a>
       <a href="genaiops-csa-starter/downloads/q-and-a-bank.md">Public Q&A bank</a>
+      <a href="patterns/#checklists">Pattern checklists</a>
+      <a href="articles/">Article index</a>
     </div>
   </section>
 </main>
 
 <footer class="site-footer">
   <p>AzureCraft, 2026. Practical Azure architecture, without the noise.</p>
+  <a href="articles/">Articles</a>
   <a href="patterns/">Patterns</a>
   <a href="genaiops-csa-starter/">GenAIOps</a>
 </footer>

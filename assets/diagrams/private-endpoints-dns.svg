@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" role="img" aria-labelledby="title desc">
+  <title id="title">Private endpoints and DNS pattern</title>
+  <desc id="desc">Diagram showing workload spokes, private endpoints, private DNS zones, central DNS forwarding, and platform operations.</desc>
+  <defs>
+    <style>
+      .bg { fill: #f8fafc; }
+      .box { fill: #ffffff; stroke: #cbd5e1; stroke-width: 2; rx: 8; }
+      .workload { fill: #ecfdf5; stroke: #0f766e; }
+      .platform { fill: #e0f2fe; stroke: #0284c7; }
+      .dns { fill: #fdf2f8; stroke: #b83280; }
+      .ops { fill: #fff7ed; stroke: #c2410c; }
+      .title { fill: #0f172a; font: 700 24px Segoe UI, Arial, sans-serif; }
+      .label { fill: #1f2937; font: 700 17px Segoe UI, Arial, sans-serif; }
+      .small { fill: #475569; font: 14px Segoe UI, Arial, sans-serif; }
+      .arrow { stroke: #64748b; stroke-width: 2.5; fill: none; marker-end: url(#arrow); }
+      .dash { stroke-dasharray: 6 6; }
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
+    </marker>
+  </defs>
+  <rect class="bg" width="960" height="560" rx="12"/>
+  <text class="title" x="48" y="52">Private Endpoints and DNS</text>
+  <text class="small" x="48" y="80">Private access succeeds or fails on ownership, DNS forwarding, and repeatable zone linking.</text>
+
+  <rect class="box workload" x="62" y="144" width="245" height="250"/>
+  <text class="label" x="92" y="178">Workload Spoke</text>
+  <rect class="box" x="92" y="222" width="170" height="58"/>
+  <text class="small" x="126" y="256">Application</text>
+  <rect class="box" x="92" y="314" width="170" height="58"/>
+  <text class="small" x="112" y="348">Private Endpoint</text>
+
+  <rect class="box dns" x="382" y="144" width="245" height="250"/>
+  <text class="label" x="420" y="178">Private DNS</text>
+  <rect class="box" x="412" y="222" width="170" height="58"/>
+  <text class="small" x="442" y="256">Zone Group</text>
+  <rect class="box" x="412" y="314" width="170" height="58"/>
+  <text class="small" x="430" y="348">Zone Links</text>
+
+  <rect class="box platform" x="702" y="144" width="245" height="250"/>
+  <text class="label" x="734" y="178">Platform DNS</text>
+  <rect class="box" x="732" y="222" width="170" height="58"/>
+  <text class="small" x="744" y="256">DNS Forwarder</text>
+  <rect class="box" x="732" y="314" width="170" height="58"/>
+  <text class="small" x="752" y="348">On-prem DNS</text>
+
+  <path class="arrow" d="M262 251 H382"/>
+  <path class="arrow dash" d="M262 343 H382"/>
+  <path class="arrow" d="M627 251 H702"/>
+  <path class="arrow dash" d="M627 343 H702"/>
+
+  <rect class="box ops" x="278" y="438" width="405" height="58"/>
+  <text class="label" x="340" y="473">Operational contract</text>
+  <text class="small" x="340" y="492">Who creates zones, links VNets, approves endpoints, and troubleshoots names?</text>
+</svg>
