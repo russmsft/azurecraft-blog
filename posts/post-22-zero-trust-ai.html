@@ -1,0 +1,39 @@
+<article class="article">
+  <p class="meta">Security | Published June 2026</p>
+  <h1>Zero Trust for AI Workloads</h1>
+  <p class="intro">AI workloads introduce an attack surface that perimeter-based security was never designed to cover. Models process sensitive data, pipelines call endpoints through automated identities, and access patterns are harder to baseline than anything in a conventional application. The only reliable answer is to apply Zero Trust controls across every layer of the AI stack, not just the edges.</p>
+
+  <h2>Three Principles, Four Layers</h2>
+  <p>Zero Trust is not an Azure feature. It is a design posture built on three principles that map directly to controls you configure today.</p>
+  <ul>
+    <li><strong>Verify explicitly:</strong> Every request to an AI endpoint must be authenticated and authorized. No anonymous calls to Azure AI Foundry. No unauthenticated queries to Azure AI Search. Managed identity handles service-to-service. Entra ID handles user access. Neither is optional.</li>
+    <li><strong>Use least privilege:</strong> RBAC assignments scoped to the specific resource, not the subscription or resource group. Cognitive Services OpenAI User, not Contributor. No wildcard roles on AI hubs. When a pipeline only needs to call an inference endpoint, it should not be able to read storage or modify deployments.</li>
+    <li><strong>Assume breach:</strong> Log every inference request. Monitor token usage. Alert on anomalous call volumes and repeated authorization failures. Diagnostic Settings on every AI service, routed to a central Log Analytics workspace, with Defender for Cloud watching the resource group.</li>
+  </ul>
+
+  <h2>Controls by Layer</h2>
+  <table>
+    <thead><tr><th>Layer</th><th>Required Controls</th></tr></thead>
+    <tbody>
+      <tr><td>Network</td><td>Private endpoints on Foundry, AI Search, Storage, and Cosmos DB. Public network access disabled. Egress through Azure Firewall or NAT Gateway. NSGs for subnet segmentation between AI compute and data tiers.</td></tr>
+      <tr><td>Identity</td><td>System-assigned or user-assigned managed identity for all service-to-service calls. Entra ID for human access to the Foundry portal. Conditional Access policy scoped to the AI workbench, enforcing compliant device and MFA.</td></tr>
+      <tr><td>Data</td><td>AI Search and Storage accessed through private endpoints with Entra-based RBAC only. No SAS tokens for production data paths. API keys eliminated where managed identity is supported.</td></tr>
+      <tr><td>Gateway</td><td>Azure API Management in front of every Foundry inference endpoint. JWT validation and request logging at the policy layer. Azure AI Content Safety applied to input and output paths through APIM policies before traffic reaches the model.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Where Teams Get This Wrong</h2>
+  <ul>
+    <li>Foundry hubs created with public network access left on, which bypasses the private endpoint configuration entirely. A private endpoint on a hub that still allows public traffic is a false sense of security.</li>
+    <li>API keys stored in Key Vault but the service still configured to accept key-based authentication. Storing the key securely does not make it safe. The attack vector is the key itself, not where it lives.</li>
+    <li>Content Safety absent from input paths. Sending raw user input directly to a model without inspection leaves prompt injection and sensitive data extraction running undetected.</li>
+    <li>No Conditional Access policy scoped to the Foundry portal, so any Entra user can access the AI workbench from an unmanaged device on a public network.</li>
+  </ul>
+
+  <h2>Monitoring That Actually Catches Threats</h2>
+  <p>Enable Diagnostic Settings on every AI service and route logs to a shared Log Analytics workspace. Build Azure Monitor alerts for three specific signals: token usage spikes that exceed your normal p99 by more than 50 percent, repeated 401 and 403 responses from any single identity, and unexpected egress traffic from the AI subnet. Defender for Cloud should be connected to the AI resource group so that misconfigurations and threat detections surface alongside security recommendations in the same workflow your security team already uses.</p>
+
+  <div class="article-callout">
+    <strong>Key principle:</strong> Zero Trust for AI is not a product you buy. It is the combination of network, identity, data, and gateway controls applied consistently across the AI stack.
+  </div>
+</article>

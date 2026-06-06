@@ -1,0 +1,41 @@
+<article class="article">
+  <p class="meta">Governance | Published June 2026</p>
+  <h1>Azure Policy for AI Governance</h1>
+  <p class="intro">The teams moving fastest on AI are also the teams most likely to skip governance controls. Model deployments go out without content filtering. Foundry hubs sit with public network access enabled because nobody wanted to block the demo. Managed identity gets replaced by API keys because it was three steps faster to configure. Azure Policy moves AI governance from a checklist that teams ignore to an enforcement mechanism that does not require their cooperation.</p>
+
+  <h2>The Problem Is Structural, Not Attitudinal</h2>
+  <p>Asking individual workload teams to self-enforce AI governance does not work at scale. The incentive structure is wrong. Speed wins, compliance is someone else's problem, and the consequences of a misconfigured Foundry hub are not immediate enough to change behavior. The correct fix is to remove the decision entirely. When a Deny policy blocks public network access at deployment time, the conversation is over before it starts.</p>
+
+  <h2>Built-In Policies Worth Assigning Today</h2>
+  <ul>
+    <li><strong>Azure AI Services should use managed identity:</strong> Audits or denies AI service instances not configured with a managed identity. This is the single highest-value policy for eliminating API key sprawl.</li>
+    <li><strong>Azure AI Services should disable public network access:</strong> Hard blocks Foundry and Cognitive Services deployments with a public endpoint enabled. Assign with Deny effect in production subscriptions.</li>
+    <li><strong>Azure Cognitive Services accounts should restrict network access:</strong> Enforces VNet integration or private endpoint access on Cognitive Services resources.</li>
+    <li>Content filter configuration enforcement: audit deployments where no content filter profile is attached to a model deployment. A model without content filtering in production is a support ticket waiting to happen.</li>
+  </ul>
+
+  <h2>Custom Policy Patterns for AI Workloads</h2>
+  <table>
+    <thead><tr><th>Policy Pattern</th><th>Effect</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td>Restrict allowed model families and versions in Foundry</td><td>Deny</td><td>Block deployment of unapproved or preview models in production without a change-management review</td></tr>
+      <tr><td>Require content filter profile on model deployments</td><td>Deny</td><td>Prevent any Foundry model deployment from going live without a named content filter configuration attached</td></tr>
+      <tr><td>Enforce cost allocation tags on AI resources</td><td>Deny</td><td>Require workload, cost-center, and environment tags on all AI resources so chargeback reports are accurate</td></tr>
+      <tr><td>Deploy Diagnostic Settings on new AI services</td><td>DeployIfNotExists</td><td>Automatically configure Log Analytics routing on any AI resource created without it</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Choosing the Right Effect</h2>
+  <p>Effect selection matters as much as the policy rule. Deny is for controls where non-compliance is never acceptable: public network access, API key authentication, unapproved model families. Use Audit when you are baselining an existing environment and need visibility before you can enforce. DeployIfNotExists is specifically for configuration that should always be present but is easy to miss - Diagnostic Settings being the canonical example. If a team deploys a new AI hub and forgets to wire up logging, the policy deploys it for them within minutes.</p>
+
+  <h2>Initiative Structure and Assignment</h2>
+  <p>Group every AI governance policy into a single Initiative named AI Governance Baseline. Assign that initiative at the management group level so that every AI subscription inherits the controls without any action from individual workload teams. This is not optional if you have more than two or three teams running AI workloads. The overhead of maintaining per-subscription policy assignments grows faster than your team count.</p>
+  <p>Remediation tasks handle DeployIfNotExists violations on resources that existed before the policy assignment. For Deny violations that pre-date the assignment, use a documented manual remediation workflow. The compliance dashboard shows exactly which resources are out of scope so the backlog is visible and trackable.</p>
+
+  <h2>Compliance Reporting</h2>
+  <p>The Azure Policy compliance dashboard gives a per-initiative, per-resource breakdown of compliance state against the AI Governance Baseline initiative. Export that data to Log Analytics for historical trending. Surface the compliance posture in Microsoft Defender for Cloud so that AI governance gaps appear in the same secure score workflow architects and security teams use for everything else.</p>
+
+  <div class="article-callout">
+    <strong>Key principle:</strong> The teams least likely to apply AI governance controls are the teams moving fastest. Policy enforcement at the management group level removes the dependency on individual team discipline.
+  </div>
+</article>

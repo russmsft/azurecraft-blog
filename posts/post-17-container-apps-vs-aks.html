@@ -1,0 +1,39 @@
+<article class="article">
+  <p class="meta">Compute | Published June 2026</p>
+  <h1>Container Apps vs AKS: A Practical Decision</h1>
+  <p class="intro">Most architects overthink this choice. Container Apps handles the majority of containerized workloads without requiring anyone to manage a cluster. AKS is the right answer when you specifically need what it provides. The hard part is being honest about which situation you are actually in.</p>
+
+  <h2>What Container Apps Actually Is</h2>
+  <p>Container Apps runs on Kubernetes. That fact is deliberately hidden from you, and that is the point. You work with environments, revisions, and scale rules. KEDA handles scaling based on HTTP load, queue depth, or custom metrics. Dapr is available natively, so service-to-service calls, pub/sub, and state management work without building infrastructure for them. Revision management gives you blue/green and canary deployments out of the box. VNet integration happens at the environment level, meaning every app in that environment shares the same network boundary.</p>
+  <p>Scale to zero is on by default. For AI agent backends, APIs, and async processing workloads, Container Apps is the answer. You get consistent deployment patterns, clean cost attribution, and no cluster lifecycle to manage.</p>
+
+  <h2>What AKS Actually Requires</h2>
+  <p>AKS gives you the full Kubernetes API surface. Custom resource definitions, admission webhooks, custom operators, node-level OS configuration, GPU node pools with driver management, and full control over CNI (Cilium, Calico, or bring your own). Spot node pools reduce cost at scale. The cluster autoscaler operates at the node level, not just the pod level.</p>
+  <p>Here is the thing that does not get said enough: recommending AKS to a team without Kubernetes expertise is an architecture decision with a long tail. Node upgrades, certificate rotation, storage class management, networking troubleshooting after a CNI misconfiguration - these problems land on someone. If that someone does not know Kubernetes, the operational debt compounds across every quarter the workload runs. Be honest about the team you are designing for, not the team you wish you had.</p>
+
+  <h2>Decision Table</h2>
+  <table>
+    <thead><tr><th>Use Case</th><th>Platform</th><th>Reason</th></tr></thead>
+    <tbody>
+      <tr><td>AI agent backend</td><td>Container Apps</td><td>Dapr, scale to zero, and VNet integration cover all requirements without cluster ops</td></tr>
+      <tr><td>High-throughput API</td><td>Container Apps</td><td>KEDA HTTP scaling and revision traffic splitting handle it; simpler operations</td></tr>
+      <tr><td>GPU inference workload</td><td>AKS</td><td>GPU node pools require node-level driver config and MIG partitioning support</td></tr>
+      <tr><td>Legacy Kubernetes workload</td><td>AKS</td><td>Existing manifests, operators, and team expertise already invested</td></tr>
+      <tr><td>Background job processing</td><td>Container Apps</td><td>KEDA queue-based scaling and scale to zero cut idle cost</td></tr>
+      <tr><td>Complex service mesh</td><td>AKS</td><td>Istio and Linkerd require full Kubernetes API access and node-level configuration</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Cost and the Migration Path</h2>
+  <p>Container Apps charges per vCPU second, memory second, and request count. You pay for what runs. AKS charges a control plane fee plus node VM costs before accounting for the operational time that keeps the cluster healthy. At large scale with dense packing across many nodes, AKS can come out ahead. For most workloads, scale to zero makes Container Apps cheaper because you are not paying for idle compute at 3am.</p>
+  <p>The migration path works cleanly in one direction. Start on Container Apps, ship the workload, and move to AKS when you hit a specific ceiling. Document the ceiling before migrating - not a preference, a specific capability you cannot get any other way.</p>
+  <ul>
+    <li>GPU inference, custom operators, and service mesh are valid ceilings that justify AKS</li>
+    <li>Wanting more control is not a ceiling</li>
+    <li>Validate team Kubernetes expertise before committing to AKS in a design review</li>
+  </ul>
+
+  <div class="article-callout">
+    <strong>Key principle:</strong> AKS is the right answer when you need what only Kubernetes provides. Container Apps is the right answer for everything else.
+  </div>
+</article>

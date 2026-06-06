@@ -45,6 +45,76 @@ const postCatalog = {
     title: "Minimum Viable Governance for Azure",
     description: "Start with the smallest useful Azure governance baseline for ownership, policy, tagging, budgets, logging, and review.",
     image: defaultShareImage
+  },
+  "post-10-microsoft-foundry": {
+    title: "Microsoft Foundry: The New AI Platform Model",
+    description: "Hubs, projects, deployment types, and why standalone Azure OpenAI resources are now an anti-pattern for new builds.",
+    image: "https://www.rbcloud.co.uk/assets/social/genaiops-og.png"
+  },
+  "post-11-foundry-agent-service": {
+    title: "Foundry Agent Service: Prompt Agents vs Hosted Agents",
+    description: "How to choose between no-code prompt-based agents and containerized hosted agents in Azure AI Foundry.",
+    image: "https://www.rbcloud.co.uk/assets/social/genaiops-og.png"
+  },
+  "post-12-multi-agent-patterns": {
+    title: "Multi-Agent Patterns on Azure",
+    description: "Sequential, concurrent, group chat, handoff, and Magentic - when each pattern applies and how to wire them on Azure.",
+    image: "https://www.rbcloud.co.uk/assets/social/genaiops-og.png"
+  },
+  "post-13-rag-vs-finetuning": {
+    title: "RAG vs Fine-Tuning vs Prompt Engineering: A Decision Framework",
+    description: "A practical decision table for when to use retrieval, fine-tuning, or prompt engineering for enterprise AI workloads.",
+    image: "https://www.rbcloud.co.uk/assets/social/genaiops-og.png"
+  },
+  "post-14-vector-search-options": {
+    title: "Vector Search on Azure: AI Search vs Cosmos DB vs PostgreSQL",
+    description: "Compare Azure AI Search, Cosmos DB, and PostgreSQL with pgvector for RAG grounding and production AI workloads.",
+    image: "https://www.rbcloud.co.uk/assets/social/genaiops-og.png"
+  },
+  "post-15-content-safety": {
+    title: "AI Content Safety in Production",
+    description: "Harm categories, Prompt Shields, groundedness detection, and where to integrate Azure AI Content Safety in your AI stack.",
+    image: "https://www.rbcloud.co.uk/assets/social/genaiops-og.png"
+  },
+  "post-16-managed-identity-ai": {
+    title: "Managed Identity for AI: No API Keys, Ever",
+    description: "DefaultAzureCredential, RBAC roles for Foundry and AI Search, and how to wire managed identity across Container Apps and AKS.",
+    image: "https://www.rbcloud.co.uk/assets/social/genaiops-og.png"
+  },
+  "post-17-container-apps-vs-aks": {
+    title: "Container Apps vs AKS: A Practical Decision",
+    description: "When to choose Azure Container Apps over AKS, and the honest conversation about Kubernetes expertise and operational debt.",
+    image: defaultShareImage
+  },
+  "post-18-flex-consumption": {
+    title: "Azure Functions Flex Consumption: The New Default for Event-Driven AI",
+    description: "VNet integration without the Premium plan, configurable concurrency, and where Flex Consumption fits in AI pipelines.",
+    image: defaultShareImage
+  },
+  "post-19-prompt-versioning": {
+    title: "Prompt Versioning and Deployment Gates",
+    description: "Treat prompts as code with Foundry prompt catalog versioning, eval-gated deployments, and GitHub Actions integration.",
+    image: "https://www.rbcloud.co.uk/assets/social/genaiops-og.png"
+  },
+  "post-20-ai-cost-management": {
+    title: "AI Cost Management: Token Budgets, PTU vs Consumption, and Model Tiering",
+    description: "Control AI spend with model tiering, output token limits, PTU vs consumption decisions, and APIM-based cost attribution.",
+    image: "https://www.rbcloud.co.uk/assets/social/genaiops-og.png"
+  },
+  "post-21-continuous-evaluation": {
+    title: "Continuous Evaluation Pipelines",
+    description: "Automate AI quality gates with the Azure AI Evaluation SDK, GitHub Actions, baseline tracking, and regression blocking.",
+    image: "https://www.rbcloud.co.uk/assets/social/genaiops-og.png"
+  },
+  "post-22-zero-trust-ai": {
+    title: "Zero Trust for AI Workloads",
+    description: "Network, identity, data, and gateway controls that make up a complete Zero Trust posture for Azure AI workloads.",
+    image: defaultShareImage
+  },
+  "post-23-azure-policy-ai": {
+    title: "Azure Policy for AI Governance",
+    description: "Enforce managed identity, disable public access, require content filters, and govern model deployments with Azure Policy.",
+    image: defaultShareImage
   }
 };
 
