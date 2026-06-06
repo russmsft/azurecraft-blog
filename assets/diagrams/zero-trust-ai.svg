@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" role="img" aria-labelledby="zt-title zt-desc">
+  <title id="zt-title">Zero Trust for AI Workloads</title>
+  <desc id="zt-desc">Four defence layers — Network, Identity, Data, Gateway — protecting Azure AI Foundry endpoints.</desc>
+  <defs>
+    <marker id="arr3" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0,7 2.5,0 5" fill="#64748b"/>
+    </marker>
+  </defs>
+  <rect width="960" height="560" rx="12" fill="#f8fafc"/>
+  <!-- Title -->
+  <text x="48" y="46" font-family="Segoe UI,Arial,sans-serif" font-size="22" font-weight="700" fill="#0f172a">Zero Trust for AI Workloads</text>
+  <text x="48" y="68" font-family="Segoe UI,Arial,sans-serif" font-size="13" fill="#475569">Four defence layers protecting Azure AI Foundry inference endpoints.</text>
+
+  <!-- Layer 1: NETWORK (y=84,h=80) -->
+  <rect x="30" y="84" width="900" height="80" rx="8" fill="#f1f5f9" stroke="#475569" stroke-width="1.5"/>
+  <text x="48" y="106" font-family="Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#334155">NETWORK</text>
+  <!-- 4 items inside Network -->
+  <rect x="150" y="96" width="183" height="52" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="241" y="122" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#475569">NSG + Subnet</text>
+  <rect x="347" y="96" width="183" height="52" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="438" y="122" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#475569">Private Endpoints</text>
+  <rect x="544" y="96" width="183" height="52" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="635" y="122" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#475569">Azure Firewall</text>
+  <rect x="741" y="96" width="183" height="52" rx="6" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="832" y="122" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#475569">Public access OFF</text>
+
+  <!-- Arrow: Network → Identity -->
+  <line x1="480" y1="164" x2="480" y2="176" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr3)"/>
+
+  <!-- Layer 2: IDENTITY (y=178,h=80) -->
+  <rect x="30" y="178" width="900" height="80" rx="8" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="48" y="200" font-family="Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#1e3a8a">IDENTITY</text>
+  <!-- 4 items inside Identity -->
+  <rect x="150" y="190" width="183" height="52" rx="6" fill="#ffffff" stroke="#bfdbfe" stroke-width="1.5"/>
+  <text x="241" y="216" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#475569">Managed Identity</text>
+  <rect x="347" y="190" width="183" height="52" rx="6" fill="#ffffff" stroke="#bfdbfe" stroke-width="1.5"/>
+  <text x="438" y="216" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#475569">Microsoft Entra ID</text>
+  <rect x="544" y="190" width="183" height="52" rx="6" fill="#ffffff" stroke="#bfdbfe" stroke-width="1.5"/>
+  <text x="635" y="216" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#475569">Conditional Access</text>
+  <rect x="741" y="190" width="183" height="52" rx="6" fill="#ffffff" stroke="#bfdbfe" stroke-width="1.5"/>
+  <text x="832" y="216" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#475569">RBAC scoped</text>
+
+  <!-- Arrow: Identity → Data -->
+  <line x1="480" y1="258" x2="480" y2="270" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr3)"/>
+
+  <!-- Layer 3: DATA (y=272,h=80) -->
+  <rect x="30" y="272" width="900" height="80" rx="8" fill="#ecfdf5" stroke="#0f766e" stroke-width="1.5"/>
+  <text x="48" y="294" font-family="Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#134e4a">DATA</text>
+  <!-- 4 items inside Data -->
+  <rect x="150" y="284" width="183" height="52" rx="6" fill="#ffffff" stroke="#6ee7b7" stroke-width="1.5"/>
+  <text x="241" y="310" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#475569">Azure AI Search</text>
+  <rect x="347" y="284" width="183" height="52" rx="6" fill="#ffffff" stroke="#6ee7b7" stroke-width="1.5"/>
+  <text x="438" y="310" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#475569">Azure Storage</text>
+  <rect x="544" y="284" width="183" height="52" rx="6" fill="#ffffff" stroke="#6ee7b7" stroke-width="1.5"/>
+  <text x="635" y="310" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#475569">Cosmos DB</text>
+  <rect x="741" y="284" width="183" height="52" rx="6" fill="#ffffff" stroke="#6ee7b7" stroke-width="1.5"/>
+  <text x="832" y="310" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#475569">No SAS tokens</text>
+
+  <!-- Arrow: Data → Gateway -->
+  <line x1="480" y1="352" x2="480" y2="364" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr3)"/>
+
+  <!-- Layer 4: GATEWAY (y=366,h=80) -->
+  <rect x="30" y="366" width="900" height="80" rx="8" fill="#fdf2f8" stroke="#b83280" stroke-width="1.5"/>
+  <text x="48" y="388" font-family="Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#831843">GATEWAY</text>
+  <!-- 3 items inside Gateway (wider) -->
+  <rect x="150" y="378" width="250" height="52" rx="6" fill="#ffffff" stroke="#fbcfe8" stroke-width="1.5"/>
+  <text x="275" y="404" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#475569">Azure API Management</text>
+  <rect x="414" y="378" width="250" height="52" rx="6" fill="#ffffff" stroke="#fbcfe8" stroke-width="1.5"/>
+  <text x="539" y="404" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#475569">Azure AI Content Safety</text>
+  <rect x="678" y="378" width="246" height="52" rx="6" fill="#ffffff" stroke="#fbcfe8" stroke-width="1.5"/>
+  <text x="801" y="404" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#475569">Diagnostic Settings</text>
+
+  <!-- Arrow: Gateway → Foundry -->
+  <line x1="480" y1="446" x2="480" y2="458" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr3)"/>
+
+  <!-- Foundry box -->
+  <rect x="200" y="460" width="560" height="56" rx="8" fill="#dbeafe" stroke="#1d4ed8" stroke-width="2.5"/>
+  <text x="480" y="493" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="16" font-weight="700" fill="#1e3a8a">Azure AI Foundry (Inference Endpoints)</text>
+
+  <!-- Footer -->
+  <text x="48" y="535" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#64748b">Requests traverse all four layers before reaching model endpoints. Each layer enforces distinct controls.</text>
+</svg>

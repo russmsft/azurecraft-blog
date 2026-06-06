@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" role="img" aria-labelledby="fa-title fa-desc">
+  <title id="fa-title">Microsoft Foundry Architecture</title>
+  <desc id="fa-desc">Hub/project structure with Azure Subscription, Resource Group, Foundry Hub with infra items, and two project workspaces.</desc>
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0,8 3,0 6" fill="#64748b"/>
+    </marker>
+  </defs>
+  <!-- Background -->
+  <rect width="960" height="560" rx="12" fill="#f8fafc"/>
+  <!-- Title -->
+  <text x="48" y="50" font-family="Segoe UI,Arial,sans-serif" font-size="22" font-weight="700" fill="#0f172a">Microsoft Foundry Architecture</text>
+  <text x="48" y="74" font-family="Segoe UI,Arial,sans-serif" font-size="13" fill="#475569">Hub/project model — platform controls shared via hub, isolated team workspaces via projects.</text>
+  <!-- Azure Subscription dashed outline -->
+  <rect x="30" y="90" width="900" height="420" rx="10" fill="none" stroke="#94a3b8" stroke-dasharray="6,3" stroke-width="1.5"/>
+  <text x="46" y="110" font-family="Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#1f2937">Azure Subscription</text>
+  <!-- Resource Group dashed outline -->
+  <rect x="50" y="116" width="860" height="382" rx="8" fill="none" stroke="#94a3b8" stroke-dasharray="6,3" stroke-width="1.5"/>
+  <text x="66" y="134" font-family="Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#1f2937">Resource Group</text>
+  <!-- Foundry Hub box -->
+  <rect x="68" y="138" width="340" height="338" rx="10" fill="#dbeafe" stroke="#1d4ed8" stroke-width="2.5"/>
+  <text x="238" y="164" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="14" font-weight="700" fill="#1f2937">Foundry Hub</text>
+  <text x="238" y="182" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#64748b">Owned by platform / ops team</text>
+  <!-- Infra item 1: VNet integration + DNS -->
+  <rect x="84" y="194" width="308" height="40" rx="6" fill="#eff6ff" stroke="#6366f1" stroke-width="1.5"/>
+  <text x="238" y="219" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="13" fill="#475569">VNet integration + DNS</text>
+  <!-- Infra item 2: Managed identity -->
+  <rect x="84" y="244" width="308" height="40" rx="6" fill="#eff6ff" stroke="#6366f1" stroke-width="1.5"/>
+  <text x="238" y="269" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="13" fill="#475569">Managed identity</text>
+  <!-- Infra item 3a: Storage -->
+  <rect x="84" y="294" width="148" height="40" rx="6" fill="#eff6ff" stroke="#6366f1" stroke-width="1.5"/>
+  <text x="158" y="319" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="13" fill="#475569">Storage</text>
+  <!-- Infra item 3b: Key Vault -->
+  <rect x="244" y="294" width="148" height="40" rx="6" fill="#eff6ff" stroke="#6366f1" stroke-width="1.5"/>
+  <text x="318" y="319" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="13" fill="#475569">Key Vault</text>
+  <!-- Infra item 4a: Azure Monitor -->
+  <rect x="84" y="344" width="148" height="40" rx="6" fill="#eff6ff" stroke="#6366f1" stroke-width="1.5"/>
+  <text x="158" y="369" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="13" fill="#475569">Azure Monitor</text>
+  <!-- Infra item 4b: Content Safety -->
+  <rect x="244" y="344" width="148" height="40" rx="6" fill="#eff6ff" stroke="#6366f1" stroke-width="1.5"/>
+  <text x="318" y="369" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="13" fill="#475569">Content Safety</text>
+  <!-- Infra item 5: Role assignments -->
+  <rect x="84" y="394" width="308" height="40" rx="6" fill="#eff6ff" stroke="#6366f1" stroke-width="1.5"/>
+  <text x="238" y="419" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="13" fill="#475569">Role assignments (cascade to projects)</text>
+  <!-- Arrows from hub to projects -->
+  <line x1="408" y1="215" x2="448" y2="215" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="408" y1="385" x2="448" y2="385" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+  <!-- Project A box -->
+  <rect x="450" y="138" width="470" height="155" rx="8" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+  <text x="552" y="162" font-family="Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#1f2937">Project A — Product team workspace</text>
+  <!-- Project A: AI items -->
+  <rect x="466" y="170" width="216" height="40" rx="6" fill="#fdf2f8" stroke="#b83280" stroke-width="1.5"/>
+  <text x="574" y="195" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="13" fill="#475569">Model Deployments</text>
+  <rect x="696" y="170" width="208" height="40" rx="6" fill="#fdf2f8" stroke="#b83280" stroke-width="1.5"/>
+  <text x="800" y="195" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="13" fill="#475569">Agent Service</text>
+  <!-- Project A: Data items -->
+  <rect x="466" y="222" width="216" height="40" rx="6" fill="#ecfdf5" stroke="#0f766e" stroke-width="1.5"/>
+  <text x="574" y="247" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="13" fill="#475569">Connections</text>
+  <rect x="696" y="222" width="208" height="40" rx="6" fill="#ecfdf5" stroke="#0f766e" stroke-width="1.5"/>
+  <text x="800" y="247" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="13" fill="#475569">Evaluations</text>
+  <!-- Project B box -->
+  <rect x="450" y="308" width="470" height="155" rx="8" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+  <text x="552" y="332" font-family="Segoe UI,Arial,sans-serif" font-size="13" font-weight="700" fill="#1f2937">Project B — Product team workspace</text>
+  <!-- Project B: AI items -->
+  <rect x="466" y="340" width="216" height="40" rx="6" fill="#fdf2f8" stroke="#b83280" stroke-width="1.5"/>
+  <text x="574" y="365" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="13" fill="#475569">Model Deployments</text>
+  <rect x="696" y="340" width="208" height="40" rx="6" fill="#fdf2f8" stroke="#b83280" stroke-width="1.5"/>
+  <text x="800" y="365" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="13" fill="#475569">Agent Service</text>
+  <!-- Project B: Data items -->
+  <rect x="466" y="392" width="216" height="40" rx="6" fill="#ecfdf5" stroke="#0f766e" stroke-width="1.5"/>
+  <text x="574" y="417" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="13" fill="#475569">Connections</text>
+  <rect x="696" y="392" width="208" height="40" rx="6" fill="#ecfdf5" stroke="#0f766e" stroke-width="1.5"/>
+  <text x="800" y="417" text-anchor="middle" font-family="Segoe UI,Arial,sans-serif" font-size="13" fill="#475569">Evaluations</text>
+  <!-- Footer -->
+  <text x="48" y="530" font-family="Segoe UI,Arial,sans-serif" font-size="12" fill="#64748b">Projects inherit hub controls; each team workspace is isolated with its own identity, quotas, and connections.</text>
+</svg>
