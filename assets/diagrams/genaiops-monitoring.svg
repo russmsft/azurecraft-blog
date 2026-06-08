@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 350" fill="none">
+  <rect width="800" height="350" rx="12" fill="#15212f"/>
+
+  <!-- Title -->
+  <text x="400" y="36" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="18" font-weight="700" fill="#ffffff">System Health vs Answer Health</text>
+
+  <!-- Divider -->
+  <line x1="400" y1="60" x2="400" y2="310" stroke="#334155" stroke-width="2" stroke-dasharray="6 4"/>
+
+  <!-- System Health side -->
+  <text x="200" y="72" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="14" font-weight="700" fill="#0078d4">System Health</text>
+
+  <rect x="50" y="90" width="300" height="40" rx="6" fill="#1e3a5f"/>
+  <circle cx="80" cy="110" r="8" fill="#4ade80"/>
+  <text x="100" y="114" font-family="Segoe UI, sans-serif" font-size="11" fill="#94a3b8">Availability &amp; uptime</text>
+
+  <rect x="50" y="140" width="300" height="40" rx="6" fill="#1e3a5f"/>
+  <circle cx="80" cy="160" r="8" fill="#4ade80"/>
+  <text x="100" y="164" font-family="Segoe UI, sans-serif" font-size="11" fill="#94a3b8">Latency &amp; response times</text>
+
+  <rect x="50" y="190" width="300" height="40" rx="6" fill="#1e3a5f"/>
+  <circle cx="80" cy="210" r="8" fill="#fbbf24"/>
+  <text x="100" y="214" font-family="Segoe UI, sans-serif" font-size="11" fill="#94a3b8">Error rates &amp; 5xx codes</text>
+
+  <rect x="50" y="240" width="300" height="40" rx="6" fill="#1e3a5f"/>
+  <circle cx="80" cy="260" r="8" fill="#4ade80"/>
+  <text x="100" y="264" font-family="Segoe UI, sans-serif" font-size="11" fill="#94a3b8">Throughput &amp; token consumption</text>
+
+  <!-- Answer Health side -->
+  <text x="600" y="72" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="14" font-weight="700" fill="#b83280">Answer Health</text>
+
+  <rect x="450" y="90" width="300" height="40" rx="6" fill="#3b1f33"/>
+  <circle cx="480" cy="110" r="8" fill="#4ade80"/>
+  <text x="500" y="114" font-family="Segoe UI, sans-serif" font-size="11" fill="#94a3b8">Groundedness in sources</text>
+
+  <rect x="450" y="140" width="300" height="40" rx="6" fill="#3b1f33"/>
+  <circle cx="480" cy="160" r="8" fill="#fbbf24"/>
+  <text x="500" y="164" font-family="Segoe UI, sans-serif" font-size="11" fill="#94a3b8">User feedback &amp; corrections</text>
+
+  <rect x="450" y="190" width="300" height="40" rx="6" fill="#3b1f33"/>
+  <circle cx="480" cy="210" r="8" fill="#f87171"/>
+  <text x="500" y="214" font-family="Segoe UI, sans-serif" font-size="11" fill="#94a3b8">Content safety events</text>
+
+  <rect x="450" y="240" width="300" height="40" rx="6" fill="#3b1f33"/>
+  <circle cx="480" cy="260" r="8" fill="#4ade80"/>
+  <text x="500" y="264" font-family="Segoe UI, sans-serif" font-size="11" fill="#94a3b8">Quality trends &amp; regressions</text>
+
+  <!-- Bottom bar -->
+  <rect x="50" y="300" width="700" height="36" rx="6" fill="#166534"/>
+  <text x="400" y="323" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="12" font-weight="700" fill="#ffffff">Both required for a mature GenAI operating model</text>
+</svg>

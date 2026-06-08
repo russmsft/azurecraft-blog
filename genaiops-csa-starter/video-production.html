@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>
+    (() => {
+      const param = new URLSearchParams(window.location.search).get("clawpilotTheme");
+      const theme =
+        param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Video Production Plan | AzureCraft</title>
+  <meta name="description" content="Video production plan for GenAIOps explainer including voiceover script, shot list, AI voice workflow, and production brief." />
+  <meta property="og:title" content="GenAIOps Video Production Plan" />
+  <meta property="og:description" content="Complete video production plan for the GenAIOps CSA explainer: script, shot list, AI voice workflow, and brief." />
+  <meta property="og:type" content="article" />
+  <meta property="og:image" content="https://www.rbcloud.co.uk/assets/social/genaiops-og.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="stylesheet" href="../css/styles.css" />
+  <style>
+    :root {
+      color-scheme: light;
+      --cp-bg: #f7f4ef;
+      --cp-bg-elevated: #fcfbf8;
+      --cp-surface: #ffffff;
+      --cp-surface-soft: #f5f5f5;
+      --cp-border: #dedede;
+      --cp-border-strong: #919191;
+      --cp-text: #242424;
+      --cp-text-muted: #5c5c5c;
+      --cp-text-soft: #6f6f6f;
+      --cp-accent: #b11f4b;
+      --cp-accent-hover: #9a1a41;
+      --cp-accent-soft: rgba(177, 31, 75, 0.08);
+      --cp-accent-fg: #ffffff;
+      --cp-success: #16a34a;
+      --cp-danger: #dc2626;
+      --cp-warning: #f59e0b;
+      --cp-link: #0078d4;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
+      --cp-overlay: rgba(255, 255, 255, 0.8);
+      --cp-panel: rgba(255, 255, 255, 0.86);
+      --cp-panel-strong: rgba(255, 255, 255, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.55);
+      --cp-highlight: rgba(177, 31, 75, 0.12);
+    }
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --cp-bg: #3d3b3a;
+      --cp-bg-elevated: #343231;
+      --cp-surface: #292929;
+      --cp-surface-soft: #2e2e2e;
+      --cp-border: #474747;
+      --cp-border-strong: #5f5f5f;
+      --cp-text: #dedede;
+      --cp-text-muted: #919191;
+      --cp-text-soft: #b0b0b0;
+      --cp-accent: #fd8ea1;
+      --cp-accent-hover: #fb7b91;
+      --cp-accent-soft: rgba(253, 142, 161, 0.14);
+      --cp-accent-fg: #1a1a1a;
+      --cp-success: #4ade80;
+      --cp-danger: #f87171;
+      --cp-warning: #fbbf24;
+      --cp-link: #4da6ff;
+      --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+      --cp-overlay: rgba(41, 41, 41, 0.88);
+      --cp-panel: rgba(41, 41, 41, 0.72);
+      --cp-panel-strong: rgba(41, 41, 41, 0.96);
+      --cp-sheen: rgba(255, 255, 255, 0.04);
+      --cp-highlight: rgba(253, 142, 161, 0.12);
+    }
+    :root {
+      --magenta: var(--cp-accent);
+    }
+    body {
+      background: var(--cp-bg);
+      color: var(--cp-text);
+      font-family: "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    code,
+    pre {
+      font-family: Consolas, "Courier New", Courier, monospace;
+    }
+    .article {
+      color: var(--cp-text);
+    }
+    .video-plan-icon {
+      display: flex;
+      justify-content: center;
+      margin: 0 0 24px;
+    }
+    .video-plan-icon svg {
+      width: 120px;
+      height: 120px;
+      display: block;
+    }
+    .article h2 {
+      margin-top: 32px;
+    }
+    .article-callout,
+    .video-plan-card {
+      background: var(--cp-surface);
+      border: 1px solid var(--cp-border);
+      border-left: 4px solid var(--cp-border-strong);
+      border-radius: 16px;
+      padding: 20px;
+    }
+    .article-callout p:last-child,
+    .video-plan-card p:last-child {
+      margin-bottom: 0;
+    }
+    .video-plan-table-wrap {
+      overflow-x: auto;
+      margin: 16px 0;
+      background: var(--cp-surface);
+      border: 1px solid var(--cp-border);
+      border-radius: 16px;
+    }
+    .video-plan-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .video-plan-table th,
+    .video-plan-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--cp-border);
+      text-align: left;
+      vertical-align: top;
+    }
+    .video-plan-table thead {
+      background: var(--cp-surface-soft);
+    }
+    .video-plan-table tbody tr:last-child td {
+      border-bottom: 0;
+    }
+    .voice-disclosure {
+      display: grid;
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .voice-disclosure code {
+      display: block;
+      white-space: pre-wrap;
+      background: var(--cp-surface-soft);
+      border: 1px solid var(--cp-border);
+      border-radius: 0.625rem;
+      padding: 12px;
+      color: var(--cp-text);
+    }
+    .actions .button {
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+<a class="skip-link" href="#post-content">Skip to article</a>
+<div id="reading-progress" aria-hidden="true"></div>
+
+<header class="site-header">
+  <nav class="site-nav" aria-label="Primary navigation">
+    <a class="brand" href="../index.html" aria-label="AzureCraft home">
+      <span class="brand-mark">AC</span>
+      <span>
+        <strong>AzureCraft</strong>
+        <small>Practical Azure architecture</small>
+      </span>
+    </a>
+    <div class="nav-links">
+      <a href="../articles/">Articles</a>
+      <a href="../patterns/">Patterns</a>
+      <a href="./">GenAIOps</a>
+      <a href="../index.html#resources">Resources</a>
+    </div>
+  </nav>
+</header>
+
+<main class="article-shell" id="post-content">
+  <article class="article">
+    <div class="video-plan-icon" aria-hidden="true">
+      <svg viewBox="0 0 120 120" role="img" aria-label="Stylized video camera icon">
+        <circle cx="60" cy="60" r="56" fill="#fdf2f8"></circle>
+        <rect x="24" y="38" width="50" height="44" rx="12" fill="#b83280"></rect>
+        <path d="M77 48 97 39V81L77 72Z" fill="#b83280"></path>
+        <path d="M46 50 62 60 46 70Z" fill="#fdf2f8"></path>
+      </svg>
+    </div>
+    <p class="meta">GenAIOps | Video Production</p>
+    <h1>Video Production Plan</h1>
+    <p class="intro">Complete production plan for the GenAIOps CSA explainer video — an 8-10 minute public-safe walkthrough of the GenAIOps lifecycle for new Cloud Solution Architects.</p>
+
+    <h2>Production Brief</h2>
+    <p><strong>Working title:</strong> GenAIOps for Cloud Solution Architects: From Prompt to Production</p>
+    <p><strong>Purpose:</strong> Create a public, community-friendly explainer that helps new CSA starters understand how to talk about operationalising GenAI on Azure.</p>
+    <p><strong>Audience:</strong> New Cloud Solution Architects, community learners, architects moving from cloud infrastructure into AI applications, and technical sellers or consultants who need a practical conversation model.</p>
+    <p><strong>Format:</strong> Recommended length is 8 to 10 minutes with a calm, practical, architect-to-architect style. Avoid hype and use simple visuals, lifecycle diagrams, and realistic but generic examples.</p>
+    <ol>
+      <li>Hook: GenAI demos are easy; production AI is harder.</li>
+      <li>Define GenAIOps.</li>
+      <li>Walk through the six lifecycle stages.</li>
+      <li>Explain the Azure reference pattern.</li>
+      <li>Cover evaluation and monitoring.</li>
+      <li>Explain governance, AI gateway, and cost.</li>
+      <li>Close with a practical pilot checklist.</li>
+    </ol>
+    <p><strong>Visual style:</strong> Match the existing rbcloud and AzureCraft feel with a terminal-inspired presentation, clean cards, minimal animation, and diagram-first explanations.</p>
+    <div class="article-callout" style="border-left-color: var(--magenta);">
+      <strong>Public-safety rule</strong><br><br>
+      Do not show customer screenshots, internal decks, private tenant details, customer names, or confidential account context. Use simple generated diagrams and public-safe examples only.
+    </div>
+    <p><strong>AI voice disclosure:</strong> If you use AI-generated narration based on your own voice, include a short disclosure in the video description and optionally at the end of the video: “Narration uses an AI-generated version of my own voice, created with my consent. The script and opinions are my own.”</p>
+
+    <h2>Voiceover Script</h2>
+    <div class="article-callout" style="border-left-color: var(--magenta);">
+      <strong>Full script</strong><br><br>
+      <p>Generative AI is easy to demonstrate.</p>
+      <p>You can open a playground, write a prompt, and get something impressive in minutes.</p>
+      <p>But that is not the same as running a trusted enterprise service.</p>
+      <p>In production, customers need to know: where does the data come from, how do we test quality, how do we monitor behaviour, how do we control cost, who has access, and what happens when the AI gets something wrong?</p>
+      <p>That is where GenAIOps comes in.</p>
+      <p>GenAIOps is the operating discipline for generative AI applications. It helps teams move from experimentation to repeatable delivery by thinking across six stages: build, evaluate, deploy, monitor, govern, and optimise.</p>
+      <p>Let us walk through those stages from a Cloud Solution Architect perspective.</p>
+      <p>First: build.</p>
+      <p>This is where teams design the user experience, prompts, retrieval approach, agents, tools, and orchestration. The key architectural question is not, “Can the model answer?” It is, “What is the simplest safe pattern that helps the user complete the task?”</p>
+      <p>Sometimes that is a simple summarisation flow. Sometimes it is retrieval-augmented generation over approved knowledge. Sometimes it is an agent that can call tools or follow a workflow. The pattern should follow the use case, not the other way around.</p>
+      <p>Second: evaluate.</p>
+      <p>Evaluation is the bridge between demo confidence and production confidence.</p>
+      <p>A good-looking answer is not enough. We need repeatable ways to test groundedness, relevance, coherence, safety, and task success. We need representative test questions, edge cases, and examples of what bad looks like.</p>
+      <p>For a CSA, this is an important customer conversation. If a customer cannot define how they will judge answer quality, they are not ready to scale the use case.</p>
+      <p>Third: deploy.</p>
+      <p>Deployment is where the solution becomes a service. That means managed endpoints, release controls, CI/CD, environment separation, and often an API gateway.</p>
+      <p>An AI gateway, for example using Azure API Management, can provide a central control point for authentication, rate limits, routing, failover, logging, and usage analytics. It becomes especially useful when multiple applications or teams consume AI services.</p>
+      <p>Fourth: monitor.</p>
+      <p>Traditional monitoring tells us whether the system is up. GenAI monitoring must also tell us whether the answers are useful, safe, grounded, and cost-effective.</p>
+      <p>So we still care about latency, errors, availability, and throughput. But we also care about token usage, safety events, user feedback, failed retrievals, and quality trends.</p>
+      <p>This is the difference between monitoring system health and monitoring answer health.</p>
+      <p>Fifth: govern.</p>
+      <p>GenAI systems combine models, prompts, data, tools, evaluations, and application code. Governance is what keeps that combination safe as more teams get involved.</p>
+      <p>Useful controls include identity, role-based access control, project isolation, audit logs, responsible AI review, environment separation, and human approval for high-risk actions.</p>
+      <p>The aim is not to slow innovation. The aim is to make safe scale possible.</p>
+      <p>Sixth: optimise.</p>
+      <p>GenAI cost is driven by usage volume, model choice, input tokens, output tokens, context size, and rework caused by poor answers.</p>
+      <p>So FinOps for GenAI is more than asking, “How much does the model cost?” A better question is, “What does it cost to achieve the outcome?” Cost per resolved ticket. Cost per completed case. Cost per useful summary. Cost per successful user interaction.</p>
+      <p>That is the full GenAIOps loop: build, evaluate, deploy, monitor, govern, and optimise.</p>
+      <p>A typical Azure pattern might include an application or chatbot, an API gateway, an orchestrator or agent, Azure OpenAI or another model endpoint, retrieval over trusted data, content safety controls, telemetry, and cost visibility.</p>
+      <p>But the important thing is not memorising a diagram. The important thing is knowing which questions to ask.</p>
+      <p>What business outcome matters? Which data sources are trusted? What could go wrong? How will quality be evaluated before release? Who owns the solution after it goes live? How will usage and cost be tracked? And what needs to be reusable for the next AI use case?</p>
+      <p>For new CSAs, that is the mindset shift.</p>
+      <p>You are not just helping a customer get a model to respond. You are helping them design an operating model for AI.</p>
+      <p>Start small. Pick a bounded use case. Use approved data. Define quality criteria. Add basic monitoring. Apply sensible access control. Track cost. Then use what you learn to create a reusable pattern.</p>
+      <p>The goal is not one clever AI demo.</p>
+      <p>The goal is a repeatable way to deliver safe, useful, governed, and cost-aware generative AI solutions.</p>
+    </div>
+
+    <h2>Shot List</h2>
+    <p><strong>Visual language:</strong> Use a terminal-inspired rbcloud style with a dark background, command prompts, clean architecture cards, lifecycle diagrams, and minimal animation.</p>
+    <div class="video-plan-table-wrap">
+      <table class="video-plan-table">
+        <thead>
+          <tr>
+            <th scope="col">Scene</th>
+            <th scope="col">Visual</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Hook</td>
+            <td>Prompt window showing “Demo works” followed by production questions appearing around it.</td>
+          </tr>
+          <tr>
+            <td>Define GenAIOps</td>
+            <td>Six-stage lifecycle diagram.</td>
+          </tr>
+          <tr>
+            <td>Build</td>
+            <td>Cards for prompts, RAG, agents, tools, and orchestration.</td>
+          </tr>
+          <tr>
+            <td>Evaluate</td>
+            <td>Test dataset flowing into quality gates.</td>
+          </tr>
+          <tr>
+            <td>Deploy</td>
+            <td>CI/CD path to an app endpoint behind a gateway.</td>
+          </tr>
+          <tr>
+            <td>Monitor</td>
+            <td>Split screen showing system health and answer health.</td>
+          </tr>
+          <tr>
+            <td>Govern</td>
+            <td>Identity, RBAC, audit, and responsible AI controls.</td>
+          </tr>
+          <tr>
+            <td>Optimise</td>
+            <td>Token usage, model routing, quotas, and cost per outcome.</td>
+          </tr>
+          <tr>
+            <td>Reference architecture</td>
+            <td>Application, APIM, agent or orchestrator, model, retrieval, safety, and telemetry components.</td>
+          </tr>
+          <tr>
+            <td>Close</td>
+            <td>Pilot checklist and a call to download the guide.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p><strong>Screen capture ideas:</strong> Use generated diagrams rather than private tenant screenshots. If you show Azure portals, use public docs pages or a demo tenant with no customer data.</p>
+    <ul>
+      <li>Lifecycle diagram.</li>
+      <li>Reference architecture diagram.</li>
+      <li>Evaluation quality gate diagram.</li>
+      <li>Monitoring split diagram.</li>
+      <li>Pilot checklist slide.</li>
+    </ul>
+
+    <h2>Responsible AI Voice Workflow</h2>
+    <ol>
+      <li>Record a clean consent and training sample.</li>
+      <li>Use a reputable voice provider that supports explicit consent and voice ownership controls.</li>
+      <li>Generate narration only from scripts you have reviewed.</li>
+      <li>Listen to the full output for accuracy, tone, and unintended emphasis.</li>
+      <li>Keep the final audio project files private.</li>
+      <li>Add disclosure wherever the video is published.</li>
+    </ol>
+    <div class="article-callout" style="border-left-color: var(--magenta);">
+      <strong>Consent text to record and store privately</strong><br><br>
+      “I am creating an AI-generated version of my own voice for use in my personal educational content. I consent to using my voice for narration of material that I write and approve. I do not consent to this voice being used to impersonate me in private conversations, commercial commitments, endorsements, or messages I have not reviewed.”
+    </div>
+    <div class="voice-disclosure">
+      <p><strong>Short disclosure</strong><code>“Narration uses an AI-generated version of my own voice, created with my consent.”</code></p>
+      <p><strong>Long disclosure</strong><code>“This video is narrated using an AI-generated version of my own voice, created with my consent. The script was written and reviewed by me. The content is for educational purposes and does not include confidential customer information.”</code></p>
+    </div>
+    <p><strong>Provider selection criteria:</strong></p>
+    <ul>
+      <li>Explicit consent controls.</li>
+      <li>Clear voice ownership terms.</li>
+      <li>Ability to delete voice models.</li>
+      <li>Commercial and public publishing rights.</li>
+      <li>Downloadable audio output.</li>
+      <li>Controls to prevent unauthorised voice use.</li>
+    </ul>
+    <p><strong>Production tips:</strong></p>
+    <ul>
+      <li>Generate short sections, not the whole video in one pass.</li>
+      <li>Keep sentence length moderate.</li>
+      <li>Add pronunciation hints for Azure, GenAIOps, APIM, Entra, and telemetry.</li>
+      <li>Use a slower speaking pace than a live conversation.</li>
+      <li>Keep a human review step before publishing.</li>
+    </ul>
+
+    <h2>Source files</h2>
+    <div class="actions" style="margin-top:12px; flex-wrap:wrap">
+      <a class="button" href="video/video-production-brief.md">Production brief</a>
+      <a class="button" href="video/voiceover-script.md">Voiceover script</a>
+      <a class="button" href="video/shot-list.md">Shot list</a>
+      <a class="button" href="video/ai-voice-workflow.md">AI voice workflow</a>
+    </div>
+  </article>
+</main>
+
+<footer class="site-footer">
+  <p>AzureCraft, 2026. Practical Azure architecture, without the noise.</p>
+  <a href="../index.html">Home</a>
+  <a href="../articles/">Articles</a>
+  <a href="../patterns/">Patterns</a>
+</footer>
+
+<script src="../js/main.js"></script>
+<script src="../js/interactions.js"></script>
+</body>
+</html>
