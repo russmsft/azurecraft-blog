@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Community Facilitator Guide | AzureCraft</title>
+  <meta name="description" content="Run a GenAIOps community session with this facilitator guide covering lightning talks, lunch-and-learns, and workshops." />
+  <meta property="og:title" content="GenAIOps Community Facilitator Guide" />
+  <meta property="og:description" content="Run a GenAIOps community session with this facilitator guide covering lightning talks, lunch-and-learns, and workshops." />
+  <meta property="og:type" content="article" />
+  <meta property="og:image" content="https://www.rbcloud.co.uk/assets/social/genaiops-og.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="stylesheet" href="../css/styles.css" />
+</head>
+<body>
+<a class="skip-link" href="#post-content">Skip to article</a>
+<div id="reading-progress" aria-hidden="true"></div>
+
+<header class="site-header">
+  <nav class="site-nav" aria-label="Primary navigation">
+    <a class="brand" href="../index.html" aria-label="AzureCraft home">
+      <span class="brand-mark">AC</span>
+      <span>
+        <strong>AzureCraft</strong>
+        <small>Practical Azure architecture</small>
+      </span>
+    </a>
+    <div class="nav-links">
+      <a href="../articles/">Articles</a>
+      <a href="../patterns/">Patterns</a>
+      <a href="./">GenAIOps</a>
+      <a href="../index.html#resources">Resources</a>
+    </div>
+  </nav>
+</header>
+
+<main class="article-shell" id="post-content">
+  <article class="article">
+    <p class="meta">GenAIOps | Community Session</p>
+    <h1>Community Facilitator Guide</h1>
+    <p class="intro">GenAIOps for Cloud Solution Architects: From Prompt to Production — a guide for running community lunch-and-learns, lightning talks, and workshops.</p>
+
+    <figure style="text-align:center;">
+      <svg viewBox="0 0 240 180" width="200" role="img" aria-labelledby="facilitator-guide-title facilitator-guide-desc" style="max-width:100%;height:auto;display:inline-block;">
+        <title id="facilitator-guide-title">Community facilitator guide icon</title>
+        <desc id="facilitator-guide-desc">A stylized presentation screen and podium speaker in AzureCraft blue and teal tones.</desc>
+        <defs>
+          <linearGradient id="screenGradient" x1="0%" x2="100%" y1="0%" y2="100%">
+            <stop offset="0%" stop-color="#0078d4" />
+            <stop offset="100%" stop-color="#0f766e" />
+          </linearGradient>
+        </defs>
+        <rect x="34" y="18" width="172" height="96" rx="14" fill="#eef6f8" stroke="#d8e0e8" stroke-width="3" />
+        <rect x="48" y="30" width="144" height="72" rx="10" fill="url(#screenGradient)" />
+        <path d="M68 82 L94 60 L116 74 L144 48 L172 72" fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="6" />
+        <circle cx="171" cy="72" r="7" fill="#7dd3fc" />
+        <rect x="111" y="114" width="18" height="22" rx="5" fill="#15212f" />
+        <rect x="88" y="136" width="64" height="10" rx="5" fill="#15212f" opacity="0.9" />
+        <circle cx="120" cy="122" r="16" fill="#0f766e" />
+        <path d="M95 164 C98 145 109 136 120 136 C131 136 142 145 145 164" fill="#0078d4" />
+        <rect x="107" y="144" width="26" height="20" rx="6" fill="#ffffff" opacity="0.9" />
+        <rect x="70" y="150" width="24" height="8" rx="4" fill="#0f766e" opacity="0.8" />
+        <rect x="146" y="150" width="24" height="8" rx="4" fill="#0f766e" opacity="0.8" />
+      </svg>
+      <figcaption>Use this format to run a safe, practical GenAIOps session for new architects and community learners.</figcaption>
+    </figure>
+
+    <h2>Audience</h2>
+    <ul>
+      <li>New CSA starters who need a simple way to explain GenAIOps from prompt experiments to production readiness.</li>
+      <li>Early-career cloud architects building confidence in Azure AI architecture, governance, and operational thinking.</li>
+      <li>Community learners exploring how GenAI changes architecture, evaluation, and monitoring practices.</li>
+      <li>Technical consultants who need a reusable public-safe session format for internal or community events.</li>
+    </ul>
+
+    <h2>Duration options</h2>
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Format</th>
+          <th scope="col">Duration</th>
+          <th scope="col">Shape</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Lightning talk</td>
+          <td>15 minutes</td>
+          <td>Lifecycle overview and three lessons learned.</td>
+        </tr>
+        <tr>
+          <td>Lunch and learn</td>
+          <td>45 minutes</td>
+          <td>Lifecycle, reference architecture, use cases, Q&amp;A.</td>
+        </tr>
+        <tr>
+          <td>Workshop</td>
+          <td>90 minutes</td>
+          <td>Lifecycle, group exercise, evaluation checklist, operating model.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Learning outcomes</h2>
+    <ol>
+      <li>Explain GenAIOps in plain language.</li>
+      <li>Describe the Build, Evaluate, Deploy, Monitor, Govern, Optimise lifecycle.</li>
+      <li>Identify why evaluation and monitoring are different for GenAI.</li>
+      <li>Explain where an AI gateway helps.</li>
+      <li>Ask better customer discovery questions.</li>
+    </ol>
+
+    <h2>Suggested agenda for a 45 minute session</h2>
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Time</th>
+          <th scope="col">Activity</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>0-5</td>
+          <td>Why GenAI demos are not the same as production services.</td>
+        </tr>
+        <tr>
+          <td>5-15</td>
+          <td>GenAIOps lifecycle walkthrough.</td>
+        </tr>
+        <tr>
+          <td>15-25</td>
+          <td>Reference architecture: app, gateway, agent, retrieval, model, safety, telemetry.</td>
+        </tr>
+        <tr>
+          <td>25-35</td>
+          <td>Use case exercise: choose a pilot and define controls.</td>
+        </tr>
+        <tr>
+          <td>35-42</td>
+          <td>Common questions and objections.</td>
+        </tr>
+        <tr>
+          <td>42-45</td>
+          <td>Takeaways and next steps.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Group exercise</h2>
+    <p>Ask attendees to choose one realistic pilot use case, then work through the operational questions that separate a demo from a production service.</p>
+    <ul>
+      <li>Who is the user?</li>
+      <li>What task are they trying to complete?</li>
+      <li>Which data sources are trusted?</li>
+      <li>What could go wrong?</li>
+      <li>How would you evaluate quality before release?</li>
+      <li>What would you monitor after release?</li>
+      <li>Who owns the solution in production?</li>
+    </ul>
+
+    <h2>Safe public framing</h2>
+    <div class="article-callout">
+      <p><strong>Keep the examples public-safe.</strong> Avoid customer-specific scenarios and use generic examples such as support knowledge assistants, service desk triage, contact centre summarisation, policy assistants, and engineering runbook assistants.</p>
+    </div>
+
+    <div class="actions" style="margin-top:28px"><a class="button primary" href="downloads/community-facilitator-guide.md">Download markdown</a><a class="button" href="starter-guide.html">Read the full guide</a></div>
+  </article>
+</main>
+
+<footer class="site-footer">
+  <p>AzureCraft, 2026. Practical Azure architecture, without the noise.</p>
+  <a href="../index.html">Home</a>
+  <a href="../articles/">Articles</a>
+  <a href="../patterns/">Patterns</a>
+</footer>
+
+<script src="../js/main.js"></script>
+<script src="../js/interactions.js"></script>
+</body>
+</html>

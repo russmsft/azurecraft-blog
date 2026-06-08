@@ -17,6 +17,7 @@ This project is designed for publication on rbcloud.co.uk. It avoids customer-sp
 - `downloads/genaiops-csa-starter-guide.md` - long-form public guide
 - `downloads/genaiops-one-page-crib-sheet.md` - concise live reference
 - `downloads/community-facilitator-guide.md` - guide for running a community session
+- `q-and-a.html` - static article page for the public Q&A bank
 - `downloads/q-and-a-bank.md` - public Q&A bank
 - `downloads/Public GenAIOps CSA Starter Guide.docx` - Word version
 - `downloads/Public GenAIOps CSA Starter Guide.pdf` - PDF version
