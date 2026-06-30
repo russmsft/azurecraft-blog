@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://www.rbcloud.co.uk/sitemap.xml
+Sitemap: https://rbcloud.co.uk/sitemap.xml
