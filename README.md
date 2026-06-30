@@ -19,6 +19,7 @@ posts/
   ai-workloads.html        "AI Workloads in Azure Landing Zones"
   hub-spoke-vs-virtual-wan.html  "Hub-and-Spoke vs Azure Virtual WAN"
   identity-foundations.html      "Identity Foundations for Platform Teams"
+  bicep-vs-terraform.html        "Bicep vs Terraform for Landing Zones"
 css/styles.css             Design system (dark-first, auto light mode)
 js/site.js                 Mobile nav, reading progress, subscribe form, footer year
 assets/
@@ -81,7 +82,6 @@ With no endpoint set, the form validates the email and shows a friendly
 
 Planned posts across the three pillars (Infrastructure · Data & AI · Modern Apps):
 
-- Bicep vs Terraform for landing zones
 - Zero-trust networking: Private Endpoints, Private DNS, firewall patterns
 - FinOps guardrails with Azure Policy and budgets
 - Observability baseline: Log Analytics, workbooks, and alerts that matter
