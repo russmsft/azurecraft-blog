@@ -29,7 +29,7 @@ function toSitePath(filePath) {
   return path.relative(root, filePath).replace(/\\/g, "/");
 }
 
-function resolveTarget(fromFile, rawTarget) {
+function resolveTarget(fromFile, rawTarget, fromStandaloneDoc) {
   const trimmed = rawTarget.trim();
   if (!trimmed || trimmed.startsWith("#")) {
     return null;
@@ -37,7 +37,7 @@ function resolveTarget(fromFile, rawTarget) {
 
   if (trimmed.startsWith(siteOrigin)) {
     const url = new URL(trimmed);
-    return resolveTarget(fromFile, `${url.pathname}${url.search}${url.hash}`);
+    return resolveTarget(fromFile, `${url.pathname}${url.search}${url.hash}`, fromStandaloneDoc);
   }
 
   if (ignoredPrefixes.some((prefix) => trimmed.startsWith(prefix))) {
@@ -60,7 +60,11 @@ function resolveTarget(fromFile, rawTarget) {
   }
 
   const decoded = decodeURIComponent(withoutQuery);
-  const fromPostsDirectory = path.basename(path.dirname(fromFile)) === "posts";
+  // Snippet posts (loaded into post.html at the site root) resolve their
+  // relative links from root. Standalone HTML documents in posts/ resolve
+  // from their own directory like any normal page.
+  const fromPostsDirectory =
+    path.basename(path.dirname(fromFile)) === "posts" && !fromStandaloneDoc;
   const baseDirectory = decoded.startsWith("/") || fromPostsDirectory
     ? root
     : path.dirname(fromFile);
@@ -84,10 +88,11 @@ const localUrlContentPattern = /\bcontent=["'](https:\/\/www\.rbcloud\.co\.uk\/[
 
 for (const file of htmlFiles) {
   const html = fs.readFileSync(file, "utf8");
+  const isStandaloneDoc = /^\s*<!doctype html>/i.test(html) || /<html[\s>]/i.test(html);
   let match;
 
   while ((match = attributePattern.exec(html))) {
-    const target = resolveTarget(file, match[1]);
+    const target = resolveTarget(file, match[1], isStandaloneDoc);
     if (!target) {
       continue;
     }
@@ -98,7 +103,7 @@ for (const file of htmlFiles) {
   }
 
   while ((match = localUrlContentPattern.exec(html))) {
-    const target = resolveTarget(file, match[1]);
+    const target = resolveTarget(file, match[1], isStandaloneDoc);
     if (!target) {
       continue;
     }

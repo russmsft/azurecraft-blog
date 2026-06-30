@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>About — AzureCraft</title>
+  <meta name="description" content="What AzureCraft is, the principles behind it, and how to get in touch." />
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="About AzureCraft" />
+  <meta property="og:description" content="Practical, diagram-first Azure architecture." />
+  <link rel="stylesheet" href="css/azurecraft.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="container site-nav">
+    <a class="brand" href="index.html">
+      <span class="brand-mark">AC</span>
+      <span>
+        <span class="brand-text-title">AzureCraft</span>
+        <span class="brand-text-sub">Infra · Data &amp; AI · Modern Apps</span>
+      </span>
+    </a>
+    <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+    <nav class="site-nav__links" aria-label="Primary">
+      <a href="index.html">Home</a>
+      <a href="index.html#posts">Articles</a>
+      <a href="index.html#roadmap">Roadmap</a>
+      <a href="about.html" aria-current="page">About</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="article-wrap">
+
+  <div class="article-header">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="index.html">Home</a> / About
+    </nav>
+    <h1>About AzureCraft</h1>
+    <div class="article-meta">
+      <span>Practical Azure architecture, without the noise.</span>
+    </div>
+  </div>
+
+  <article class="prose">
+    <p>AzureCraft is a small, focused blog about <strong>designing on Azure well</strong>. It’s for architects and engineers who want the reasoning behind a reference architecture — not just a screenshot of the portal.</p>
+
+    <h2>Why it exists</h2>
+    <p>Most Azure content explains <em>how</em> to click a thing. Far less explains <em>why</em> you’d choose one pattern over another, what the diagram should look like, and how to reuse it. AzureCraft is an attempt to write down that judgement: the decisions, the trade-offs, and the patterns that survive contact with real environments.</p>
+
+    <h2>What we believe</h2>
+    <ul>
+      <li><strong>Opinionated.</strong> A clear recommendation with stated trade-offs beats a wall of “it depends.”</li>
+      <li><strong>Diagram-first.</strong> If it can’t be drawn clearly, it isn’t understood yet.</li>
+      <li><strong>Reusable.</strong> Patterns are written so you can lift them into your own designs.</li>
+      <li><strong>Honest.</strong> Where Azure has rough edges, we name them.</li>
+    </ul>
+
+    <h2>The three pillars</h2>
+    <div class="card-grid" style="margin-top: 1rem;">
+      <div class="card">
+        <span class="tag tag--infra">Infrastructure</span>
+        <p style="margin-top:0.75rem;">Landing zones, networking, identity, governance, and cost guardrails.</p>
+      </div>
+      <div class="card">
+        <span class="tag tag--ai">Data &amp; AI</span>
+        <p style="margin-top:0.75rem;">Landing AI workloads safely, private connectivity, and data platform patterns.</p>
+      </div>
+      <div class="card">
+        <span class="tag tag--apps">Modern Apps</span>
+        <p style="margin-top:0.75rem;">Application design that holds up under real load and real org structures.</p>
+      </div>
+    </div>
+
+    <div class="callout callout--note" style="margin-top:2rem;">
+      <span class="callout__icon">✉️</span>
+      <p><strong>Get in touch.</strong> Want a specific topic covered, or have feedback on a post? Replace this with your email or social links — the footer and this box are ready for them.</p>
+    </div>
+
+    <p>New here? Start with <a href="posts/welcome.html">Welcome to AzureCraft</a>.</p>
+  </article>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <div>
+      <a class="brand" href="index.html">
+        <span class="brand-mark">AC</span>
+        <span class="brand-text-title">AzureCraft</span>
+      </a>
+      <p style="color: var(--text-muted); margin-top: 0.75rem; max-width: 36ch;">Practical Azure architecture, without the noise.</p>
+    </div>
+    <div>
+      <h4>Topics</h4>
+      <ul>
+        <li><a href="categories/infrastructure.html">Infrastructure</a></li>
+        <li><a href="categories/data-ai.html">Data &amp; AI</a></li>
+        <li><a href="categories/modern-apps.html">Modern Apps</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Site</h4>
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="index.html#roadmap">Roadmap</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="site-footer__bottom">
+    <p>© <span data-year>2026</span> AzureCraft. Built as a static site on Azure App Service.</p>
+  </div>
+</footer>
+
+<script src="js/site.js"></script>
+</body>
+</html>

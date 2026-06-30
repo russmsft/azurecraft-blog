@@ -1,6 +1,12 @@
+# Node
 node_modules/
 .npm-cache/
 npm-debug.log*
 server-*.log
-.DS_Store
+
+# OS / editor temp files
 Thumbs.db
+.DS_Store
+
+# Office lock files
+~$*

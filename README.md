@@ -1,80 +1,121 @@
 # AzureCraft Blog
 
-AzureCraft is a lightweight Azure architecture publishing site. It is built with static HTML, CSS, and JavaScript, with a small dependency-free Node.js wrapper for Azure App Service hosting.
+AzureCraft is a lightweight Azure architecture publishing site, built with static
+HTML, CSS, and JavaScript plus a small dependency-free Node.js server for Azure
+App Service hosting. The content is practical and diagram-first: landing zones,
+AI workloads, GenAIOps, governance, FinOps, and reusable patterns.
 
-The site is focused on practical, diagram-first Azure architecture content: landing zones, AI workloads, GenAIOps, governance, FinOps, and reusable patterns for Cloud Solution Architects.
+The site has two complementary layers:
 
-## What Is Included
+- A **redesigned landing experience** (homepage, category indexes, and a set of
+  standalone long-form Infrastructure guides) styled with `css/azurecraft.css`.
+- A **catalog-driven content library** (article index, pattern library, GenAIOps
+  starter, and 23+ posts) styled with `css/styles.css`.
 
-- `index.html`: Main AzureCraft homepage and content hub.
-- `post.html`: Article shell that loads posts from `posts/`.
-- `posts/catalog.json`: Article metadata (titles, descriptions, categories, OG image paths).
-- `articles/`: Article index with text search and category filter.
-- `posts/`: Static article snippets.
-- `patterns/`: Architecture pattern library and downloadable pattern checklists.
-- `genaiops-csa-starter/`: Public GenAIOps starter guide and downloadable assets.
-- `assets/diagrams/`: SVG architecture diagrams.
-- `assets/social/`: 1200x630 Open Graph PNG images for sharing.
-- `css/styles.css`: Shared site styling including print styles.
-- `js/main.js`: Post loader - fetches catalog.json then loads the requested post.
-- `server.js`: Dependency-free Node.js static server for Azure App Service.
-- `scripts/check-site.js`: Local internal link, asset, and catalog validator.
-- `scripts/generate-og-images.ps1`: Generates shared and per-article Open Graph PNG assets.
+## Structure
 
-## Run Locally
+```
+index.html                 Redesigned homepage: hero, featured guides, categories,
+                           "full library" links, roadmap (uses css/azurecraft.css)
+about.html                 About page
+categories/                Category indexes (Infrastructure / Data & AI / Modern Apps)
+posts/
+  catalog.json             Article metadata for the catalog system
+  welcome.html, azure-landing-zones.html, ai-workloads.html,
+  hub-spoke-vs-virtual-wan.html, identity-foundations.html,
+  bicep-vs-terraform.html  Standalone redesigned guides (css/azurecraft.css)
+  post-1..post-23 *.html   Catalog posts loaded via post.html (css/styles.css)
+articles/                  Searchable, filterable article index
+patterns/                  Architecture pattern library + downloadable checklists
+genaiops-csa-starter/      Public GenAIOps starter guide
+post.html                  Article shell that loads catalog posts from posts/
+css/
+  azurecraft.css           Redesigned design system (dark-first, auto light mode)
+  styles.css               Catalog/library styling (incl. print styles)
+js/
+  site.js                  Redesign behaviour: mobile nav, reading progress, subscribe form
+  main.js                  Catalog post loader (reads catalog.json)
+  interactions.js          Library interactions (reveal, stats, filters)
+assets/
+  favicon.svg              Site icon
+  diagrams/                SVG architecture diagrams
+  social/                  1200x630 Open Graph images
+server.js                  Dependency-free Node.js static server (Azure App Service)
+scripts/
+  check-site.js            Internal link, asset, and catalog validator
+  generate-og-images.ps1   Generates shared + per-article Open Graph images
+```
 
-Start the local server:
+> Why two stylesheets? The redesigned landing pages and the catalog library use
+> different class systems. Keeping them in separate stylesheets lets both render
+> correctly without collisions. Redesigned pages link `css/azurecraft.css`;
+> catalog/library pages link `css/styles.css`.
+
+## Run locally
 
 ```powershell
 npm start
 ```
 
-Then browse to `http://localhost:8080`. No external runtime dependencies are required.
+Then browse to `http://localhost:8080`. No external runtime dependencies are
+required. (Or use `python -m http.server 8080` for a quick static server.)
 
-## Check the Site
-
-Run the static link, asset, and catalog checker:
+## Check the site
 
 ```powershell
 npm run check
 ```
 
-The checker validates internal `href` and `src` references across all HTML pages, verifies that post slugs resolve to files in `posts/`, and validates that every entry in `posts/catalog.json` has a matching post file.
+Validates internal `href`/`src` references across all HTML pages, verifies post
+slugs resolve to files in `posts/`, and checks that every `posts/catalog.json`
+entry has a matching post file.
 
-## Generate Social Images
-
-Regenerate the Open Graph images used for LinkedIn and social previews:
+## Generate social images
 
 ```powershell
 npm run generate:og
 ```
 
-This generates the shared site images plus a per-article image for every post. After running, commit the new files in `assets/social/`. To use per-article images, update the `image` field for each entry in `posts/catalog.json` to point to `https://www.rbcloud.co.uk/assets/social/<slug>-og.png`.
+Generates the shared site images plus a per-article Open Graph image for every
+post. Commit new files under `assets/social/` afterwards.
 
-## Print Articles
+## Design notes (redesigned landing layer)
 
-Any article page can be printed or saved as a PDF using the browser print dialog (Ctrl+P / Cmd+P). The print stylesheet removes navigation, hides non-content elements, and formats tables and callout blocks for clean output.
+- Dark theme by default; light theme applied automatically via
+  `prefers-color-scheme` (css/azurecraft.css).
+- Typography tuned for reading: ~72ch line length, 1.7 line-height, fluid scale.
+- Responsive collapsible nav; skip link, focus styles, semantic markup.
+- Per-page `<title>`, meta description, Open Graph, and Twitter tags.
 
-## Content Model
+## Newsletter form
 
-The current article model:
+The subscribe form on the homepage is provider-ready. Set the `data-endpoint`
+attribute on the `.cta-form` to your email provider's POST URL (Mailchimp,
+Buttondown, ConvertKit, an Azure Function, etc.):
 
-1. Add an HTML snippet under `posts/`.
-2. Add an entry to `posts/catalog.json` with `slug`, `title`, `description`, `category`, and `image`.
-3. Link to it with `post.html?post=your-post-slug`.
-4. Add the post card to `articles/index.html`.
-5. Add any diagrams under `assets/diagrams/`.
-6. Run `npm run check` to validate links and catalog integrity.
+```html
+<form class="cta-form" data-endpoint="https://your-provider/subscribe">
+```
 
-## Implemented Improvements
+With no endpoint set, it validates the email and shows a friendly "not live yet"
+message instead of failing silently. Handler lives in `js/site.js`.
 
-- Added Open Graph images for LinkedIn and social sharing.
-- Expanded the pattern library with hub-spoke/Virtual WAN, private endpoints/DNS, answer health monitoring, and minimum viable governance patterns.
-- Added downloadable Markdown checklists for each pattern.
-- Added a full article index.
-- Added automated static link and asset validation to the GitHub Actions deployment workflow.
-- Moved post metadata into `posts/catalog.json` (separate from application code).
-- Added per-article Open Graph image generation to `generate-og-images.ps1`.
-- Added print stylesheet for clean browser print and PDF export of articles.
-- Added text search and category filter to the article index.
-- Added catalog integrity validation to `scripts/check-site.js`.
+## Content roadmap
+
+Planned posts across the three pillars (Infrastructure · Data & AI · Modern Apps):
+
+- Zero-trust networking: Private Endpoints, Private DNS, firewall patterns
+- FinOps guardrails with Azure Policy and budgets
+- Observability baseline: Log Analytics, workbooks, and alerts that matter
+- Data platform reference architecture
+
+## Adding content
+
+**A redesigned standalone guide:** copy a file in `posts/` (e.g.
+`azure-landing-zones.html`), update title/meta/content, point it at
+`../css/azurecraft.css`, and add a card to `index.html`.
+
+**A catalog post:** add an HTML snippet under `posts/`, add an entry to
+`posts/catalog.json` (`slug`, `title`, `description`, `category`, `image`), link
+via `post.html?post=<slug>`, add a card to `articles/index.html`, then run
+`npm run check`.

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Workloads in Azure Landing Zones — AzureCraft</title>
+  <meta name="description" content="How to land Azure OpenAI, vector search, and AI compute inside an enterprise landing zone — with private networking, governance, and a clear reference architecture." />
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="AI Workloads in Azure Landing Zones" />
+  <meta property="og:description" content="Landing Azure OpenAI and vector search safely inside an enterprise landing zone." />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="stylesheet" href="../css/azurecraft.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="reading-progress" aria-hidden="true"></div>
+
+<header class="site-header">
+  <div class="container site-nav">
+    <a class="brand" href="../index.html">
+      <span class="brand-mark">AC</span>
+      <span>
+        <span class="brand-text-title">AzureCraft</span>
+        <span class="brand-text-sub">Infra · Data &amp; AI · Modern Apps</span>
+      </span>
+    </a>
+    <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+    <nav class="site-nav__links" aria-label="Primary">
+      <a href="../index.html">Home</a>
+      <a href="../index.html#posts">Articles</a>
+      <a href="../index.html#roadmap">Roadmap</a>
+      <a href="../about.html">About</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="article-wrap">
+
+  <div class="article-header">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a> / <a href="../index.html#posts">Articles</a> / AI Workloads
+    </nav>
+    <span class="tag tag--ai">Data &amp; AI</span>
+    <h1>AI Workloads in Azure Landing Zones</h1>
+    <div class="article-meta">
+      <span>By the AzureCraft team</span>
+      <span class="dot">•</span>
+      <time datetime="2026-03-22">March 2026</time>
+      <span class="dot">•</span>
+      <span>8 min read</span>
+    </div>
+  </div>
+
+  <article class="prose">
+    <p>AI workloads are no longer “special cases.” Azure OpenAI, vector search, and GPU compute are becoming standard parts of enterprise applications — which means they need to live inside the same governed, private, cost-controlled <a href="azure-landing-zones.html">landing zone</a> as everything else. The mistake teams make is treating an AI service as a quick standalone deployment, then discovering it has a public endpoint, no network isolation, and no policy coverage.</p>
+
+    <p>This post shows how an <strong>AI landing zone</strong> sits on top of your platform foundation, and the handful of decisions that keep it secure and affordable.</p>
+
+    <h2>Architecture diagram</h2>
+    <p>The AI landing zone is just another workload subscription — it inherits identity, networking, monitoring, and policy from the platform, then adds the AI-specific services behind private endpoints.</p>
+
+    <figure class="figure">
+      <pre class="mermaid" aria-label="AI landing zone architecture diagram">
+flowchart TB
+  MG["Management Group"] --> B["AI Landing Zone (subscription)"]
+  subgraph Platform["Platform services (inherited)"]
+    P1["Identity / Entra ID"]
+    P2["Hub networking"]
+    P3["Monitoring / Log Analytics"]
+    P4["Azure Policy"]
+  end
+  Platform --> B
+  B --> W1["AI compute (GPU / AML)"]
+  B --> W2["Azure OpenAI (Private Endpoint)"]
+  B --> W3["Vector search (Private Endpoint)"]
+  B --> W4["Storage / data (Private Endpoint)"]
+      </pre>
+      <figcaption>An AI landing zone inherits platform services and exposes AI resources only through private endpoints.</figcaption>
+    </figure>
+
+    <h2>The four decisions that matter</h2>
+
+    <h3>1. Private connectivity by default</h3>
+    <p>Every AI service — Azure OpenAI, the vector store, and the backing storage — should be reachable only over a <strong>Private Endpoint</strong>, with public network access disabled. Resolution flows through the platform’s Private DNS zones, so no AI traffic ever traverses the public internet. This is the single most important control, and it’s far easier to set up on day one than to retrofit.</p>
+
+    <div class="callout callout--warn">
+      <span class="callout__icon">⚠️</span>
+      <p><strong>Watch out:</strong> deploying Azure OpenAI with default settings leaves a public endpoint enabled. Disable public access and link the Private DNS zone explicitly, or your “private” model is one leaked key away from exposure.</p>
+    </div>
+
+    <h3>2. Identity over keys</h3>
+    <p>Use <strong>managed identities</strong> and Entra ID authentication for service-to-service calls instead of API keys. Keys get copied into notebooks, pipelines, and chat messages; managed identities can’t leak the same way and are governed by conditional access and PIM. Reserve keys for the rare case that genuinely can’t use identity, and store them in Key Vault behind a Private Endpoint.</p>
+
+    <h3>3. Governance that understands AI</h3>
+    <p>Extend your existing Azure Policy guardrails to the AI estate:</p>
+    <ul>
+      <li>Deny AI resources with public network access enabled.</li>
+      <li>Restrict deployable model regions for data-residency compliance.</li>
+      <li>Require diagnostic settings so prompts, completions, and usage flow to Log Analytics.</li>
+      <li>Enforce tagging for cost attribution and content-safety configuration.</li>
+    </ul>
+
+    <h3>4. Cost and capacity, on purpose</h3>
+    <p>AI spend is lumpy and easy to lose track of. Decide deliberately between <strong>pay-as-you-go</strong> and <strong>provisioned throughput (PTU)</strong> for predictable, high-volume workloads, set budgets and alerts per subscription, and tag everything so each team sees its own consumption. Token usage flowing to Log Analytics makes this observable rather than a month-end surprise.</p>
+
+    <div class="callout callout--tip">
+      <span class="callout__icon">💡</span>
+      <p><strong>Tip:</strong> put a thin gateway (APIM or your own service) in front of Azure OpenAI. It gives you per-team rate limiting, central logging, prompt/response filtering, and the ability to switch models without touching every caller.</p>
+    </div>
+
+    <h2>How it lands on the platform</h2>
+    <p>Notice what the AI landing zone <em>doesn’t</em> do: it doesn’t define its own networking topology, its own identity provider, or its own monitoring stack. Those are inherited from the platform subscriptions. The workload team focuses purely on the AI services and the application — exactly the division of responsibility a good landing zone is designed to create.</p>
+
+    <div class="takeaways">
+      <h2>Key takeaways</h2>
+      <ul>
+        <li>Treat AI as a normal workload that <strong>inherits</strong> the platform foundation.</li>
+        <li>Private Endpoints + disabled public access are non-negotiable.</li>
+        <li>Prefer managed identities over API keys.</li>
+        <li>Extend Azure Policy to cover AI-specific risks.</li>
+        <li>Make token spend observable and choose your capacity model on purpose.</li>
+      </ul>
+    </div>
+
+    <p>Haven’t set up the foundation yet? Start with <a href="azure-landing-zones.html">Azure Landing Zones: A Practical Architect’s View</a>.</p>
+  </article>
+
+  <nav class="post-nav" aria-label="More posts">
+    <a href="azure-landing-zones.html">← Azure Landing Zones</a>
+    <a href="../index.html#posts">All articles →</a>
+  </nav>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <div>
+      <a class="brand" href="../index.html">
+        <span class="brand-mark">AC</span>
+        <span class="brand-text-title">AzureCraft</span>
+      </a>
+      <p style="color: var(--text-muted); margin-top: 0.75rem; max-width: 36ch;">Practical Azure architecture, without the noise.</p>
+    </div>
+    <div>
+      <h4>Topics</h4>
+      <ul>
+        <li><a href="../categories/infrastructure.html">Infrastructure</a></li>
+        <li><a href="../categories/data-ai.html">Data &amp; AI</a></li>
+        <li><a href="../categories/modern-apps.html">Modern Apps</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Site</h4>
+      <ul>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../about.html">About</a></li>
+        <li><a href="../index.html#roadmap">Roadmap</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="site-footer__bottom">
+    <p>© <span data-year>2026</span> AzureCraft. Built as a static site on Azure App Service.</p>
+  </div>
+</footer>
+
+<script src="../js/site.js"></script>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  const dark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  mermaid.initialize({ startOnLoad: true, theme: dark ? "dark" : "default", securityLevel: "strict" });
+</script>
+</body>
+</html>

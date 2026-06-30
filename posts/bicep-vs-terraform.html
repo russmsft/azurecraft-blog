@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bicep vs Terraform for Landing Zones — AzureCraft</title>
+  <meta name="description" content="An honest, diagram-first comparison of Bicep and Terraform for deploying Azure landing zones — state, multi-cloud, modules, and how to choose." />
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Bicep vs Terraform for Landing Zones" />
+  <meta property="og:description" content="State, multi-cloud, modules, and ecosystem — choosing an IaC tool for Azure landing zones." />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="stylesheet" href="../css/azurecraft.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="reading-progress" aria-hidden="true"></div>
+
+<header class="site-header">
+  <div class="container site-nav">
+    <a class="brand" href="../index.html">
+      <span class="brand-mark">AC</span>
+      <span>
+        <span class="brand-text-title">AzureCraft</span>
+        <span class="brand-text-sub">Infra · Data &amp; AI · Modern Apps</span>
+      </span>
+    </a>
+    <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+    <nav class="site-nav__links" aria-label="Primary">
+      <a href="../index.html">Home</a>
+      <a href="../index.html#posts">Articles</a>
+      <a href="../index.html#roadmap">Roadmap</a>
+      <a href="../about.html">About</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="article-wrap">
+
+  <div class="article-header">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a> /
+      <a href="../categories/infrastructure.html">Infrastructure</a> /
+      Bicep vs Terraform
+    </nav>
+    <span class="tag tag--infra">Infrastructure</span>
+    <h1>Bicep vs Terraform for Landing Zones</h1>
+    <div class="article-meta">
+      <span>By the AzureCraft team</span>
+      <span class="dot">•</span>
+      <time datetime="2026-05-03">May 2026</time>
+      <span class="dot">•</span>
+      <span>11 min read</span>
+    </div>
+  </div>
+
+  <article class="prose">
+    <p>Once you’ve decided <em>what</em> your <a href="azure-landing-zones.html">landing zone</a> looks like, you have to decide <em>how</em> to deploy it. On Azure, that almost always comes down to two infrastructure-as-code tools: <strong>Bicep</strong>, Microsoft’s native Azure DSL, and <strong>Terraform</strong>, HashiCorp’s multi-cloud standard. Both are excellent. Both have official landing-zone implementations. The right choice depends less on syntax and more on <strong>state, scope, and the team that has to live with it</strong>.</p>
+
+    <blockquote>Short version: if you’re all-in on Azure and want the least machinery, Bicep is the path of least resistance. If you run multiple clouds or already have Terraform skills and tooling, Terraform’s ecosystem wins. Both can deploy a first-class Azure landing zone.</blockquote>
+
+    <h2>The core difference: state</h2>
+    <p>Almost every practical difference flows from one design decision — how each tool knows what already exists.</p>
+
+    <figure class="figure">
+      <pre class="mermaid" aria-label="Bicep deploys directly to Azure Resource Manager which holds state, while Terraform compares a separate state file against Azure">
+flowchart TB
+  subgraph BICEP["Bicep"]
+    direction TB
+    B1["Bicep template"] --> B2["ARM / deployment engine"]
+    B2 --> B3["Azure resources<br/>(Azure is the state)"]
+  end
+  subgraph TF["Terraform"]
+    direction TB
+    T1["Terraform config"] --> T2["Terraform engine"]
+    T2 --> T3["State file<br/>(remote backend)"]
+    T2 --> T4["Azure resources"]
+    T3 -. compares .-> T4
+  end
+      </pre>
+      <figcaption>Bicep treats Azure itself as the source of truth; Terraform maintains a separate state file it reconciles against Azure.</figcaption>
+    </figure>
+
+    <p><strong>Bicep has no state file.</strong> It compiles to ARM and asks Azure Resource Manager to reconcile the desired template against what’s deployed. Azure <em>is</em> the state. That means nothing extra to store, lock, secure, or corrupt.</p>
+    <p><strong>Terraform keeps its own state</strong> in a remote backend (typically an Azure Storage account). State unlocks powerful features — accurate plans, drift detection, resource graphs across providers — but it’s also infrastructure you must protect: it can contain secrets, it needs locking for team use, and a damaged state file is its own incident.</p>
+
+    <h2>Five lenses for the decision</h2>
+
+    <h3>1. Single-cloud vs multi-cloud</h3>
+    <p>This is the biggest deciding factor. If your world is exclusively Azure, Bicep’s native focus is an advantage — same-day support for new resource types, no provider layer in between. If you deploy to AWS, GCP, Cloudflare, Datadog, or dozens of SaaS providers <em>as well</em>, Terraform lets you describe all of it in one language and workflow. Don’t adopt Terraform <em>only</em> for Azure if multi-cloud isn’t real for you — but if it is, one tool beats two.</p>
+
+    <h3>2. Day-one resource coverage</h3>
+    <p>Because Bicep sits directly on ARM, brand-new Azure features and resource types are usually available immediately. Terraform’s AzureRM and AzAPI providers track Azure closely but can lag for very new services. If you live on the bleeding edge of Azure previews, Bicep has a slight edge.</p>
+
+    <h3>3. Modules &amp; reuse</h3>
+    <p>Both support modules. Bicep has <strong>Azure Verified Modules (AVM)</strong> — Microsoft-curated, tested building blocks — and a registry for sharing your own. Terraform has an enormous public <strong>Registry</strong> and a mature module ecosystem honed over years. For Azure-only building blocks the two are close; for breadth of community modules Terraform is ahead.</p>
+
+    <h3>4. Tooling, team &amp; ecosystem</h3>
+    <p>Terraform brings a deep ecosystem: a rich CLI, plan/apply workflow, policy-as-code (Sentinel/OPA), Terraform Cloud, and a large hiring pool already fluent in it. Bicep brings tight Azure integration, first-party VS Code tooling, what-if previews, and no extra licensing or backend to run. If your team already knows Terraform, that knowledge is worth a lot; if they’re Azure-native and new to IaC, Bicep is the gentler on-ramp.</p>
+
+    <h3>5. Landing-zone accelerators</h3>
+    <p>You’re not starting from scratch either way. Microsoft ships the <strong>Azure Landing Zones (ALZ) accelerators in both Bicep and Terraform</strong>, implementing the same Cloud Adoption Framework design. So “which tool” doesn’t mean “which one supports landing zones” — both do — it means which one your team will operate well for years.</p>
+
+    <h2>Decision summary</h2>
+    <div class="takeaways">
+      <h2>Quick guide</h2>
+      <ul>
+        <li><strong>Choose Bicep</strong> for Azure-only estates, teams wanting the least operational machinery (no state to manage), and bleeding-edge Azure feature coverage.</li>
+        <li><strong>Choose Terraform</strong> for multi-cloud, existing Terraform skills/tooling, policy-as-code workflows, and the widest module ecosystem.</li>
+        <li><strong>Either way</strong>, start from the official ALZ accelerator rather than hand-rolling the foundation.</li>
+        <li><strong>Don’t mix without reason.</strong> One tool for the platform keeps state, reviews, and skills coherent. Pick one and standardize.</li>
+      </ul>
+    </div>
+
+    <div class="callout callout--warn">
+      <span class="callout__icon">⚠️</span>
+      <p><strong>Watch out:</strong> if you choose Terraform, treat the state backend as production infrastructure from day one — remote storage with versioning, locking, encryption, and tight RBAC. State sprawled across laptops is how teams lose their landing zone.</p>
+    </div>
+
+    <div class="callout callout--note">
+      <span class="callout__icon">🧭</span>
+      <p><strong>Rule of thumb:</strong> let your <em>cloud footprint</em> and <em>existing skills</em> decide, not syntax preference. The tool you’ll still be happy operating in two years is the right one.</p>
+    </div>
+
+    <p>This is the delivery layer for the foundation in <a href="azure-landing-zones.html">Azure Landing Zones: A Practical Architect’s View</a> — and whichever tool you pick, deploy the <a href="identity-foundations.html">identity</a> and <a href="hub-spoke-vs-virtual-wan.html">networking</a> layers as code, never by click-ops.</p>
+  </article>
+
+  <nav class="post-nav" aria-label="More posts">
+    <a href="identity-foundations.html">← Identity Foundations</a>
+    <a href="../categories/infrastructure.html">More Infrastructure →</a>
+  </nav>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <div>
+      <a class="brand" href="../index.html">
+        <span class="brand-mark">AC</span>
+        <span class="brand-text-title">AzureCraft</span>
+      </a>
+      <p style="color: var(--text-muted); margin-top: 0.75rem; max-width: 36ch;">Practical Azure architecture, without the noise.</p>
+    </div>
+    <div>
+      <h4>Topics</h4>
+      <ul>
+        <li><a href="../categories/infrastructure.html">Infrastructure</a></li>
+        <li><a href="../categories/data-ai.html">Data &amp; AI</a></li>
+        <li><a href="../categories/modern-apps.html">Modern Apps</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Site</h4>
+      <ul>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../about.html">About</a></li>
+        <li><a href="../index.html#roadmap">Roadmap</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="site-footer__bottom">
+    <p>© <span data-year>2026</span> AzureCraft. Built as a static site on Azure App Service.</p>
+  </div>
+</footer>
+
+<script src="../js/site.js"></script>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  const dark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  mermaid.initialize({ startOnLoad: true, theme: dark ? "dark" : "default", securityLevel: "strict" });
+</script>
+</body>
+</html>
