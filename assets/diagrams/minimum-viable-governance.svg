@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" role="img" aria-labelledby="title desc">
+  <title id="title">Minimum viable governance pattern</title>
+  <desc id="desc">Diagram showing the smallest useful governance baseline: ownership, policy, tagging, budgets, logging, access, and review cadence.</desc>
+  <defs>
+    <style>
+      .bg { fill: #f8fafc; }
+      .box { fill: #ffffff; stroke: #cbd5e1; stroke-width: 2; rx: 8; }
+      .core { fill: #e0f2fe; stroke: #0284c7; }
+      .control { fill: #ecfdf5; stroke: #0f766e; }
+      .risk { fill: #fdf2f8; stroke: #b83280; }
+      .ops { fill: #fff7ed; stroke: #c2410c; }
+      .title { fill: #0f172a; font: 700 24px Segoe UI, Arial, sans-serif; }
+      .label { fill: #1f2937; font: 700 17px Segoe UI, Arial, sans-serif; }
+      .small { fill: #475569; font: 14px Segoe UI, Arial, sans-serif; }
+      .arrow { stroke: #64748b; stroke-width: 2.5; fill: none; marker-end: url(#arrow); }
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
+    </marker>
+  </defs>
+  <rect class="bg" width="960" height="560" rx="12"/>
+  <text class="title" x="48" y="52">Minimum Viable Governance</text>
+  <text class="small" x="48" y="80">The smallest useful baseline should prevent common mistakes without blocking delivery.</text>
+
+  <rect class="box core" x="360" y="148" width="240" height="96"/>
+  <text class="label" x="416" y="186">Ownership</text>
+  <text class="small" x="394" y="214">Named service owner, support path, and risk owner</text>
+
+  <rect class="box control" x="92" y="286" width="180" height="76"/>
+  <text class="label" x="140" y="318">Policy</text>
+  <text class="small" x="118" y="342">Allowed regions, SKUs, baseline controls</text>
+
+  <rect class="box control" x="312" y="286" width="180" height="76"/>
+  <text class="label" x="356" y="318">Tagging</text>
+  <text class="small" x="330" y="342">Cost, owner, app, environment</text>
+
+  <rect class="box risk" x="532" y="286" width="180" height="76"/>
+  <text class="label" x="582" y="318">Budgets</text>
+  <text class="small" x="556" y="342">Alerts and review thresholds</text>
+
+  <rect class="box ops" x="752" y="286" width="180" height="76"/>
+  <text class="label" x="802" y="318">Logging</text>
+  <text class="small" x="774" y="342">Diagnostics, audit, security signals</text>
+
+  <rect class="box core" x="360" y="424" width="240" height="76"/>
+  <text class="label" x="418" y="456">Review Cadence</text>
+  <text class="small" x="390" y="480">Monthly cost, access, policy, and risk review</text>
+
+  <path class="arrow" d="M480 244 V286"/>
+  <path class="arrow" d="M480 244 C320 254 242 268 182 286"/>
+  <path class="arrow" d="M480 244 C640 254 720 268 842 286"/>
+  <path class="arrow" d="M480 362 V424"/>
+</svg>

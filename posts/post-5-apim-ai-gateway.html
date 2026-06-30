@@ -1,0 +1,54 @@
+<article class="article">
+  <p class="meta">AI gateway | Published June 2026</p>
+  <h1>APIM as an AI Gateway</h1>
+  <p class="intro">Azure API Management can become a useful control point for AI traffic when multiple applications, teams, models, or environments need consistent policy, observability, and cost controls.</p>
+
+  <figure>
+    <img src="assets/diagrams/ai-gateway.svg" alt="Azure API Management AI gateway pattern diagram" />
+    <figcaption>An AI gateway centralizes cross-cutting controls while applications keep their own product logic.</figcaption>
+  </figure>
+
+  <h2>When it helps</h2>
+  <ul>
+    <li>Multiple apps call shared model deployments.</li>
+    <li>Teams need quotas, throttling, or cost allocation by product or environment.</li>
+    <li>Traffic needs centralized authentication, logging, or policy enforcement.</li>
+    <li>Routing across deployments, regions, or model families needs to be handled consistently.</li>
+    <li>Operations teams need a single place to observe usage and failure patterns.</li>
+  </ul>
+
+  <h2>When it may be overkill</h2>
+  <p>For a small single-team prototype, adding a gateway too early can slow learning. Start with the simplest path that gives enough safety and observability, then introduce APIM when shared controls become valuable.</p>
+
+  <h2>What to centralize</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Gateway concern</th>
+        <th>Typical control</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Access</td>
+        <td>Authenticate callers and enforce product or environment boundaries.</td>
+      </tr>
+      <tr>
+        <td>Usage</td>
+        <td>Apply quotas, rate limits, and logging for showback or chargeback.</td>
+      </tr>
+      <tr>
+        <td>Resilience</td>
+        <td>Route to fallback deployments or regions when needed.</td>
+      </tr>
+      <tr>
+        <td>Observability</td>
+        <td>Capture latency, failures, request classes, token usage, and traffic patterns.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="article-callout">
+    <strong>Design test:</strong> use an AI gateway when it removes duplicated controls across teams, not just because every architecture diagram wants one more box.
+  </div>
+</article>

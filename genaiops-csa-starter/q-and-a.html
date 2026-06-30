@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>
+    (() => {
+      const param = new URLSearchParams(window.location.search).get("clawpilotTheme");
+      const theme =
+        param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GenAIOps Q&amp;A Bank | AzureCraft</title>
+  <meta name="description" content="Common GenAIOps questions and answers for Cloud Solution Architects covering evaluation, monitoring, cost, agents, and hallucination." />
+  <meta property="og:title" content="GenAIOps Q&amp;A Bank" />
+  <meta property="og:description" content="Reusable answers for common GenAIOps questions about evaluation, monitoring, cost, agents, and hallucination." />
+  <meta property="og:type" content="article" />
+  <meta property="og:image" content="https://www.rbcloud.co.uk/assets/social/genaiops-og.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="stylesheet" href="../css/styles.css" />
+  <style>
+:root {
+  color-scheme: light;
+  --cp-bg: #f7f4ef;
+  --cp-bg-elevated: #fcfbf8;
+  --cp-surface: #ffffff;
+  --cp-surface-soft: #f5f5f5;
+  --cp-border: #dedede;
+  --cp-border-strong: #919191;
+  --cp-text: #242424;
+  --cp-text-muted: #5c5c5c;
+  --cp-text-soft: #6f6f6f;
+  --cp-accent: #b11f4b;
+  --cp-accent-hover: #9a1a41;
+  --cp-accent-soft: rgba(177, 31, 75, 0.08);
+  --cp-accent-fg: #ffffff;
+  --cp-success: #16a34a;
+  --cp-danger: #dc2626;
+  --cp-warning: #f59e0b;
+  --cp-link: #0078d4;
+  --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
+  --cp-overlay: rgba(255, 255, 255, 0.8);
+  --cp-panel: rgba(255, 255, 255, 0.86);
+  --cp-panel-strong: rgba(255, 255, 255, 0.96);
+  --cp-sheen: rgba(255, 255, 255, 0.55);
+  --cp-highlight: rgba(177, 31, 75, 0.12);
+}
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --cp-bg: #3d3b3a;
+  --cp-bg-elevated: #343231;
+  --cp-surface: #292929;
+  --cp-surface-soft: #2e2e2e;
+  --cp-border: #474747;
+  --cp-border-strong: #5f5f5f;
+  --cp-text: #dedede;
+  --cp-text-muted: #919191;
+  --cp-text-soft: #b0b0b0;
+  --cp-accent: #fd8ea1;
+  --cp-accent-hover: #fb7b91;
+  --cp-accent-soft: rgba(253, 142, 161, 0.14);
+  --cp-accent-fg: #1a1a1a;
+  --cp-success: #4ade80;
+  --cp-danger: #f87171;
+  --cp-warning: #fbbf24;
+  --cp-link: #4da6ff;
+  --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+  --cp-overlay: rgba(41, 41, 41, 0.88);
+  --cp-panel: rgba(41, 41, 41, 0.72);
+  --cp-panel-strong: rgba(41, 41, 41, 0.96);
+  --cp-sheen: rgba(255, 255, 255, 0.04);
+  --cp-highlight: rgba(253, 142, 161, 0.12);
+}
+body {
+  background: var(--cp-bg);
+  color: var(--cp-text);
+  font-family: "Segoe UI", Aptos, Calibri, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+.site-header {
+  background: var(--cp-panel-strong);
+  border-bottom: 1px solid var(--cp-border);
+}
+.brand,
+.nav-links a,
+.site-footer a {
+  color: var(--cp-text);
+}
+.brand small,
+.site-footer p,
+.article p,
+.article li {
+  color: var(--cp-text-muted);
+}
+.brand-mark {
+  background: var(--cp-accent);
+  color: var(--cp-accent-fg);
+}
+.nav-links a:hover,
+.nav-links a:focus-visible {
+  background: var(--cp-accent-soft);
+  color: var(--cp-accent);
+}
+#reading-progress {
+  background: var(--cp-accent);
+}
+.article {
+  background: var(--cp-surface);
+  border: 1px solid var(--cp-border);
+  border-radius: 16px;
+  box-shadow: 0 0 2px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.14);
+}
+.article h1,
+.article h2 {
+  color: var(--cp-text);
+}
+.article .intro {
+  color: var(--cp-text);
+}
+.meta {
+  color: var(--cp-accent);
+}
+.qa-icon {
+  display: flex;
+  justify-content: center;
+  margin: 0 0 24px;
+}
+.qa-icon svg {
+  display: block;
+  max-width: 120px;
+  height: auto;
+}
+.article-callout {
+  background: var(--cp-surface-soft);
+  border-left-color: var(--cp-accent);
+}
+.button {
+  background: var(--cp-surface);
+  border: 1px solid var(--cp-border);
+  color: var(--cp-text);
+}
+.button.primary {
+  background: var(--cp-accent);
+  border-color: var(--cp-accent);
+  color: var(--cp-accent-fg);
+}
+.button.primary:hover {
+  background: var(--cp-accent-hover);
+  color: var(--cp-accent-fg);
+}
+.button:hover {
+  border-color: var(--cp-border-strong);
+  color: var(--cp-text);
+}
+  </style>
+</head>
+<body>
+<a class="skip-link" href="#post-content">Skip to article</a>
+<div id="reading-progress" aria-hidden="true"></div>
+
+<header class="site-header">
+  <nav class="site-nav" aria-label="Primary navigation">
+    <a class="brand" href="../index.html" aria-label="AzureCraft home">
+      <span class="brand-mark">AC</span>
+      <span>
+        <strong>AzureCraft</strong>
+        <small>Practical Azure architecture</small>
+      </span>
+    </a>
+    <div class="nav-links">
+      <a href="../articles/">Articles</a>
+      <a href="../patterns/">Patterns</a>
+      <a href="./">GenAIOps</a>
+      <a href="../index.html#resources">Resources</a>
+    </div>
+  </nav>
+</header>
+
+<main class="article-shell" id="post-content">
+  <article class="article">
+    <p class="meta">GenAIOps | Q&amp;A Reference</p>
+    <div class="qa-icon" aria-hidden="true">
+      <svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="60" cy="60" r="60" fill="#ecfdf5" />
+        <path d="M35 34c-8.284 0-15 6.716-15 15v18c0 8.284 6.716 15 15 15h8l8 9a2 2 0 0 0 3.414-1.414V82h12c8.284 0 15-6.716 15-15V49c0-8.284-6.716-15-15-15H35Z" fill="#0f766e" />
+        <path d="M72 47h13c8.284 0 15 6.716 15 15v13c0 8.284-6.716 15-15 15H74.5l-7.086 7.086A2 2 0 0 1 64 95.672V90h-2c-8.284 0-15-6.716-15-15v-2h19c11.046 0 20-8.954 20-20v-6Z" fill="#115e59" opacity="0.96" />
+        <path d="M42.3 66.4c-.867 0-1.608-.3-2.225-.9-.6-.617-.9-1.358-.9-2.225 0-.85.3-1.575.9-2.175.617-.617 1.358-.925 2.225-.925.85 0 1.575.308 2.175.925.617.6.925 1.325.925 2.175 0 .867-.308 1.608-.925 2.225-.6.6-1.325.9-2.175.9Zm9.875 0c-.867 0-1.608-.3-2.225-.9-.6-.617-.9-1.358-.9-2.225 0-.85.3-1.575.9-2.175.617-.617 1.358-.925 2.225-.925.85 0 1.575.308 2.175.925.617.6.925 1.325.925 2.175 0 .867-.308 1.608-.925 2.225-.6.6-1.325.9-2.175.9Zm9.875 0c-.867 0-1.608-.3-2.225-.9-.6-.617-.9-1.358-.9-2.225 0-.85.3-1.575.9-2.175.617-.617 1.358-.925 2.225-.925.85 0 1.575.308 2.175.925.617.6.925 1.325.925 2.175 0 .867-.308 1.608-.925 2.225-.6.6-1.325.9-2.175.9Z" fill="#ffffff" />
+        <path d="M74.5 64.5h13" stroke="#ffffff" stroke-width="4" stroke-linecap="round" />
+        <path d="M74.5 73.5h8.5" stroke="#ffffff" stroke-width="4" stroke-linecap="round" />
+      </svg>
+    </div>
+    <h1>Public GenAIOps Q&amp;A Bank</h1>
+    <p class="intro">Reusable, public-safe answers for common GenAIOps questions. Use these in customer conversations, community sessions, and architecture reviews.</p>
+
+    <h2>What is GenAIOps?</h2>
+    <p>GenAIOps is the operating discipline for generative AI applications. It helps teams build, evaluate, deploy, monitor, govern, and optimise GenAI systems in a repeatable way.</p>
+
+    <h2 style="border-top: 1px solid var(--border); padding-top: 24px;">How is it different from MLOps?</h2>
+    <p>MLOps often focuses on custom model training and retraining. GenAIOps focuses more on prompts, agents, retrieval, orchestration, evaluation, safety, monitoring, and cost around foundation models.</p>
+
+    <h2 style="border-top: 1px solid var(--border); padding-top: 24px;">Why is evaluation important?</h2>
+    <p>LLM outputs are probabilistic. Evaluation provides repeatable quality gates for groundedness, relevance, coherence, safety, and task success before changes reach users.</p>
+
+    <h2 style="border-top: 1px solid var(--border); padding-top: 24px;">What is groundedness?</h2>
+    <p>Groundedness measures whether the answer is supported by the provided sources. It is especially important for retrieval-augmented generation and enterprise knowledge assistants.</p>
+
+    <h2 style="border-top: 1px solid var(--border); padding-top: 24px;">Why use an AI gateway?</h2>
+    <p>A gateway can centralise authentication, policy enforcement, routing, rate limits, quotas, logging, failover, and usage analytics.</p>
+
+    <h2 style="border-top: 1px solid var(--border); padding-top: 24px;">How do we reduce hallucination?</h2>
+    <p>Use approved knowledge sources, retrieval, citations, evaluation, prompt constraints, monitoring, feedback, and human review for high-risk cases.</p>
+
+    <h2 style="border-top: 1px solid var(--border); padding-top: 24px;">What should we monitor?</h2>
+    <p>Monitor operational signals like latency, errors, throughput, and token use. Also monitor AI-specific signals like safety events, feedback, groundedness, failed retrievals, and quality trends.</p>
+
+    <h2 style="border-top: 1px solid var(--border); padding-top: 24px;">How should cost be managed?</h2>
+    <p>Track token usage, route simple tasks to smaller models, reduce unnecessary context, cache repeatable responses, enforce quotas, and measure cost against successful outcomes.</p>
+
+    <h2 style="border-top: 1px solid var(--border); padding-top: 24px;">Do we need agents for everything?</h2>
+    <p>No. Some problems only need search, summarisation, classification, or RAG. Agents are useful when the task requires multi-step reasoning, tool use, or workflow coordination.</p>
+
+    <h2 style="border-top: 1px solid var(--border); padding-top: 24px;">What makes a good first pilot?</h2>
+    <p>A good pilot is bounded, valuable, measurable, supported by trusted data, and safe enough to test with clear access control, evaluation, monitoring, and cost visibility.</p>
+
+    <div class="article-callout"><strong>Tip:</strong> Keep these answers in your own words. Adapt them to the customer context and avoid implying official Microsoft guidance unless linking to public docs.</div>
+    <div class="actions" style="margin-top:28px"><a class="button primary" href="downloads/q-and-a-bank.md">Download markdown</a><a class="button" href="starter-guide.html">Read the full guide</a></div>
+  </article>
+</main>
+
+<footer class="site-footer">
+  <p>AzureCraft, 2026. Practical Azure architecture, without the noise.</p>
+  <a href="../index.html">Home</a>
+  <a href="../articles/">Articles</a>
+  <a href="../patterns/">Patterns</a>
+</footer>
+
+<script src="../js/main.js"></script>
+<script src="../js/interactions.js"></script>
+</body>
+</html>

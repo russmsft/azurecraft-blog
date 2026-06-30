@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" role="img" aria-labelledby="title desc">
+  <title id="title">Answer health monitoring pattern</title>
+  <desc id="desc">Diagram showing system health, answer health, safety events, feedback, evaluation sets, and continuous improvement for GenAI operations.</desc>
+  <defs>
+    <style>
+      .bg { fill: #f8fafc; }
+      .box { fill: #ffffff; stroke: #cbd5e1; stroke-width: 2; rx: 8; }
+      .system { fill: #e0f2fe; stroke: #0284c7; }
+      .answer { fill: #ecfdf5; stroke: #0f766e; }
+      .risk { fill: #fdf2f8; stroke: #b83280; }
+      .ops { fill: #fff7ed; stroke: #c2410c; }
+      .title { fill: #0f172a; font: 700 24px Segoe UI, Arial, sans-serif; }
+      .label { fill: #1f2937; font: 700 17px Segoe UI, Arial, sans-serif; }
+      .small { fill: #475569; font: 14px Segoe UI, Arial, sans-serif; }
+      .arrow { stroke: #64748b; stroke-width: 2.5; fill: none; marker-end: url(#arrow); }
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
+    </marker>
+  </defs>
+  <rect class="bg" width="960" height="560" rx="12"/>
+  <text class="title" x="48" y="52">Answer Health Monitoring</text>
+  <text class="small" x="48" y="80">Production GenAI observability needs both service signals and answer-quality signals.</text>
+
+  <rect class="box system" x="70" y="144" width="220" height="210"/>
+  <text class="label" x="116" y="178">System Health</text>
+  <text class="small" x="100" y="222">Latency</text>
+  <text class="small" x="100" y="252">Errors</text>
+  <text class="small" x="100" y="282">Throughput</text>
+  <text class="small" x="100" y="312">Token usage</text>
+
+  <rect class="box answer" x="370" y="144" width="220" height="210"/>
+  <text class="label" x="414" y="178">Answer Health</text>
+  <text class="small" x="400" y="222">Groundedness</text>
+  <text class="small" x="400" y="252">Relevance</text>
+  <text class="small" x="400" y="282">Task success</text>
+  <text class="small" x="400" y="312">User feedback</text>
+
+  <rect class="box risk" x="670" y="144" width="220" height="210"/>
+  <text class="label" x="728" y="178">Risk Signals</text>
+  <text class="small" x="700" y="222">Safety events</text>
+  <text class="small" x="700" y="252">Ungrounded output</text>
+  <text class="small" x="700" y="282">Source drift</text>
+  <text class="small" x="700" y="312">Regression</text>
+
+  <rect class="box ops" x="250" y="420" width="460" height="70"/>
+  <text class="label" x="344" y="452">Continuous Improvement Loop</text>
+  <text class="small" x="316" y="476">Telemetry + feedback + eval sets drive prompt, retrieval, and model changes.</text>
+
+  <path class="arrow" d="M180 354 C220 400 248 420 304 420"/>
+  <path class="arrow" d="M480 354 V420"/>
+  <path class="arrow" d="M780 354 C738 400 710 420 656 420"/>
+</svg>

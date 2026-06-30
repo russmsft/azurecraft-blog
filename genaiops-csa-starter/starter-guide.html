@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GenAIOps Starter Guide | AzureCraft</title>
+  <meta name="description" content="A practical guide for new Cloud Solution Architects learning how to build, evaluate, deploy, monitor, govern, and optimise generative AI solutions on Azure." />
+  <meta property="og:title" content="GenAIOps Starter Guide" />
+  <meta property="og:description" content="A practical guide for new Cloud Solution Architects learning how to build, evaluate, deploy, monitor, govern, and optimise generative AI solutions on Azure." />
+  <meta property="og:type" content="article" />
+  <meta property="og:image" content="https://www.rbcloud.co.uk/assets/social/genaiops-og.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="stylesheet" href="../css/styles.css" />
+</head>
+<body>
+<a class="skip-link" href="#post-content">Skip to article</a>
+<div id="reading-progress" aria-hidden="true"></div>
+
+<header class="site-header">
+  <nav class="site-nav" aria-label="Primary navigation">
+    <a class="brand" href="../index.html" aria-label="AzureCraft home">
+      <span class="brand-mark">AC</span>
+      <span>
+        <strong>AzureCraft</strong>
+        <small>Practical Azure architecture</small>
+      </span>
+    </a>
+    <div class="nav-links">
+      <a href="../articles/">Articles</a>
+      <a href="../patterns/">Patterns</a>
+      <a href="./">GenAIOps</a>
+      <a href="../index.html#resources">Resources</a>
+    </div>
+  </nav>
+</header>
+
+<main class="article-shell" id="post-content">
+  <article class="article">
+    <p class="meta">GenAIOps | CSA Starter Guide</p>
+    <h1>GenAIOps for Cloud Solution Architects</h1>
+
+    <h2>From prompt to production</h2>
+    <p class="intro">Generative AI is easy to demonstrate and hard to operate. A useful prompt can create excitement in minutes, but enterprise adoption needs more than a prompt. It needs a repeatable way to design, evaluate, deploy, monitor, govern, and optimise AI-enabled systems.</p>
+    <p>That is the purpose of GenAIOps.</p>
+    <p>GenAIOps is the operating discipline for generative AI applications. It borrows useful thinking from DevOps and MLOps, but adapts it for foundation models, prompts, agents, retrieval, evaluation, safety, cost, and governance.</p>
+    <p>This guide is written for new Cloud Solution Architects and community learners. It is intentionally public-safe: no customer details, no confidential implementation notes, and no private workshop material.</p>
+
+    <h2>The lifecycle</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Stage</th>
+          <th>What it means</th>
+          <th>CSA focus</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Build</td>
+          <td>Create prompts, agents, orchestration, retrieval, and tool integrations.</td>
+          <td>Help the customer choose the simplest architecture that meets the use case.</td>
+        </tr>
+        <tr>
+          <td>Evaluate</td>
+          <td>Test quality, groundedness, relevance, safety, and regression.</td>
+          <td>Turn subjective demos into measurable quality gates.</td>
+        </tr>
+        <tr>
+          <td>Deploy</td>
+          <td>Release through managed endpoints, CI/CD, and gateway patterns.</td>
+          <td>Explain production controls, release paths, and rollback thinking.</td>
+        </tr>
+        <tr>
+          <td>Monitor</td>
+          <td>Observe latency, errors, token use, safety events, and answer quality.</td>
+          <td>Separate system health from answer health.</td>
+        </tr>
+        <tr>
+          <td>Govern</td>
+          <td>Apply identity, RBAC, policy, audit, responsible AI, and data boundaries.</td>
+          <td>Make safe scale possible through clear ownership and access.</td>
+        </tr>
+        <tr>
+          <td>Optimise</td>
+          <td>Improve cost, performance, model choice, context design, and user outcomes.</td>
+          <td>Help customers think about cost per successful outcome, not just cost per token.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <figure>
+      <img src="../assets/diagrams/genaiops-lifecycle.svg" alt="GenAIOps lifecycle diagram showing six stages: Build, Evaluate, Deploy, Monitor, Govern, Optimise in a continuous cycle" />
+      <figcaption>The GenAIOps lifecycle: six stages from build to continuous optimisation.</figcaption>
+    </figure>
+
+    <h2>How GenAIOps differs from MLOps</h2>
+    <p>MLOps often focuses on training, validating, deploying, and retraining custom models. GenAIOps often starts with foundation models that already exist. The work shifts toward operating the application layer around those models.</p>
+    <p><strong>Key differences:</strong></p>
+    <ul>
+      <li>Prompts and instructions become versioned assets.</li>
+      <li>Retrieval quality matters as much as model quality.</li>
+      <li>Agents need boundaries, tools, identity, and observability.</li>
+      <li>Evaluation includes groundedness, relevance, coherence, safety, and task success.</li>
+      <li>Monitoring must include behaviour and quality, not only uptime.</li>
+      <li>Cost is strongly influenced by tokens, context length, model choice, and usage patterns.</li>
+    </ul>
+
+    <h2>Azure service mapping</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Need</th>
+          <th>Common Azure pattern</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Foundation model access</td>
+          <td>Azure OpenAI Service or models available through Azure AI Foundry.</td>
+        </tr>
+        <tr>
+          <td>Experimentation and project workspace</td>
+          <td>Azure AI Foundry.</td>
+        </tr>
+        <tr>
+          <td>Retrieval over enterprise content</td>
+          <td>Azure AI Search and approved data sources.</td>
+        </tr>
+        <tr>
+          <td>Safety controls</td>
+          <td>Azure AI Content Safety and responsible AI process.</td>
+        </tr>
+        <tr>
+          <td>Identity and access</td>
+          <td>Microsoft Entra ID and role-based access control.</td>
+        </tr>
+        <tr>
+          <td>API control plane</td>
+          <td>Azure API Management as an AI gateway.</td>
+        </tr>
+        <tr>
+          <td>Observability</td>
+          <td>Azure Monitor, Application Insights, and OpenTelemetry traces.</td>
+        </tr>
+        <tr>
+          <td>Cost visibility</td>
+          <td>Azure Cost Management, Azure Monitor logs, and gateway analytics.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Reference architecture pattern</h2>
+    <p>A common production pattern looks like this:</p>
+    <ol>
+      <li>A user interacts with an application or chatbot.</li>
+      <li>Requests pass through an API gateway for authentication, policy, logging, and throttling.</li>
+      <li>An orchestrator or agent decides how to handle the request.</li>
+      <li>Retrieval pulls relevant information from approved knowledge sources.</li>
+      <li>The model generates a response grounded in the retrieved context.</li>
+      <li>Safety checks and policy controls are applied.</li>
+      <li>Telemetry captures latency, token use, errors, tool calls, safety flags, and feedback.</li>
+      <li>Evaluation and monitoring feed continuous improvement.</li>
+    </ol>
+
+    <figure>
+      <img src="../assets/diagrams/genaiops-reference-architecture.svg" alt="GenAI reference architecture showing User, API Gateway, Orchestrator, Model, Retrieval, Safety, Telemetry, and Cost layers" />
+      <figcaption>A common production pattern: app, gateway, orchestrator, model, retrieval, safety, and telemetry.</figcaption>
+    </figure>
+
+    <h2>Evaluation: the production confidence layer</h2>
+    <figure>
+      <img src="../assets/diagrams/genaiops-evaluation.svg" alt="Evaluation flow showing test dataset through AI system through quality gates to a pass/fail decision" />
+      <figcaption>Evaluation: the bridge between demo confidence and production confidence.</figcaption>
+    </figure>
+    <p>Evaluation is the bridge between a promising demo and a trusted service.</p>
+    <p>A good evaluation set includes:</p>
+    <ul>
+      <li>Common user questions.</li>
+      <li>Edge cases and ambiguous requests.</li>
+      <li>Known failure examples.</li>
+      <li>Unsafe or policy-sensitive prompts.</li>
+      <li>Questions that require source grounding.</li>
+      <li>Expected answer characteristics, not only exact answer strings.</li>
+    </ul>
+    <p>Useful evaluation dimensions include:</p>
+    <ul>
+      <li><strong>Groundedness:</strong> Is the answer supported by the provided sources?</li>
+      <li><strong>Relevance:</strong> Does the answer address the actual question?</li>
+      <li><strong>Coherence:</strong> Is the answer structured and internally consistent?</li>
+      <li><strong>Completeness:</strong> Does the answer include the necessary detail?</li>
+      <li><strong>Safety:</strong> Does the answer avoid unsafe, inappropriate, or policy-violating content?</li>
+      <li><strong>Task success:</strong> Did the user get closer to the intended outcome?</li>
+    </ul>
+
+    <h2>Monitoring: system health and answer health</h2>
+    <figure>
+      <img src="../assets/diagrams/genaiops-monitoring.svg" alt="System health vs answer health monitoring comparison" />
+      <figcaption>A mature operating model monitors both system health and answer health.</figcaption>
+    </figure>
+    <p>Traditional monitoring answers questions like:</p>
+    <ul>
+      <li>Is the service available?</li>
+      <li>What is the latency?</li>
+      <li>What is the error rate?</li>
+      <li>How much traffic is flowing?</li>
+    </ul>
+    <p>GenAI monitoring also needs to ask:</p>
+    <ul>
+      <li>Are answers grounded in trusted sources?</li>
+      <li>Are users repeatedly asking follow-up corrections?</li>
+      <li>Are content safety events increasing?</li>
+      <li>Are token costs changing unexpectedly?</li>
+      <li>Are certain use cases failing more often than others?</li>
+      <li>Are model, prompt, retrieval, or data changes causing regression?</li>
+    </ul>
+
+    <h2>APIM as an AI gateway</h2>
+    <p>Azure API Management can act as a control plane for AI traffic. It is especially useful when multiple applications, teams, or models are involved.</p>
+    <p>Common gateway capabilities:</p>
+    <ul>
+      <li>Authentication and authorization.</li>
+      <li>Rate limiting and quota enforcement.</li>
+      <li>Routing across models, deployments, or regions.</li>
+      <li>Failover and resilience patterns.</li>
+      <li>Centralized logging.</li>
+      <li>Policy enforcement.</li>
+      <li>Usage analytics for showback or chargeback.</li>
+    </ul>
+
+    <h2>FinOps for GenAI</h2>
+    <p>GenAI costs are driven by usage volume, model choice, input tokens, output tokens, context size, retrieval patterns, and rework caused by poor answers.</p>
+    <p>Cost levers include:</p>
+    <ul>
+      <li>Use smaller models for simple tasks.</li>
+      <li>Reserve stronger models for complex reasoning.</li>
+      <li>Shorten prompts and reduce unnecessary context.</li>
+      <li>Cache common answers where appropriate.</li>
+      <li>Use quotas and rate limits by app, team, or environment.</li>
+      <li>Track cost by successful business outcome.</li>
+    </ul>
+
+    <h2>Governance and team model</h2>
+    <figure>
+      <img src="../assets/diagrams/genaiops-governance.svg" alt="GenAI governance team model and controls" />
+      <figcaption>Governance roles and controls that make safe scale possible.</figcaption>
+    </figure>
+    <p>GenAI projects combine models, prompts, data, tools, evaluations, and application code. That makes governance a practical engineering concern, not a paperwork exercise.</p>
+    <p>Suggested roles:</p>
+    <ul>
+      <li><strong>Use case owner:</strong> defines business outcome and quality expectations.</li>
+      <li><strong>Platform team:</strong> provides secure reusable patterns and shared services.</li>
+      <li><strong>Engineering team:</strong> builds and deploys the application.</li>
+      <li><strong>Operations team:</strong> monitors reliability and supportability.</li>
+      <li><strong>Governance/risk team:</strong> defines policy, safety, audit, and compliance expectations.</li>
+    </ul>
+    <p>Useful governance controls:</p>
+    <ul>
+      <li>Project isolation.</li>
+      <li>Least-privilege access.</li>
+      <li>Environment separation.</li>
+      <li>Versioned prompts and configuration.</li>
+      <li>Evaluation gates before release.</li>
+      <li>Audit logs.</li>
+      <li>Human approval for high-risk actions.</li>
+      <li>Responsible AI review for sensitive use cases.</li>
+    </ul>
+
+    <h2>Customer discovery questions</h2>
+    <p>Use these to move from AI enthusiasm to actionable architecture:</p>
+    <ol>
+      <li>What business outcome would make this use case worth scaling?</li>
+      <li>Who owns the quality of the answer?</li>
+      <li>Which data sources are trusted enough to ground responses?</li>
+      <li>What happens when the AI is uncertain or wrong?</li>
+      <li>Which users should have access to which information and tools?</li>
+      <li>What would be an unacceptable failure?</li>
+      <li>How will you measure answer quality before release?</li>
+      <li>Who supports the solution after it goes live?</li>
+      <li>How will cost be tracked by team, product, or use case?</li>
+      <li>What needs to be reusable for the next AI use case?</li>
+    </ol>
+
+    <h2>Example use cases</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Use case</th>
+          <th>Pattern</th>
+          <th>Operating concern</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Support knowledge assistant</td>
+          <td>Retrieval-augmented generation over approved content.</td>
+          <td>Groundedness, citations, freshness, feedback.</td>
+        </tr>
+        <tr>
+          <td>IT service desk triage</td>
+          <td>Agent classifies requests and calls ITSM tools.</td>
+          <td>Human approval, tool boundaries, audit logs.</td>
+        </tr>
+        <tr>
+          <td>Contact centre summarisation</td>
+          <td>Summarise calls and extract actions.</td>
+          <td>Quality sampling, privacy, cost per interaction.</td>
+        </tr>
+        <tr>
+          <td>Policy assistant</td>
+          <td>Answer questions from approved policy documents.</td>
+          <td>Source control, access boundaries, compliance review.</td>
+        </tr>
+        <tr>
+          <td>Engineering runbook assistant</td>
+          <td>Retrieve runbooks and prior incident notes.</td>
+          <td>Retrieval quality, escalation, operational telemetry.</td>
+        </tr>
+        <tr>
+          <td>Proposal drafting assistant</td>
+          <td>Draft from approved templates and case studies.</td>
+          <td>Review workflow, brand consistency, hallucination control.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>A practical pilot checklist</h2>
+    <p>A good pilot should include:</p>
+    <ul>
+      <li>A named business owner.</li>
+      <li>A clear user group.</li>
+      <li>A narrow, valuable use case.</li>
+      <li>Approved data sources.</li>
+      <li>A test question set.</li>
+      <li>Quality and safety criteria.</li>
+      <li>Access control design.</li>
+      <li>Monitoring plan.</li>
+      <li>Cost visibility.</li>
+      <li>Support and feedback process.</li>
+      <li>A decision point for scale, stop, or redesign.</li>
+    </ul>
+
+    <h2>Key message</h2>
+    <div class="article-callout">
+      <strong>The goal is not to build one clever AI demo.</strong> The goal is to create a repeatable way to deliver safe, useful, governed, and cost-aware GenAI solutions.
+    </div>
+  </article>
+</main>
+
+<footer class="site-footer">
+  <p>AzureCraft, 2026. Practical Azure architecture, without the noise.</p>
+  <a href="../index.html">Home</a>
+  <a href="../articles/">Articles</a>
+  <a href="../patterns/">Patterns</a>
+</footer>
+
+<script src="../js/main.js"></script>
+<script src="../js/interactions.js"></script>
+</body>
+</html>

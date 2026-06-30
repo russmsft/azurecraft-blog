@@ -1,82 +1,104 @@
 # AzureCraft Blog
 
-AzureCraft is a lightweight static blog about practical, diagram-first Azure
-architecture. It uses plain HTML and CSS with a small, dependency-free script —
-no build step and no framework.
+AzureCraft is a lightweight Azure architecture publishing site, built with static
+HTML, CSS, and JavaScript plus a small dependency-free Node.js server for Azure
+App Service hosting. The content is practical and diagram-first: landing zones,
+AI workloads, GenAIOps, governance, FinOps, and reusable patterns.
+
+The site has two complementary layers:
+
+- A **redesigned landing experience** (homepage, category indexes, and a set of
+  standalone long-form Infrastructure guides) styled with `css/azurecraft.css`.
+- A **catalog-driven content library** (article index, pattern library, GenAIOps
+  starter, and 23+ posts) styled with `css/styles.css`.
 
 ## Structure
 
 ```
-index.html                 Home page: hero, article cards, categories, roadmap
+index.html                 Redesigned homepage: hero, featured guides, categories,
+                           "full library" links, roadmap (uses css/azurecraft.css)
 about.html                 About page
-categories/
-  infrastructure.html      Infrastructure category index
-  data-ai.html             Data & AI category index
-  modern-apps.html         Modern Apps category index
+categories/                Category indexes (Infrastructure / Data & AI / Modern Apps)
 posts/
-  welcome.html             "Welcome to AzureCraft" (start here)
-  azure-landing-zones.html "Azure Landing Zones: A Practical Architect's View"
-  ai-workloads.html        "AI Workloads in Azure Landing Zones"
-  hub-spoke-vs-virtual-wan.html  "Hub-and-Spoke vs Azure Virtual WAN"
-  identity-foundations.html      "Identity Foundations for Platform Teams"
-  bicep-vs-terraform.html        "Bicep vs Terraform for Landing Zones"
-css/styles.css             Design system (dark-first, auto light mode)
-js/site.js                 Mobile nav, reading progress, subscribe form, footer year
+  catalog.json             Article metadata for the catalog system
+  welcome.html, azure-landing-zones.html, ai-workloads.html,
+  hub-spoke-vs-virtual-wan.html, identity-foundations.html,
+  bicep-vs-terraform.html  Standalone redesigned guides (css/azurecraft.css)
+  post-1..post-23 *.html   Catalog posts loaded via post.html (css/styles.css)
+articles/                  Searchable, filterable article index
+patterns/                  Architecture pattern library + downloadable checklists
+genaiops-csa-starter/      Public GenAIOps starter guide
+post.html                  Article shell that loads catalog posts from posts/
+css/
+  azurecraft.css           Redesigned design system (dark-first, auto light mode)
+  styles.css               Catalog/library styling (incl. print styles)
+js/
+  site.js                  Redesign behaviour: mobile nav, reading progress, subscribe form
+  main.js                  Catalog post loader (reads catalog.json)
+  interactions.js          Library interactions (reveal, stats, filters)
 assets/
   favicon.svg              Site icon
-  diagrams/                Architecture diagrams (SVG)
-server.js                  Tiny Express static server (used by Azure App Service)
+  diagrams/                SVG architecture diagrams
+  social/                  1200x630 Open Graph images
+server.js                  Dependency-free Node.js static server (Azure App Service)
+scripts/
+  check-site.js            Internal link, asset, and catalog validator
+  generate-og-images.ps1   Generates shared + per-article Open Graph images
 ```
 
-Each post is a standalone HTML page (good for SEO and shareable URLs) that shares
-an inlined header and footer and links to the common stylesheet.
-
-> Note: `post.html`, `js/main.js`, and the `posts/post-1-*` / `posts/post-2-*`
-> files are the original client-side-injection prototype. They are kept for
-> reference but are no longer linked from the site.
+> Why two stylesheets? The redesigned landing pages and the catalog library use
+> different class systems. Keeping them in separate stylesheets lets both render
+> correctly without collisions. Redesigned pages link `css/azurecraft.css`;
+> catalog/library pages link `css/styles.css`.
 
 ## Run locally
 
-Because this is a static site, you can open `index.html` directly in a browser.
-
-To run the bundled Express server:
-
 ```powershell
-npm install
 npm start
 ```
 
-Then browse to `http://localhost:8080`.
+Then browse to `http://localhost:8080`. No external runtime dependencies are
+required. (Or use `python -m http.server 8080` for a quick static server.)
 
-Or, with no Node.js, use Python's static server:
+## Check the site
 
 ```powershell
-python -m http.server 8080
+npm run check
 ```
 
-## Design notes
+Validates internal `href`/`src` references across all HTML pages, verifies post
+slugs resolve to files in `posts/`, and checks that every `posts/catalog.json`
+entry has a matching post file.
+
+## Generate social images
+
+```powershell
+npm run generate:og
+```
+
+Generates the shared site images plus a per-article Open Graph image for every
+post. Commit new files under `assets/social/` afterwards.
+
+## Design notes (redesigned landing layer)
 
 - Dark theme by default; light theme applied automatically via
-  `prefers-color-scheme`.
-- Typography is tuned for reading: ~72ch line length, 1.7 line-height, fluid
-  type scale.
-- Responsive: a collapsible nav appears on small screens.
-- Accessibility: skip link, visible focus styles, semantic `<time>`, alt text.
-- SEO/social: per-page `<title>`, meta description, Open Graph, and Twitter tags.
+  `prefers-color-scheme` (css/azurecraft.css).
+- Typography tuned for reading: ~72ch line length, 1.7 line-height, fluid scale.
+- Responsive collapsible nav; skip link, focus styles, semantic markup.
+- Per-page `<title>`, meta description, Open Graph, and Twitter tags.
 
 ## Newsletter form
 
-The subscribe form is provider-ready. To make it live, set the `data-endpoint`
-attribute on the `.cta-form` in `index.html` to your email provider's POST URL
-(Mailchimp, Buttondown, ConvertKit, an Azure Function, etc.):
+The subscribe form on the homepage is provider-ready. Set the `data-endpoint`
+attribute on the `.cta-form` to your email provider's POST URL (Mailchimp,
+Buttondown, ConvertKit, an Azure Function, etc.):
 
 ```html
 <form class="cta-form" data-endpoint="https://your-provider/subscribe">
 ```
 
-With no endpoint set, the form validates the email and shows a friendly
-"not live yet" message instead of failing silently. The handler lives in
-`js/site.js`.
+With no endpoint set, it validates the email and shows a friendly "not live yet"
+message instead of failing silently. Handler lives in `js/site.js`.
 
 ## Content roadmap
 
@@ -87,9 +109,13 @@ Planned posts across the three pillars (Infrastructure · Data & AI · Modern Ap
 - Observability baseline: Log Analytics, workbooks, and alerts that matter
 - Data platform reference architecture
 
-## Adding a new post
+## Adding content
 
-1. Copy an existing file in `posts/` (e.g. `azure-landing-zones.html`).
-2. Update the `<title>`, meta description, Open Graph tags, and article content.
-3. Add a matching card to the grid in `index.html`.
-4. Drop any diagrams into `assets/diagrams/` and reference them from the post.
+**A redesigned standalone guide:** copy a file in `posts/` (e.g.
+`azure-landing-zones.html`), update title/meta/content, point it at
+`../css/azurecraft.css`, and add a card to `index.html`.
+
+**A catalog post:** add an HTML snippet under `posts/`, add an entry to
+`posts/catalog.json` (`slug`, `title`, `description`, `category`, `image`), link
+via `post.html?post=<slug>`, add a card to `articles/index.html`, then run
+`npm run check`.

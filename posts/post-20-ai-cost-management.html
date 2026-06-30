@@ -1,0 +1,54 @@
+<article class="article">
+  <p class="meta">GenAIOps | Published June 2026</p>
+  <h1>AI Cost Management: Token Budgets, PTU vs Consumption, and Model Tiering</h1>
+  <p class="intro">AI workloads on Azure generate costs across multiple meters simultaneously: token consumption, embedding calls, search queries, compute hosting, and fine-tuning jobs all appear on the same invoice with different cost structures. Without deliberate architecture decisions, costs scale unpredictably with usage and teams lose visibility into where spend is concentrated. This post covers the levers available to architects for controlling and attributing AI costs in production.</p>
+
+  <h2>Where AI Costs Accumulate</h2>
+  <ul>
+    <li>Input and output tokens on each completion call</li>
+    <li>Embedding API calls during both document indexing and query time</li>
+    <li>Azure AI Search query units and index storage</li>
+    <li>Compute hosting for container-based components on Azure Container Apps or AKS</li>
+    <li>Fine-tuning job GPU hours when custom model training is in scope</li>
+  </ul>
+
+  <h2>PTU vs Consumption: Picking the Right Pricing Model</h2>
+  <p>Azure AI Foundry offers two billing models for inference. Consumption charges per token processed and is the correct starting point for new workloads or low-volume use cases. Provisioned Throughput Units (PTU) reserve a fixed amount of model capacity at a flat hourly rate with no per-token charges and no rate limits within the provisioned allocation.</p>
+  <table>
+    <thead><tr><th>Dimension</th><th>Consumption</th><th>PTU</th></tr></thead>
+    <tbody>
+      <tr><td>Cost structure</td><td>Per token, variable</td><td>Flat hourly, fixed</td></tr>
+      <tr><td>Rate limits</td><td>Subject to TPM limits per deployment</td><td>No rate limits within provisioned capacity</td></tr>
+      <tr><td>Cost advantage</td><td>Below roughly 60% consistent utilization</td><td>Above roughly 60% consistent utilization</td></tr>
+      <tr><td>Best fit</td><td>Early-stage and bursty workloads</td><td>Stable, high-volume production workloads</td></tr>
+    </tbody>
+  </table>
+  <p>Model your projected token volume against the PTU hourly rate for the target model to find the crossover before committing to a reservation. Purchasing PTU for a workload running at 30% utilization results in paying more than consumption billing for the same throughput.</p>
+
+  <h2>Model Tiering Strategy</h2>
+  <p>Not every task in an application requires the same model capability. Routing every call to a large model regardless of task complexity is the single largest source of avoidable AI spend.</p>
+  <ul>
+    <li>Routing, intent classification, and keyword extraction: GPT-4.1 nano or GPT-4.1 mini</li>
+    <li>Summarization, structured extraction, and short-form generation: GPT-4.1 mini</li>
+    <li>Complex reasoning, multi-step planning, and synthesis tasks: GPT-4.1 or o4-series</li>
+  </ul>
+  <p>Validate the quality of smaller models against your eval set before routing production traffic. The Azure AI Evaluation SDK makes it straightforward to compare groundedness and relevance scores across model deployments on the same eval set.</p>
+
+  <h2>Token Budget Patterns</h2>
+  <p>Output token limits are the fastest way to reduce per-call cost. Set max_tokens to the minimum value that satisfies the use case: summarization tasks typically need 200 to 400 tokens, structured JSON extraction is bounded by schema size. Beyond output limits, reduce input token consumption by compressing system prompts over time, tuning retrieval chunk size to match the information density required by each query type, and caching repeated context segments where the content is stable across requests.</p>
+
+  <h2>Cost Visibility with APIM and Azure Cost Management</h2>
+  <p>Azure API Management deployed in front of Azure AI Foundry endpoints captures token usage per subscription key, enabling per-team or per-product chargebacks. Log the prompt-tokens and completion-tokens fields from each response and route them to a Log Analytics workspace. Set consumption quotas per APIM product to prevent any single team from exhausting shared deployment capacity. Use Azure Cost Management with deployment-level tags and Foundry portal usage metrics to track token consumption by model deployment and set budget alerts before thresholds are breached.</p>
+
+  <h2>Cost Anti-Patterns to Eliminate</h2>
+  <ul>
+    <li>Sending every request to the largest available model regardless of task complexity</li>
+    <li>Setting no max_tokens limit on completion calls in any environment including production</li>
+    <li>Re-embedding documents on every pipeline run when source content has not changed</li>
+    <li>Running multiple separate deployments for isolated teams where a shared deployment with per-team routing would suffice</li>
+  </ul>
+
+  <div class="article-callout">
+    <strong>Key principle:</strong> Model selection is a cost lever. Route simple tasks to smaller models and reserve the large model for tasks that genuinely need it.
+  </div>
+</article>

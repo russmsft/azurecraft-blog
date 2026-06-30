@@ -1,20 +1,53 @@
-<article>
-  <h1>Azure Landing Zones: A Practical Architect’s View</h1>
-  <p><em>Published March 2026</em></p>
+<article class="article">
+  <p class="meta">Landing zones | Published March 2026</p>
+  <h1>Azure Landing Zones: A Practical Architect's View</h1>
+  <p class="intro">Landing zones are about enablement, not control for its own sake. The goal is to give teams a governed place to build without forcing every workload team to rediscover identity, networking, monitoring, and policy from scratch.</p>
 
-  <p>Landing zones are about enablement, not control.</p>
+  <figure>
+    <img src="assets/diagrams/azure-landing-zone.svg" alt="Azure Landing Zone reference architecture diagram" />
+    <figcaption>A practical landing zone separates platform responsibilities from workload autonomy.</figcaption>
+  </figure>
 
-  <h2>Reference Architecture</h2>
+  <h2>The core idea</h2>
+  <p>An enterprise landing zone creates a foundation for cloud adoption. It usually includes management group structure, policy assignment, network topology, identity integration, logging, security tooling, and subscription vending patterns.</p>
 
-  <img src="../assets/diagrams/azure-landing-zone.svg"
-       alt="Azure Landing Zone Reference Architecture" />
+  <h2>Useful boundaries</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Area</th>
+        <th>Platform owns</th>
+        <th>Workload owns</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Identity</td>
+        <td>Tenant integration, privileged access, RBAC guardrails.</td>
+        <td>Application roles, managed identity use, least-privilege access.</td>
+      </tr>
+      <tr>
+        <td>Network</td>
+        <td>Hub, routing, shared ingress and egress controls, DNS baseline.</td>
+        <td>Spoke design, subnet needs, private endpoints, workload flows.</td>
+      </tr>
+      <tr>
+        <td>Governance</td>
+        <td>Policies, tags, budgets, logging requirements, allowed regions.</td>
+        <td>Architecture decisions within the approved guardrails.</td>
+      </tr>
+    </tbody>
+  </table>
 
-  <p>This diagram shows management groups, platform subscriptions, and workload separation.</p>
-
-  <h2>Key Principles</h2>
+  <h2>Key principles</h2>
   <ul>
-    <li>Clear control vs workload boundaries</li>
-    <li>Centralized networking</li>
-    <li>Lightweight governance</li>
+    <li>Separate platform subscriptions from workload subscriptions.</li>
+    <li>Keep policy opinionated enough to prevent common mistakes, but not so tight that teams build around it.</li>
+    <li>Make networking and identity patterns easy to consume.</li>
+    <li>Design for scale, but start with the controls that matter for the first workloads.</li>
   </ul>
+
+  <div class="article-callout">
+    <strong>Architect's test:</strong> a landing zone is working when teams can deploy faster because the hard shared decisions are already handled.
+  </div>
 </article>

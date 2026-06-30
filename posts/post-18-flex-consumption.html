@@ -1,0 +1,39 @@
+<article class="article">
+  <p class="meta">Compute | Published June 2026</p>
+  <h1>Azure Functions Flex Consumption: The New Default for Event-Driven AI</h1>
+  <p class="intro">Flex Consumption changes the calculus on Azure Functions for AI workloads. VNet integration is now available without the Premium plan. Per-instance concurrency is configurable. Cold starts are faster. If you have been routing around the Consumption plan because of its networking limitations, that workaround is no longer needed.</p>
+
+  <h2>What Changed and Why It Matters</h2>
+  <p>The standard Consumption plan has three problems that push architects toward Premium: no VNet integration, no control over per-instance concurrency, and cold starts that punish large runtimes. Flex Consumption fixes all three.</p>
+  <p>VNet integration now works on Flex Consumption. Your Azure AI Foundry endpoint is behind a private endpoint. Your Cosmos DB account is behind a private endpoint. Your storage account probably is too. Before Flex Consumption, a Functions trigger that needed to reach all of those required either the Premium plan or an architecture that punched through network boundaries you did not want open. Now a serverless function participates fully in a private VNet topology without the Premium pricing model.</p>
+  <p>Per-instance concurrency is configurable, which matters specifically for AI workloads. If each execution holds an open connection to a model endpoint or buffers a large document in memory, you do not want unbounded concurrency on a single instance. Instance memory is selectable at 2048 MB or 4096 MB, so embedding generation and document processing fit within a single execution context without hitting the old memory constraints.</p>
+
+  <h2>Where Flex Consumption Fits for AI Pipelines</h2>
+  <ul>
+    <li>Document ingestion triggered by Blob Storage events inside a private VNet</li>
+    <li>Embedding generation triggered by Cosmos DB change feed, writing vectors back to Azure AI Search</li>
+    <li>Evaluation job orchestration triggered by Service Bus after inference runs complete</li>
+    <li>Async response processing for AI API patterns where results are posted to a queue and consumed asynchronously</li>
+    <li>Single-request AI calls on spiky workloads where scale to zero keeps costs from accumulating overnight</li>
+  </ul>
+
+  <h2>Flex Consumption vs Premium: The Honest Comparison</h2>
+  <table>
+    <thead><tr><th>Capability</th><th>Flex Consumption</th><th>Premium</th></tr></thead>
+    <tbody>
+      <tr><td>VNet integration</td><td>Yes</td><td>Yes</td></tr>
+      <tr><td>Scale to zero</td><td>Yes</td><td>No (minimum one warm instance)</td></tr>
+      <tr><td>Always-warm instances</td><td>Configurable pre-provisioned count</td><td>Always on</td></tr>
+      <tr><td>Instance memory ceiling</td><td>4096 MB</td><td>Up to 14 GB on EP3</td></tr>
+      <tr><td>Best fit</td><td>Spiky, bursty AI event triggers</td><td>Sustained high-throughput, always-on workloads</td></tr>
+    </tbody>
+  </table>
+  <p>Premium still wins for sustained throughput workloads where cold starts are unacceptable and the minimum instance cost is justified by traffic volume. That is a narrower category than it used to be.</p>
+
+  <h2>When to Skip Functions Entirely</h2>
+  <p>Flex Consumption does not change the execution timeout. Ten minutes is still the ceiling for most triggers. For long-running agent conversations that maintain state across turns, use Container Apps or Azure AI Foundry Agent Service. For stateful workflows needing execution history and compensation, use Durable Functions or a workflow engine on Container Apps. Wiring Flex Consumption Functions to Azure AI Foundry follows the standard pattern: managed identity on the Function App, role assignment on the Foundry resource, DefaultAzureCredential in the code.</p>
+
+  <div class="article-callout">
+    <strong>Key principle:</strong> Flex Consumption removes the last major reason to use the Premium plan for AI event-driven workloads. Review any Premium Functions in your estate.
+  </div>
+</article>

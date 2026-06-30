@@ -1,6 +1,8 @@
 # Node
 node_modules/
+.npm-cache/
 npm-debug.log*
+server-*.log
 
 # OS / editor temp files
 Thumbs.db

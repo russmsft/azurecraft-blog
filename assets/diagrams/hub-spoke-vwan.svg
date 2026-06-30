@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" role="img" aria-labelledby="title desc">
+  <title id="title">Hub-spoke and Virtual WAN decision pattern</title>
+  <desc id="desc">Diagram comparing a traditional hub-spoke network with Azure Virtual WAN for enterprise Azure connectivity decisions.</desc>
+  <defs>
+    <style>
+      .bg { fill: #f8fafc; }
+      .box { fill: #ffffff; stroke: #cbd5e1; stroke-width: 2; rx: 8; }
+      .hub { fill: #e0f2fe; stroke: #0284c7; }
+      .spoke { fill: #ecfdf5; stroke: #0f766e; }
+      .wan { fill: #fdf2f8; stroke: #b83280; }
+      .ops { fill: #fff7ed; stroke: #c2410c; }
+      .title { fill: #0f172a; font: 700 24px Segoe UI, Arial, sans-serif; }
+      .label { fill: #1f2937; font: 700 17px Segoe UI, Arial, sans-serif; }
+      .small { fill: #475569; font: 14px Segoe UI, Arial, sans-serif; }
+      .arrow { stroke: #64748b; stroke-width: 2.5; fill: none; marker-end: url(#arrow); }
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
+    </marker>
+  </defs>
+  <rect class="bg" width="960" height="560" rx="12"/>
+  <text class="title" x="48" y="52">Hub-Spoke vs Virtual WAN</text>
+  <text class="small" x="48" y="80">A practical decision pattern for enterprise Azure network topology.</text>
+
+  <rect class="box hub" x="62" y="144" width="310" height="260"/>
+  <text class="label" x="106" y="178">Hub-Spoke</text>
+  <rect class="box" x="148" y="220" width="132" height="58"/>
+  <text class="small" x="178" y="254">Hub VNet</text>
+  <rect class="box spoke" x="86" y="322" width="110" height="52"/>
+  <text class="small" x="112" y="354">Spoke A</text>
+  <rect class="box spoke" x="238" y="322" width="110" height="52"/>
+  <text class="small" x="264" y="354">Spoke B</text>
+  <path class="arrow" d="M196 322 L190 278"/>
+  <path class="arrow" d="M238 322 L238 278"/>
+  <text class="small" x="86" y="436">Best when routing and security need tight custom control.</text>
+
+  <rect class="box wan" x="586" y="144" width="310" height="260"/>
+  <text class="label" x="632" y="178">Azure Virtual WAN</text>
+  <rect class="box" x="676" y="220" width="132" height="58"/>
+  <text class="small" x="696" y="254">vWAN Hub</text>
+  <rect class="box spoke" x="610" y="322" width="110" height="52"/>
+  <text class="small" x="638" y="354">Branch</text>
+  <rect class="box spoke" x="762" y="322" width="110" height="52"/>
+  <text class="small" x="790" y="354">Region</text>
+  <path class="arrow" d="M720 322 L710 278"/>
+  <path class="arrow" d="M762 322 L762 278"/>
+  <text class="small" x="610" y="436">Best when global connectivity needs managed scale.</text>
+
+  <rect class="box ops" x="400" y="238" width="132" height="72"/>
+  <text class="label" x="430" y="270">Decide</text>
+  <text class="small" x="420" y="292">Control vs scale</text>
+  <path class="arrow" d="M372 274 H400"/>
+  <path class="arrow" d="M532 274 H586"/>
+
+  <text class="small" x="48" y="512">Ask about operational model, regional footprint, routing complexity, security inspection, and future branch growth.</text>
+</svg>

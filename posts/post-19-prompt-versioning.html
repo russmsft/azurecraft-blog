@@ -1,0 +1,44 @@
+<article class="article">
+  <p class="meta">GenAIOps | Published June 2026</p>
+  <h1>Prompt Versioning and Deployment Gates</h1>
+  <p class="intro">System prompts are production code. A single change to a prompt can shift model behavior, degrade output quality, or break downstream parsing logic, yet teams routinely edit prompts directly in the Foundry portal with no review process and no rollback plan. Treating prompt changes with the same rigor as software changes is not optional for production AI systems; it is the baseline for safe operation.</p>
+
+  <h2>Why Prompts Need Version Control</h2>
+  <p>Every system prompt, few-shot example set, and retrieval configuration is an input that shapes production output. Unlike application code, prompt changes have no compile-time check and can introduce regressions that only surface in user-facing quality metrics days later. Version control gives you an audit trail of who changed what and when, the ability to roll back to a known-good state, and a mechanism to compare prompt variants objectively before promotion.</p>
+
+  <h2>Storage Options and Their Tradeoffs</h2>
+  <table>
+    <thead><tr><th>Storage Option</th><th>Strengths</th><th>Weaknesses</th></tr></thead>
+    <tbody>
+      <tr><td>Git repository</td><td>Full history, PR review workflow, branch-based versioning</td><td>Requires a deployment step to push changes to runtime</td></tr>
+      <tr><td>Foundry prompt catalog</td><td>Native versioning, name-plus-version reference in code, side-by-side comparison in Foundry portal</td><td>Requires an active Microsoft Foundry project</td></tr>
+      <tr><td>Azure App Configuration</td><td>Runtime updates without redeployment, per-environment overrides</td><td>No built-in diff or comparison tooling</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Foundry Prompt Catalog</h2>
+  <p>The Foundry prompt catalog stores versioned prompt assets within a Microsoft Foundry project. Each asset carries a name and an integer version. Application code references prompts by name and version, making the active prompt explicit in source control and auditable in deployment logs. The Foundry portal provides a comparison view so you can diff two versions side by side before deciding which one to promote.</p>
+
+  <h2>The Deployment Gate Pattern</h2>
+  <p>Before any prompt version reaches production, it must pass a deployment gate. Run the candidate prompt against a fixed evaluation set using the Azure AI Evaluation SDK, score the results across groundedness, relevance, and coherence, and compare those scores to the stored baseline for the current production prompt. The gate blocks promotion if any metric regresses beyond the configured tolerance. This is identical to the software release gate pattern and it applies without modification to prompt changes.</p>
+
+  <h2>What Falls Under Version Control</h2>
+  <p>Prompt versioning covers more than the system message text. The complete set of inputs that must be tracked includes:</p>
+  <ul>
+    <li>System prompt and user prompt templates</li>
+    <li>Few-shot examples and their ordering</li>
+    <li>Retrieval parameters: top-k, chunk size, and embedding model name with version</li>
+    <li>Model deployment name and target API version</li>
+    <li>Output parsing logic and structured output schemas</li>
+  </ul>
+
+  <h2>CI Integration with GitHub Actions</h2>
+  <p>Wire evaluation runs into your pull request workflow using GitHub Actions. On every PR that touches a prompt asset or retrieval configuration, a workflow step invokes the Azure AI Evaluation SDK against the eval set and publishes a structured results summary as a PR comment. The workflow fails the required check if regression is detected. A failing check blocks merge without requiring a manual reviewer to catch the issue, which means the gate holds even under release pressure.</p>
+
+  <h2>A/B Testing Before Full Rollout</h2>
+  <p>For high-risk prompt changes where offline eval scores are close to baseline, use shadow deployment or traffic splitting to validate in production before full rollout. Route a small percentage of live traffic to the new prompt version, collect answer quality telemetry from both variants in parallel, and compare distributions before committing to the switch. The Azure AI Evaluation SDK supports online evaluation against live traffic logs, which feeds this comparison directly.</p>
+
+  <div class="article-callout">
+    <strong>Key principle:</strong> A prompt change without an eval run is a production change without a test. Treat it as such.
+  </div>
+</article>

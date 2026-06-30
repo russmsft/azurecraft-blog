@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 340" fill="none">
+  <rect width="800" height="340" rx="12" fill="#15212f"/>
+
+  <!-- Title -->
+  <text x="400" y="36" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="18" font-weight="700" fill="#ffffff">GenAI Governance &amp; Team Model</text>
+
+  <!-- Roles row -->
+  <text x="400" y="68" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="12" font-weight="700" fill="#94a3b8">KEY ROLES</text>
+
+  <rect x="30" y="82" width="140" height="48" rx="6" fill="#1d4ed8"/>
+  <text x="100" y="106" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="11" font-weight="700" fill="#ffffff">Use Case Owner</text>
+  <text x="100" y="122" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="9" fill="#93c5fd">Outcome &amp; quality</text>
+
+  <rect x="185" y="82" width="140" height="48" rx="6" fill="#0f766e"/>
+  <text x="255" y="106" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="11" font-weight="700" fill="#ffffff">Platform Team</text>
+  <text x="255" y="122" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="9" fill="#99f6e4">Shared services</text>
+
+  <rect x="340" y="82" width="140" height="48" rx="6" fill="#4f46e5"/>
+  <text x="410" y="106" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="11" font-weight="700" fill="#ffffff">Engineering</text>
+  <text x="410" y="122" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="9" fill="#c7d2fe">Build &amp; deploy</text>
+
+  <rect x="495" y="82" width="140" height="48" rx="6" fill="#a15c00"/>
+  <text x="565" y="106" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="11" font-weight="700" fill="#ffffff">Operations</text>
+  <text x="565" y="122" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="9" fill="#fde68a">Monitor &amp; support</text>
+
+  <rect x="650" y="82" width="120" height="48" rx="6" fill="#b91c1c"/>
+  <text x="710" y="106" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="11" font-weight="700" fill="#ffffff">Governance</text>
+  <text x="710" y="122" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="9" fill="#fecaca">Policy &amp; compliance</text>
+
+  <!-- Controls grid -->
+  <text x="400" y="162" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="12" font-weight="700" fill="#94a3b8">GOVERNANCE CONTROLS</text>
+
+  <rect x="30" y="178" width="175" height="44" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="42" y="204" font-family="Segoe UI, sans-serif" font-size="10" fill="#e2e8f0">🔒 Project isolation</text>
+
+  <rect x="215" y="178" width="175" height="44" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="227" y="204" font-family="Segoe UI, sans-serif" font-size="10" fill="#e2e8f0">🛡️ Least-privilege access</text>
+
+  <rect x="400" y="178" width="175" height="44" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="412" y="204" font-family="Segoe UI, sans-serif" font-size="10" fill="#e2e8f0">🔄 Environment separation</text>
+
+  <rect x="585" y="178" width="185" height="44" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="597" y="204" font-family="Segoe UI, sans-serif" font-size="10" fill="#e2e8f0">📋 Versioned prompts &amp; config</text>
+
+  <rect x="30" y="232" width="175" height="44" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="42" y="258" font-family="Segoe UI, sans-serif" font-size="10" fill="#e2e8f0">✅ Evaluation gates</text>
+
+  <rect x="215" y="232" width="175" height="44" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="227" y="258" font-family="Segoe UI, sans-serif" font-size="10" fill="#e2e8f0">📝 Audit logs</text>
+
+  <rect x="400" y="232" width="175" height="44" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="412" y="258" font-family="Segoe UI, sans-serif" font-size="10" fill="#e2e8f0">👤 Human approval (high-risk)</text>
+
+  <rect x="585" y="232" width="185" height="44" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="597" y="258" font-family="Segoe UI, sans-serif" font-size="10" fill="#e2e8f0">⚖️ Responsible AI review</text>
+
+  <!-- Bottom message -->
+  <rect x="200" y="292" width="400" height="32" rx="6" fill="#166534"/>
+  <text x="400" y="313" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="11" font-weight="700" fill="#ffffff">Goal: make safe scale possible, not slow innovation</text>
+</svg>

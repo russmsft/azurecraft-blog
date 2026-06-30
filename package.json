@@ -5,12 +5,13 @@
   "description": "AzureCraft static blog hosted on Azure App Service",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node --preserve-symlinks-main server.js",
+    "dev": "node --preserve-symlinks-main server.js",
+    "generate:og": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/generate-og-images.ps1",
+    "check": "node --preserve-symlinks-main scripts/check-site.js",
+    "test": "npm run check"
   },
   "engines": {
     "node": ">=18"
-  },
-  "dependencies": {
-    "express": "^4.19.2"
   }
 }

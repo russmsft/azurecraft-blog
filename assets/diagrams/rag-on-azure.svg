@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" role="img" aria-labelledby="title desc">
+  <title id="title">Retrieval augmented generation on Azure</title>
+  <desc id="desc">Diagram showing a user, application, API gateway, orchestrator, Azure AI Search, Azure OpenAI, safety checks, telemetry, and feedback.</desc>
+  <defs>
+    <style>
+      .bg { fill: #f8fafc; }
+      .box { fill: #ffffff; stroke: #cbd5e1; stroke-width: 2; rx: 8; }
+      .app { fill: #e0f2fe; stroke: #0284c7; }
+      .data { fill: #ecfdf5; stroke: #0f766e; }
+      .ai { fill: #fdf2f8; stroke: #b83280; }
+      .ops { fill: #fff7ed; stroke: #c2410c; }
+      .title { fill: #0f172a; font: 700 24px Segoe UI, Arial, sans-serif; }
+      .label { fill: #1f2937; font: 700 17px Segoe UI, Arial, sans-serif; }
+      .small { fill: #475569; font: 14px Segoe UI, Arial, sans-serif; }
+      .arrow { stroke: #64748b; stroke-width: 2.5; fill: none; marker-end: url(#arrow); }
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
+    </marker>
+  </defs>
+  <rect class="bg" width="960" height="560" rx="12"/>
+  <text class="title" x="48" y="52">RAG on Azure</text>
+  <text class="small" x="48" y="80">A production pattern for grounded AI answers with controls, telemetry, and feedback.</text>
+
+  <rect class="box app" x="48" y="152" width="150" height="74"/>
+  <text class="label" x="78" y="185">User App</text>
+  <text class="small" x="74" y="207">Web, Teams, API</text>
+
+  <rect class="box app" x="260" y="152" width="150" height="74"/>
+  <text class="label" x="286" y="185">Gateway</text>
+  <text class="small" x="286" y="207">Auth, policy, logs</text>
+
+  <rect class="box ai" x="472" y="152" width="170" height="74"/>
+  <text class="label" x="506" y="185">Orchestrator</text>
+  <text class="small" x="500" y="207">Prompt, tools, flow</text>
+
+  <rect class="box data" x="704" y="102" width="170" height="74"/>
+  <text class="label" x="740" y="135">AI Search</text>
+  <text class="small" x="732" y="157">Indexes, chunks</text>
+
+  <rect class="box ai" x="704" y="242" width="170" height="74"/>
+  <text class="label" x="738" y="275">Model</text>
+  <text class="small" x="724" y="297">Azure OpenAI</text>
+
+  <rect class="box ops" x="260" y="360" width="170" height="74"/>
+  <text class="label" x="298" y="393">Safety</text>
+  <text class="small" x="286" y="415">Filters, policy</text>
+
+  <rect class="box ops" x="500" y="360" width="170" height="74"/>
+  <text class="label" x="530" y="393">Telemetry</text>
+  <text class="small" x="526" y="415">Quality, cost, ops</text>
+
+  <rect class="box data" x="704" y="360" width="170" height="74"/>
+  <text class="label" x="740" y="393">Feedback</text>
+  <text class="small" x="730" y="415">Evals, review</text>
+
+  <path class="arrow" d="M198 189 H260"/>
+  <path class="arrow" d="M410 189 H472"/>
+  <path class="arrow" d="M642 176 C670 150 680 139 704 139"/>
+  <path class="arrow" d="M642 204 C670 236 680 279 704 279"/>
+  <path class="arrow" d="M557 226 V360"/>
+  <path class="arrow" d="M430 397 H500"/>
+  <path class="arrow" d="M670 397 H704"/>
+  <path class="arrow" d="M704 279 C625 322 504 338 430 372"/>
+
+  <text class="small" x="48" y="512">Start simple, then add gateway, evaluation, and feedback controls as the workload moves toward production.</text>
+</svg>

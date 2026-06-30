@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" fill="none">
+  <rect width="800" height="400" rx="12" fill="#15212f"/>
+
+  <!-- Title -->
+  <text x="400" y="40" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="18" font-weight="700" fill="#ffffff">GenAIOps Lifecycle</text>
+
+  <!-- Circular arrow hint -->
+  <path d="M400 80 Q580 80 580 200 Q580 320 400 320 Q220 320 220 200 Q220 80 400 80" stroke="#334155" stroke-width="2" stroke-dasharray="6 4" fill="none"/>
+
+  <!-- Build -->
+  <rect x="345" y="68" width="110" height="52" rx="8" fill="#1d4ed8"/>
+  <text x="400" y="90" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="13" font-weight="700" fill="#ffffff">Build</text>
+  <text x="400" y="108" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="9" fill="#93c5fd">Prompts · Agents · RAG</text>
+
+  <!-- Evaluate -->
+  <rect x="530" y="128" width="110" height="52" rx="8" fill="#0f766e"/>
+  <text x="585" y="150" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="13" font-weight="700" fill="#ffffff">Evaluate</text>
+  <text x="585" y="168" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="9" fill="#99f6e4">Quality · Safety · Evals</text>
+
+  <!-- Deploy -->
+  <rect x="530" y="228" width="110" height="52" rx="8" fill="#b83280"/>
+  <text x="585" y="250" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="13" font-weight="700" fill="#ffffff">Deploy</text>
+  <text x="585" y="268" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="9" fill="#fbcfe8">CI/CD · Gateway · Release</text>
+
+  <!-- Monitor -->
+  <rect x="345" y="288" width="110" height="52" rx="8" fill="#a15c00"/>
+  <text x="400" y="310" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="13" font-weight="700" fill="#ffffff">Monitor</text>
+  <text x="400" y="328" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="9" fill="#fde68a">Health · Tokens · Feedback</text>
+
+  <!-- Govern -->
+  <rect x="160" y="228" width="110" height="52" rx="8" fill="#b91c1c"/>
+  <text x="215" y="250" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="13" font-weight="700" fill="#ffffff">Govern</text>
+  <text x="215" y="268" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="9" fill="#fecaca">Identity · RBAC · Audit</text>
+
+  <!-- Optimise -->
+  <rect x="160" y="128" width="110" height="52" rx="8" fill="#166534"/>
+  <text x="215" y="150" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="13" font-weight="700" fill="#ffffff">Optimise</text>
+  <text x="215" y="168" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="9" fill="#bbf7d0">Cost · Models · Caching</text>
+
+  <!-- Arrows -->
+  <line x1="455" y1="94" x2="530" y2="140" stroke="#475569" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="585" y1="180" x2="585" y2="228" stroke="#475569" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="530" y1="260" x2="455" y2="305" stroke="#475569" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="345" y1="314" x2="270" y2="270" stroke="#475569" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="215" y1="228" x2="215" y2="180" stroke="#475569" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="270" y1="142" x2="345" y2="94" stroke="#475569" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+  <!-- Center label -->
+  <text x="400" y="196" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="11" fill="#94a3b8">Continuous</text>
+  <text x="400" y="212" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="11" fill="#94a3b8">Improvement</text>
+
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#475569"/>
+    </marker>
+  </defs>
+</svg>

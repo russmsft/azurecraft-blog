@@ -1,0 +1,40 @@
+<article class="article">
+  <p class="meta">GenAIOps | Published June 2026</p>
+  <h1>Continuous Evaluation Pipelines</h1>
+  <p class="intro">A static eval set run manually before a major release is not a quality control system; it is a spot check. Production AI systems change continuously through prompt edits, RAG pipeline tuning, model version upgrades, and knowledge base refreshes, and each of those changes can silently degrade output quality unless an automated evaluation pipeline runs on every change and blocks promotion when scores drop.</p>
+
+  <h2>The Problem with Manual Evaluation</h2>
+  <p>Eval sets are a starting point. Their value is only realized when they run automatically on every relevant change. Without automation, teams accumulate prompt edits, retrieval tuning decisions, and model version updates and run evals infrequently, making it impossible to attribute a quality regression to a specific commit. Continuous evaluation closes this gap by tying quality measurement to the same workflow that controls code promotion.</p>
+
+  <h2>Pipeline Structure</h2>
+  <ul>
+    <li>Trigger: pull request targeting a prompt asset, RAG configuration, model deployment reference, or knowledge base content</li>
+    <li>Evaluation run: execute the full eval suite against the candidate change using the Azure AI Evaluation SDK in batch mode</li>
+    <li>Scoring and comparison: score each evaluator metric and compare results against the stored baseline for the current production configuration</li>
+    <li>Gate or alert: block the pull request merge if any metric regresses beyond the configured tolerance; send an alert on scheduled runs that detect drift</li>
+  </ul>
+
+  <h2>Azure AI Evaluation SDK</h2>
+  <p>The Azure AI Evaluation SDK provides built-in evaluators covering the quality dimensions most relevant to RAG and completion workloads: groundedness measures whether the answer follows from the retrieved context, relevance measures whether the answer addresses the user question, coherence assesses logical structure, fluency checks grammatical correctness, and F1 provides token-level overlap against a reference answer. Custom evaluators extend coverage for domain-specific requirements such as citation format compliance, structured output schema adherence, or safety policy checks.</p>
+
+  <h2>GitHub Actions Integration</h2>
+  <p>Configure the evaluation pipeline as a required status check on pull requests targeting your main or release branches. A GitHub Actions workflow step invokes the Azure AI Evaluation SDK, writes results to a JSON artifact stored in the run, and a subsequent step posts a structured summary as a PR comment showing each evaluator metric against its baseline. Configure branch protection rules to block merge when the workflow step fails. The block is automatic and does not depend on a reviewer catching the issue manually.</p>
+
+  <h2>Baseline Management</h2>
+  <p>A regression gate requires a stored baseline to compare against. Maintain a baseline file per eval set in your repository that records the accepted score for each evaluator metric after the last reviewed and approved change. Update the baseline explicitly when a prompt change intentionally trades one metric for another and that tradeoff has been reviewed and accepted. Run the same eval suite on a schedule against the production deployment to detect regressions that did not originate from a code change, such as upstream model behavior updates or knowledge base drift.</p>
+
+  <h2>What to Evaluate Continuously</h2>
+  <ul>
+    <li>System prompt changes and few-shot example updates in the Foundry prompt catalog</li>
+    <li>RAG pipeline configuration changes: chunk size, retrieval count, and embedding model version</li>
+    <li>Model deployment version upgrades, including minor version bumps</li>
+    <li>Knowledge base refreshes that materially change the retrievable content available to the model</li>
+  </ul>
+
+  <h2>The Telemetry Feedback Loop</h2>
+  <p>Close the feedback loop between production telemetry and eval set coverage. When production answer health monitoring flags low-quality responses, add those cases as new entries in the eval set. This expands coverage continuously based on real failure modes observed in production rather than only failure modes anticipated during initial design. Microsoft Foundry tracks evaluation runs associated with a project, allowing you to compare run results across time and surface regressions in the Foundry portal without querying raw logs.</p>
+
+  <div class="article-callout">
+    <strong>Key principle:</strong> An eval pipeline without a gate is a dashboard. An eval pipeline with a gate is a quality control system.
+  </div>
+</article>

@@ -1,0 +1,41 @@
+<article class="article">
+  <p class="meta">Security | Published June 2026</p>
+  <h1>Managed Identity for AI: No API Keys, Ever</h1>
+  <p class="intro">API keys are the most common security debt in AI workloads. They get committed to repositories, included in logs, shared across environments, and never rotated. Managed identity eliminates the key entirely. The identity is attached to the compute resource, not stored anywhere, and Azure handles credential rotation automatically. For every Azure AI service that supports managed identity - which is all of them - there is no justification for using a key in production.</p>
+
+  <h2>Why API Keys Are Dangerous</h2>
+  <p>An API key is a static credential with no expiry enforcement, no rotation guarantee, and no per-call identity. If it appears in a log, a repository, an environment variable file, or a container image layer, the blast radius is the entire deployment it was issued for. Keys are also shared across environments by default unless someone explicitly issues separate keys per environment - and many teams do not. Managed identity replaces all of this with a per-resource cryptographic identity that Azure issues and rotates automatically.</p>
+
+  <h2>System-Assigned vs User-Assigned</h2>
+  <table>
+    <thead><tr><th>Type</th><th>Lifecycle</th><th>When to Use</th></tr></thead>
+    <tbody>
+      <tr><td>System-assigned</td><td>Tied to the resource - deleted when the resource is deleted</td><td>Simple cases where one compute resource calls one AI service; lifecycle coupling is acceptable</td></tr>
+      <tr><td>User-assigned</td><td>Independent resource - survives compute deletion and can be shared</td><td>Multiple compute resources calling the same AI service; blue/green deployment patterns; lifecycle independence required</td></tr>
+    </tbody>
+  </table>
+  <p>For most AI production workloads, user-assigned is the better default. When you redeploy a Container App or rotate a Function App instance, the identity persists and role assignments survive. You do not need to re-grant RBAC after every deployment.</p>
+
+  <h2>DefaultAzureCredential and the Credential Chain</h2>
+  <p>DefaultAzureCredential is the correct client-side pattern for application code. It tries credential sources in order: environment variables, workload identity federation, managed identity, Azure CLI, Visual Studio Code, and the Azure Developer CLI. The same code works locally using your az login session and in production using managed identity - no code branch, no environment variable flag, no conditional credential selection.</p>
+  <p>The only setup required in code is removing the key-based client constructor and replacing it with a DefaultAzureCredential-based one. For the Azure AI SDKs, that means passing a credential object rather than an API key string to the client constructor.</p>
+
+  <h2>RBAC Roles for AI Workloads</h2>
+  <ul>
+    <li><strong>Cognitive Services OpenAI User</strong>: call inference endpoints; the minimum role for applications calling Foundry model deployments</li>
+    <li><strong>Azure AI Developer</strong>: create and manage Foundry resources within a project; needed for applications that create agent threads or manage evaluations</li>
+    <li><strong>Search Index Data Reader</strong>: query Azure AI Search indexes; for application components that retrieve grounding documents</li>
+    <li><strong>Search Index Data Contributor</strong>: read and write index data; for indexing pipelines that push documents into AI Search</li>
+    <li><strong>Storage Blob Data Reader</strong>: read from blob storage; for document ingestion pipelines pulling source files</li>
+  </ul>
+  <p>Assign roles at the smallest scope that covers the requirement. A Container App that only calls a single Foundry deployment should have Cognitive Services OpenAI User on that deployment, not on the hub or subscription.</p>
+
+  <h2>Wiring Managed Identity in Practice</h2>
+  <p><strong>Container Apps:</strong> assign a user-assigned managed identity to the Container App environment or individual app, grant that identity the required RBAC roles on the target AI resources, and use DefaultAzureCredential in application code. No secrets, no environment variables containing credentials.</p>
+  <p><strong>AKS:</strong> use Azure AD Workload Identity. Federate a Kubernetes service account to an Azure managed identity, annotate pods with the service account, and DefaultAzureCredential resolves the workload identity token automatically at runtime.</p>
+  <p><strong>Local development:</strong> run az login before starting your application. DefaultAzureCredential picks up the CLI session. Never use production keys locally; if a developer needs to test against a production model deployment, grant their personal Entra identity the required role with an expiry date.</p>
+
+  <div class="article-callout">
+    <strong>Key principle:</strong> If you have an API key in a Key Vault secret being injected into an environment variable, you have a managed identity migration to do.
+  </div>
+</article>

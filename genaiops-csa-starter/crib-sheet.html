@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GenAIOps One-Page Crib Sheet | AzureCraft</title>
+  <meta name="description" content="A concise reference sheet for GenAIOps lifecycle stages, key soundbites, and discovery questions for Cloud Solution Architects." />
+  <meta property="og:title" content="GenAIOps One-Page Crib Sheet" />
+  <meta property="og:description" content="A concise reference for Cloud Solution Architects covering the GenAIOps lifecycle, discovery questions, and practical soundbites." />
+  <meta property="og:type" content="article" />
+  <meta property="og:image" content="https://www.rbcloud.co.uk/assets/social/genaiops-og.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="stylesheet" href="../css/styles.css" />
+</head>
+<body>
+<a class="skip-link" href="#post-content">Skip to article</a>
+<div id="reading-progress" aria-hidden="true"></div>
+
+<header class="site-header">
+  <nav class="site-nav" aria-label="Primary navigation">
+    <a class="brand" href="../index.html" aria-label="AzureCraft home">
+      <span class="brand-mark">AC</span>
+      <span>
+        <strong>AzureCraft</strong>
+        <small>Practical Azure architecture</small>
+      </span>
+    </a>
+    <div class="nav-links">
+      <a href="../articles/">Articles</a>
+      <a href="../patterns/">Patterns</a>
+      <a href="./">GenAIOps</a>
+      <a href="../index.html#resources">Resources</a>
+    </div>
+  </nav>
+</header>
+
+<main class="article-shell" id="post-content">
+  <article class="article">
+    <p class="meta">GenAIOps | Quick Reference</p>
+    <h1>GenAIOps CSA One-Page Crib Sheet</h1>
+    <p class="intro">GenAIOps turns generative AI from experiments into operated enterprise services. Use this quick reference to anchor customer conversations around lifecycle stages, quality, governance, and practical delivery decisions.</p>
+
+    <figure>
+      <img src="../assets/diagrams/genaiops-lifecycle.svg" alt="GenAIOps lifecycle diagram showing Build, Evaluate, Deploy, Monitor, Govern, Optimise" />
+      <figcaption>The six-stage GenAIOps lifecycle at a glance.</figcaption>
+    </figure>
+
+    <h2>Lifecycle</h2>
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Stage</th>
+          <th scope="col">Remember</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row">Build</th>
+          <td>Prompts, agents, retrieval, orchestration, tools.</td>
+        </tr>
+        <tr>
+          <th scope="row">Evaluate</th>
+          <td>Groundedness, relevance, coherence, safety, task success.</td>
+        </tr>
+        <tr>
+          <th scope="row">Deploy</th>
+          <td>Managed endpoints, CI/CD, gateway, release controls.</td>
+        </tr>
+        <tr>
+          <th scope="row">Monitor</th>
+          <td>Latency, errors, tokens, feedback, safety events, answer quality.</td>
+        </tr>
+        <tr>
+          <th scope="row">Govern</th>
+          <td>Identity, RBAC, audit, responsible AI, project isolation.</td>
+        </tr>
+        <tr>
+          <th scope="row">Optimise</th>
+          <td>Cost, model choice, context design, caching, continuous improvement.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>Five useful soundbites</h2>
+    <ol>
+      <li>The shift is from prompt experimentation to operated AI services.</li>
+      <li>Evaluation is the bridge between demo confidence and production confidence.</li>
+      <li>Monitor system health and answer health.</li>
+      <li>Agents need boundaries: allowed tools, allowed data, allowed actions.</li>
+      <li>Cost control starts with visibility, quotas, and model selection.</li>
+    </ol>
+
+    <h2>If asked about hallucination</h2>
+    <p>Use trusted retrieval, citations, evaluation, prompt constraints, monitoring, user feedback, and human review for high-risk outcomes.</p>
+
+    <h2>If asked about cost</h2>
+    <p>Track token use, choose models by task, reduce unnecessary context, cache where appropriate, enforce quotas, and measure cost per successful outcome.</p>
+
+    <h2>If asked where to start</h2>
+    <p>Start with one bounded use case, approved data sources, clear quality criteria, basic monitoring, responsible access control, and a decision point for scale.</p>
+
+    <h2>Discovery questions</h2>
+    <ul>
+      <li>What outcome would make this worth scaling?</li>
+      <li>Which sources are trusted enough to ground answers?</li>
+      <li>What happens when the AI is wrong or uncertain?</li>
+      <li>Who owns quality after go-live?</li>
+      <li>How will usage and cost be tracked?</li>
+    </ul>
+
+    <div class="article-callout"><strong>Tip:</strong> Print this page or save as PDF for a quick desk reference during customer conversations.</div>
+
+    <div class="actions" style="margin-top:28px"><a class="button primary" href="downloads/Public%20GenAIOps%20One%20Page%20Crib%20Sheet.pdf">Download PDF</a><a class="button" href="downloads/genaiops-one-page-crib-sheet.md">View markdown</a></div>
+  </article>
+</main>
+
+<footer class="site-footer">
+  <p>AzureCraft, 2026. Practical Azure architecture, without the noise.</p>
+  <a href="../index.html">Home</a>
+  <a href="../articles/">Articles</a>
+  <a href="../patterns/">Patterns</a>
+</footer>
+
+<script src="../js/main.js"></script>
+<script src="../js/interactions.js"></script>
+</body>
+</html>

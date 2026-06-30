@@ -1,0 +1,58 @@
+<article class="article">
+  <p class="meta">Networking | Published June 2026</p>
+  <h1>Hub-Spoke vs Virtual WAN: A Practical Decision</h1>
+  <p class="intro">Most Azure network conversations eventually reach the same question: should this platform use a traditional hub-spoke model or Azure Virtual WAN? The right answer depends less on fashion and more on operating model, routing complexity, security inspection, and future scale.</p>
+
+  <figure>
+    <img src="assets/diagrams/hub-spoke-vwan.svg" alt="Hub-spoke and Azure Virtual WAN decision diagram" />
+    <figcaption>Hub-spoke gives custom control; Virtual WAN gives managed global connectivity.</figcaption>
+  </figure>
+
+  <h2>When hub-spoke fits</h2>
+  <ul>
+    <li>The network team wants direct control over routing, firewall placement, and inspection paths.</li>
+    <li>Most workloads live in a small number of regions.</li>
+    <li>The platform has mature skills for network virtual appliances, route tables, and operational ownership.</li>
+    <li>Custom security patterns matter more than managed connectivity convenience.</li>
+  </ul>
+
+  <h2>When Virtual WAN fits</h2>
+  <ul>
+    <li>The organization needs managed branch, site-to-site, point-to-site, and inter-region connectivity at scale.</li>
+    <li>Multiple regions or many branches make custom routing hard to operate.</li>
+    <li>The platform team wants a more standardized global connectivity service.</li>
+    <li>Speed of onboarding matters more than bespoke network topology.</li>
+  </ul>
+
+  <h2>Decision questions</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Question</th>
+        <th>Why it matters</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>How many regions and branches are expected?</td>
+        <td>Scale changes the operational burden of custom routing.</td>
+      </tr>
+      <tr>
+        <td>Who owns firewall and route operations?</td>
+        <td>Ownership determines whether custom control is useful or risky.</td>
+      </tr>
+      <tr>
+        <td>How standard are workload connectivity needs?</td>
+        <td>Highly repeatable connectivity often benefits from managed patterns.</td>
+      </tr>
+      <tr>
+        <td>What is the migration path?</td>
+        <td>Existing hub-spoke estates may need phased coexistence rather than a big-bang change.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="article-callout">
+    <strong>Practical rule:</strong> choose the model the team can operate reliably, not just the one that looks neatest on a diagram.
+  </div>
+</article>
