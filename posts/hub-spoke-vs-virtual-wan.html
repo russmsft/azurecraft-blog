@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hub-and-Spoke vs Azure Virtual WAN — AzureCraft</title>
+  <meta name="description" content="A practical, diagram-first comparison of hub-and-spoke and Azure Virtual WAN connectivity topologies — when to choose each, and how to decide." />
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Hub-and-Spoke vs Azure Virtual WAN" />
+  <meta property="og:description" content="Choosing an Azure connectivity topology that scales — explained diagram-first." />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="stylesheet" href="../css/styles.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="reading-progress" aria-hidden="true"></div>
+
+<header class="site-header">
+  <div class="container site-nav">
+    <a class="brand" href="../index.html">
+      <span class="brand-mark">AC</span>
+      <span>
+        <span class="brand-text-title">AzureCraft</span>
+        <span class="brand-text-sub">Infra · Data &amp; AI · Modern Apps</span>
+      </span>
+    </a>
+    <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+    <nav class="site-nav__links" aria-label="Primary">
+      <a href="../index.html">Home</a>
+      <a href="../index.html#posts">Articles</a>
+      <a href="../index.html#roadmap">Roadmap</a>
+      <a href="../about.html">About</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="article-wrap">
+
+  <div class="article-header">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a> /
+      <a href="../categories/infrastructure.html">Infrastructure</a> /
+      Hub-and-Spoke vs Virtual WAN
+    </nav>
+    <span class="tag tag--infra">Infrastructure</span>
+    <h1>Hub-and-Spoke vs Azure Virtual WAN</h1>
+    <div class="article-meta">
+      <span>By the AzureCraft team</span>
+      <span class="dot">•</span>
+      <time datetime="2026-04-05">April 2026</time>
+      <span class="dot">•</span>
+      <span>10 min read</span>
+    </div>
+  </div>
+
+  <article class="prose">
+    <p>Connectivity is the part of a <a href="azure-landing-zones.html">landing zone</a> that platform teams should own and almost never hand out. The first big decision is the <strong>topology</strong>: do you build and operate a classic <strong>hub-and-spoke</strong> network yourself, or let Microsoft run the backbone for you with <strong>Azure Virtual WAN</strong>? Both are valid. The right answer depends on scale, operational appetite, and how much routing control you actually need.</p>
+
+    <blockquote>Short version: hub-and-spoke gives you maximum control and minimum magic. Virtual WAN gives you managed scale and global reach with fewer knobs. Most organizations should start with one hub and only reach for Virtual WAN when scale or geography forces it.</blockquote>
+
+    <h2>The two topologies at a glance</h2>
+
+    <h3>Hub-and-spoke</h3>
+    <p>You deploy a <strong>hub virtual network</strong> that hosts shared services — Azure Firewall or an NVA, DNS, ExpressRoute/VPN gateways — and peer each workload VNet (a “spoke”) into it. You own the route tables, the peering, and the egress path. It is well understood, transparent, and infinitely tunable. It is also yours to operate: every new region or large-scale spoke count means more peering and routing to manage by hand (or by code).</p>
+
+    <h3>Azure Virtual WAN</h3>
+    <p>Virtual WAN is a Microsoft-managed networking service. You create <strong>virtual hubs</strong> (one per region), and Azure handles the hub-to-hub backbone, transit routing, and branch/VPN/ExpressRoute aggregation. Spokes connect to a virtual hub and get any-to-any connectivity without you building a full mesh of peerings. You trade some routing control for managed scale and global transit.</p>
+
+    <figure class="figure">
+      <pre class="mermaid" aria-label="Side-by-side comparison of hub-and-spoke and Virtual WAN topologies">
+flowchart LR
+  subgraph HS["Hub-and-Spoke (self-managed)"]
+    direction TB
+    H["Hub VNet<br/>Firewall · DNS · Gateway"]
+    H --- S1["Spoke: Prod"]
+    H --- S2["Spoke: Non-prod"]
+    H --- S3["Spoke: Shared"]
+  end
+  subgraph VW["Virtual WAN (Microsoft-managed)"]
+    direction TB
+    VH["Virtual Hub<br/>(managed routing)"]
+    VH --- V1["Spoke: Prod"]
+    VH --- V2["Spoke: Non-prod"]
+    VH --- BR["Branch / VPN / ER"]
+  end
+      </pre>
+      <figcaption>Left: you operate the hub. Right: Azure operates the hub; you connect spokes and branches.</figcaption>
+    </figure>
+
+    <h2>How to choose</h2>
+    <p>Run your scenario through these five lenses.</p>
+
+    <h3>1. Scale and number of regions</h3>
+    <p>One or two regions and a manageable number of spokes? Hub-and-spoke is simple and cheap. Many regions, global transit, or hundreds of spokes and branch sites? Virtual WAN’s managed any-to-any routing earns its keep and saves you from hand-building a peering mesh.</p>
+
+    <h3>2. Routing control</h3>
+    <p>If you need granular, custom control — specific UDRs, service chaining through multiple NVAs, exotic egress paths — hub-and-spoke gives you every knob. Virtual WAN supports custom route tables, but within a more opinionated, managed model. Heavy bespoke routing leans hub-and-spoke.</p>
+
+    <h3>3. Operational appetite</h3>
+    <p>Hub-and-spoke is more to run: you own gateway scaling, route propagation, and regional expansion. Virtual WAN offloads the backbone to Microsoft. If your platform team is small, the managed option reduces toil.</p>
+
+    <h3>4. Branch and remote connectivity</h3>
+    <p>Connecting lots of physical sites, SD-WAN, or many VPN endpoints is exactly what Virtual WAN was built for — it aggregates branch connectivity natively. A handful of site-to-site tunnels is fine on a classic hub.</p>
+
+    <h3>5. Cost model</h3>
+    <p>Hub-and-spoke costs are mostly the resources you deploy (gateways, firewall, peering egress). Virtual WAN adds hub and connection-unit and data-processing charges. At small scale hub-and-spoke is usually cheaper; at large multi-region scale Virtual WAN can be cheaper <em>per unit of capability</em> once you price in the operational effort it removes.</p>
+
+    <h2>Decision summary</h2>
+    <div class="takeaways">
+      <h2>Quick guide</h2>
+      <ul>
+        <li><strong>Choose hub-and-spoke</strong> for one or few regions, maximum routing control, bespoke NVA chains, or tight cost control at modest scale.</li>
+        <li><strong>Choose Virtual WAN</strong> for many regions, global transit, large spoke/branch counts, or a small team that wants Microsoft to run the backbone.</li>
+        <li><strong>Don’t over-engineer.</strong> A single hub with a firewall and central DNS covers most organizations for a long time.</li>
+        <li><strong>Migration is feasible.</strong> Starting hub-and-spoke and moving to Virtual WAN later is a known path — so optimize for today, not a hypothetical future.</li>
+      </ul>
+    </div>
+
+    <div class="callout callout--tip">
+      <span class="callout__icon">💡</span>
+      <p><strong>Tip:</strong> whichever you pick, define it <em>once</em> in the platform connectivity subscription and let workloads inherit it. Private Endpoints, Private DNS, and egress control should never be a per-team decision.</p>
+    </div>
+
+    <div class="callout callout--note">
+      <span class="callout__icon">🧭</span>
+      <p><strong>Rule of thumb:</strong> let scale and geography make the call. If you can’t articulate a concrete reason you need Virtual WAN, you probably don’t yet — and hub-and-spoke will teach you exactly where the limits are.</p>
+    </div>
+
+    <p>This is the connectivity layer of the foundation covered in <a href="azure-landing-zones.html">Azure Landing Zones: A Practical Architect’s View</a>. Up next in the series: identity foundations for platform teams.</p>
+  </article>
+
+  <nav class="post-nav" aria-label="More posts">
+    <a href="azure-landing-zones.html">← Azure Landing Zones</a>
+    <a href="../categories/infrastructure.html">More Infrastructure →</a>
+  </nav>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <div>
+      <a class="brand" href="../index.html">
+        <span class="brand-mark">AC</span>
+        <span class="brand-text-title">AzureCraft</span>
+      </a>
+      <p style="color: var(--text-muted); margin-top: 0.75rem; max-width: 36ch;">Practical Azure architecture, without the noise.</p>
+    </div>
+    <div>
+      <h4>Topics</h4>
+      <ul>
+        <li><a href="../categories/infrastructure.html">Infrastructure</a></li>
+        <li><a href="../categories/data-ai.html">Data &amp; AI</a></li>
+        <li><a href="../categories/modern-apps.html">Modern Apps</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Site</h4>
+      <ul>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../about.html">About</a></li>
+        <li><a href="../index.html#roadmap">Roadmap</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="site-footer__bottom">
+    <p>© <span data-year>2026</span> AzureCraft. Built as a static site on Azure App Service.</p>
+  </div>
+</footer>
+
+<script src="../js/site.js"></script>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  const dark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  mermaid.initialize({ startOnLoad: true, theme: dark ? "dark" : "default", securityLevel: "strict" });
+</script>
+</body>
+</html>

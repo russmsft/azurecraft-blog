@@ -1,0 +1,10 @@
+# Node
+node_modules/
+npm-debug.log*
+
+# OS / editor temp files
+Thumbs.db
+.DS_Store
+
+# Office lock files
+~$*

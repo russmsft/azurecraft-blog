@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Azure Landing Zones: A Practical Architect’s View — AzureCraft</title>
+  <meta name="description" content="A diagram-first guide to Azure Landing Zones: management group hierarchy, subscription democratization, networking topology, and the guardrails that let teams move fast safely." />
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Azure Landing Zones: A Practical Architect’s View" />
+  <meta property="og:description" content="Management groups, subscriptions, networking, and governance — explained diagram-first." />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="stylesheet" href="../css/styles.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="reading-progress" aria-hidden="true"></div>
+
+<header class="site-header">
+  <div class="container site-nav">
+    <a class="brand" href="../index.html">
+      <span class="brand-mark">AC</span>
+      <span>
+        <span class="brand-text-title">AzureCraft</span>
+        <span class="brand-text-sub">Infra · Data &amp; AI · Modern Apps</span>
+      </span>
+    </a>
+    <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+    <nav class="site-nav__links" aria-label="Primary">
+      <a href="../index.html">Home</a>
+      <a href="../index.html#posts">Articles</a>
+      <a href="../index.html#roadmap">Roadmap</a>
+      <a href="../about.html">About</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="article-wrap">
+
+  <div class="article-header">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a> / <a href="../index.html#posts">Articles</a> / Azure Landing Zones
+    </nav>
+    <span class="tag tag--infra">Infrastructure</span>
+    <h1>Azure Landing Zones: A Practical Architect’s View</h1>
+    <div class="article-meta">
+      <span>By the AzureCraft team</span>
+      <span class="dot">•</span>
+      <time datetime="2026-03-15">March 2026</time>
+      <span class="dot">•</span>
+      <span>9 min read</span>
+    </div>
+  </div>
+
+  <article class="prose">
+    <p>Landing zones are about <strong>enablement, not control</strong>. The whole point is to give application teams a safe, well-governed place to build — so they can move fast <em>without</em> reinventing networking, identity, and policy every time. Done well, a landing zone is invisible to the teams using it. Done badly, it becomes the bottleneck everyone routes around.</p>
+
+    <blockquote>A landing zone is a pre-provisioned, policy-governed environment that a workload can be deployed into on day one — with identity, networking, security, and cost controls already in place.</blockquote>
+
+    <h2>Reference architecture</h2>
+    <p>Start with the picture. The diagram below shows the management group hierarchy, the platform subscriptions that provide shared services, and the workload (application) subscriptions where teams actually build.</p>
+
+    <figure class="figure">
+      <img src="../assets/diagrams/landing-zone-subscriptions.svg"
+           alt="Azure Landing Zone hierarchy showing the root and intermediate management groups, platform subscriptions for identity, management, and connectivity, and separate landing zone subscriptions for production and non-production workloads." />
+      <figcaption>Management group hierarchy with separated platform and workload subscriptions.</figcaption>
+    </figure>
+
+    <h2>The four design areas that matter most</h2>
+    <p>The Cloud Adoption Framework defines eight design areas. In practice, four of them decide whether your landing zone succeeds:</p>
+
+    <h3>1. Resource organization &amp; management groups</h3>
+    <p>Management groups give you a hierarchy to apply policy and access at scale. Keep it shallow and intentional — usually a root, an intermediate group, and a small number of children such as <code>Platform</code>, <code>Landing Zones</code>, <code>Decommissioned</code>, and <code>Sandbox</code>. Resist the urge to model your org chart; model your <em>governance boundaries</em>.</p>
+
+    <div class="callout callout--warn">
+      <span class="callout__icon">⚠️</span>
+      <p><strong>Anti-pattern:</strong> a deep management-group tree mirroring departments. It looks tidy, but policy inheritance becomes impossible to reason about and every reorg triggers a migration.</p>
+    </div>
+
+    <h3>2. Subscription democratization</h3>
+    <p>Treat a subscription as a <strong>unit of management and scale</strong>, not a billing afterthought. Give each significant workload — or each team’s prod and non-prod — its own subscription. This gives you clean RBAC boundaries, independent quota, and blast-radius isolation. Platform services (identity, connectivity, management) live in their own dedicated subscriptions, separate from anything an app team touches.</p>
+
+    <h3>3. Centralized networking</h3>
+    <p>Connectivity is the part teams should almost never own. Centralize it in a platform subscription using one of two topologies:</p>
+    <ul>
+      <li><strong>Hub-and-spoke</strong> — a hub VNet hosts shared services (firewall, DNS, gateways); workload VNets peer into it. Maximum control, more to operate.</li>
+      <li><strong>Azure Virtual WAN</strong> — Microsoft-managed hubs handle routing and connectivity at scale. Less to run, fewer knobs.</li>
+    </ul>
+    <p>Either way, private connectivity (Private Endpoints + Private DNS) and egress control (Azure Firewall or an NVA) are defined once, centrally, and inherited by every workload.</p>
+
+    <h3>4. Governance &amp; guardrails</h3>
+    <p>This is where “enablement, not control” gets real. Use <strong>Azure Policy</strong> to set guardrails — allowed regions, required tags, enforced encryption, denied public IPs — applied at the management-group level so they cascade automatically. The goal is a paved road: the compliant choice is the easy default, and the non-compliant one is blocked or flagged.</p>
+
+    <h2>Key principles</h2>
+    <ul>
+      <li><strong>Clear control vs. workload boundaries.</strong> Platform teams own the guardrails; app teams own what runs inside them.</li>
+      <li><strong>Centralized networking.</strong> One topology, defined once, inherited everywhere.</li>
+      <li><strong>Lightweight governance.</strong> Enough policy to be safe; not so much that teams route around it.</li>
+      <li><strong>Everything as code.</strong> The landing zone is deployed and versioned with Bicep or Terraform — never click-ops.</li>
+    </ul>
+
+    <div class="callout callout--tip">
+      <span class="callout__icon">💡</span>
+      <p><strong>Tip:</strong> start smaller than the full enterprise blueprint. A well-structured set of management groups, a couple of platform subscriptions, baseline policy, and one networking hub will serve most organizations for a long time. Add sophistication when a real requirement demands it.</p>
+    </div>
+
+    <div class="takeaways">
+      <h2>Key takeaways</h2>
+      <ul>
+        <li>A landing zone exists to <strong>enable</strong> teams, not to control them.</li>
+        <li>Keep the management-group hierarchy shallow and governance-driven.</li>
+        <li>Give workloads their own subscriptions for clean isolation.</li>
+        <li>Centralize networking and apply guardrails via policy that inherits down the tree.</li>
+        <li>Deploy the whole thing as code so it’s repeatable and reviewable.</li>
+      </ul>
+    </div>
+
+    <p>Next up: how a modern AI workload lands cleanly on top of this foundation, with private connectivity and governance intact.</p>
+  </article>
+
+  <nav class="post-nav" aria-label="More posts">
+    <a href="welcome.html">← Welcome to AzureCraft</a>
+    <a href="ai-workloads.html">Next: AI Workloads in Landing Zones →</a>
+  </nav>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <div>
+      <a class="brand" href="../index.html">
+        <span class="brand-mark">AC</span>
+        <span class="brand-text-title">AzureCraft</span>
+      </a>
+      <p style="color: var(--text-muted); margin-top: 0.75rem; max-width: 36ch;">Practical Azure architecture, without the noise.</p>
+    </div>
+    <div>
+      <h4>Topics</h4>
+      <ul>
+        <li><a href="../categories/infrastructure.html">Infrastructure</a></li>
+        <li><a href="../categories/data-ai.html">Data &amp; AI</a></li>
+        <li><a href="../categories/modern-apps.html">Modern Apps</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Site</h4>
+      <ul>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../about.html">About</a></li>
+        <li><a href="../index.html#roadmap">Roadmap</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="site-footer__bottom">
+    <p>© <span data-year>2026</span> AzureCraft. Built as a static site on Azure App Service.</p>
+  </div>
+</footer>
+
+<script src="../js/site.js"></script>
+</body>
+</html>

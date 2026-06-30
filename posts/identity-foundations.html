@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Identity Foundations for Platform Teams — AzureCraft</title>
+  <meta name="description" content="A practical, diagram-first guide to identity foundations on Azure: Entra ID tenant design, managed identities over secrets, and Privileged Identity Management for platform teams." />
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Identity Foundations for Platform Teams" />
+  <meta property="og:description" content="Entra ID, managed identities, and PIM — the identity layer of an Azure landing zone, explained diagram-first." />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="stylesheet" href="../css/styles.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="reading-progress" aria-hidden="true"></div>
+
+<header class="site-header">
+  <div class="container site-nav">
+    <a class="brand" href="../index.html">
+      <span class="brand-mark">AC</span>
+      <span>
+        <span class="brand-text-title">AzureCraft</span>
+        <span class="brand-text-sub">Infra · Data &amp; AI · Modern Apps</span>
+      </span>
+    </a>
+    <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+    <nav class="site-nav__links" aria-label="Primary">
+      <a href="../index.html">Home</a>
+      <a href="../index.html#posts">Articles</a>
+      <a href="../index.html#roadmap">Roadmap</a>
+      <a href="../about.html">About</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="article-wrap">
+
+  <div class="article-header">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a> /
+      <a href="../categories/infrastructure.html">Infrastructure</a> /
+      Identity Foundations
+    </nav>
+    <span class="tag tag--infra">Infrastructure</span>
+    <h1>Identity Foundations for Platform Teams</h1>
+    <div class="article-meta">
+      <span>By the AzureCraft team</span>
+      <span class="dot">•</span>
+      <time datetime="2026-04-19">April 2026</time>
+      <span class="dot">•</span>
+      <span>10 min read</span>
+    </div>
+  </div>
+
+  <article class="prose">
+    <p>Identity is the real control plane of the cloud. Networking gets the diagrams and firewalls get the budget, but the boundary an attacker actually probes is <strong>who can do what</strong>. In a <a href="azure-landing-zones.html">landing zone</a>, identity is a platform responsibility: set it up well once, and every workload inherits a secure default. Get it wrong, and you are handing out long-lived secrets and standing admin rights that no firewall can claw back.</p>
+
+    <blockquote>The goal of an identity foundation is simple to state and hard to live up to: no standing privilege, no shared secrets, and every action attributable to a real identity.</blockquote>
+
+    <h2>The three pillars</h2>
+    <p>For platform teams, identity foundations come down to three things: the <strong>tenant and directory design</strong> that everything sits in, <strong>workload identity</strong> (how services authenticate without secrets), and <strong>privileged access</strong> (how humans get admin rights, briefly and accountably).</p>
+
+    <figure class="figure">
+      <pre class="mermaid" aria-label="Identity foundations: Entra ID tenant with human and workload identities and privileged access through PIM">
+flowchart TB
+  T["Entra ID Tenant"] --> H["Human identities<br/>(users &amp; groups)"]
+  T --> W["Workload identities<br/>(apps &amp; services)"]
+  H --> CA["Conditional Access<br/>(MFA · device · risk)"]
+  H --> PIM["Privileged Identity Mgmt<br/>(just-in-time roles)"]
+  PIM --> R["Azure / Entra roles<br/>(time-bound, approved)"]
+  W --> MI["Managed identities"]
+  MI --> RB["RBAC on resources"]
+  W --> KV["Key Vault<br/>(secrets, when unavoidable)"]
+      </pre>
+      <figcaption>Humans authenticate through Conditional Access and elevate via PIM; workloads use managed identities instead of secrets.</figcaption>
+    </figure>
+
+    <h2>1. Tenant &amp; directory design</h2>
+    <p>Your Entra ID tenant is the root of trust for the whole estate. A few decisions here shape everything downstream:</p>
+    <ul>
+      <li><strong>One production tenant, by default.</strong> Resist spinning up extra tenants for “separation” — management groups and subscriptions give you isolation within a single tenant. Multiple tenants mean multiple identity perimeters to secure and reconcile. Use a separate tenant only for a genuinely independent boundary (e.g. a regulated subsidiary).</li>
+      <li><strong>Groups, not direct assignments.</strong> Grant access to Entra security groups and assign roles to groups, never to individuals one by one. It keeps access reviewable and reversible.</li>
+      <li><strong>Emergency access (“break-glass”) accounts.</strong> Create two cloud-only global admin accounts excluded from Conditional Access, with long stored credentials, monitored for any sign-in. They are your way back in if MFA or federation breaks.</li>
+    </ul>
+
+    <div class="callout callout--warn">
+      <span class="callout__icon">⚠️</span>
+      <p><strong>Anti-pattern:</strong> a sprawl of tenants created “to keep things separate.” Each one multiplies your Conditional Access policies, break-glass accounts, and audit surface — and cross-tenant access is far clumsier than a clean subscription model in one tenant.</p>
+    </div>
+
+    <h2>2. Workload identity: managed identities over secrets</h2>
+    <p>The fastest way to leak a credential is to have one. Every secret you issue is a string that can be copied into a notebook, a pipeline log, or a chat message. <strong>Managed identities</strong> remove the secret entirely: Azure issues and rotates the credential for you, and the workload simply asks for a token.</p>
+    <ul>
+      <li><strong>Prefer user-assigned managed identities</strong> for anything shared across resources or that should outlive a single resource — they’re reusable and easier to grant RBAC to ahead of time.</li>
+      <li><strong>Use system-assigned</strong> for one-to-one, lifecycle-bound cases where the identity should die with the resource.</li>
+      <li><strong>For workloads outside Azure</strong> (GitHub Actions, AKS, other clouds), use <strong>workload identity federation</strong> so external tokens are exchanged for Entra tokens — no stored secret at all.</li>
+      <li><strong>When a secret is truly unavoidable</strong>, put it in <strong>Key Vault</strong> behind a Private Endpoint and access <em>that</em> with a managed identity. Never in app settings or config files.</li>
+    </ul>
+
+    <div class="callout callout--tip">
+      <span class="callout__icon">💡</span>
+      <p><strong>Tip:</strong> make “no secrets in code” an enforceable policy, not a guideline. Azure Policy can flag resources without managed identities, and secret scanning in your pipeline catches the rest before they merge.</p>
+    </div>
+
+    <h2>3. Privileged access: PIM and just-in-time admin</h2>
+    <p>Standing admin rights are the single juiciest target in your tenant. <strong>Privileged Identity Management (PIM)</strong> turns permanent role assignments into <em>eligible</em> ones: an admin activates the role only when needed, for a limited window, with justification — and optionally approval and MFA at activation.</p>
+    <ul>
+      <li><strong>Make privileged roles eligible, not active.</strong> Global Administrator, Owner, User Access Administrator, and platform roles should all require activation.</li>
+      <li><strong>Time-box and approve.</strong> Short activation windows, with approval for the most sensitive roles, so elevation is deliberate and logged.</li>
+      <li><strong>Review regularly.</strong> Access reviews on privileged groups remove the access people accumulated for a project two quarters ago and never gave back.</li>
+      <li><strong>Pair with Conditional Access.</strong> Require MFA and compliant devices for activation, and block legacy authentication everywhere.</li>
+    </ul>
+
+    <h2>How it lands on the platform</h2>
+    <p>None of this belongs to individual app teams. The platform defines the tenant, the Conditional Access baseline, the break-glass accounts, the PIM configuration, and the managed-identity pattern — and workloads inherit it. An app team’s job is simply to <em>use</em> a managed identity and request the RBAC they need; they never handle a secret or hold standing admin. That division is exactly what a landing zone exists to create.</p>
+
+    <div class="takeaways">
+      <h2>Key takeaways</h2>
+      <ul>
+        <li>Treat identity as the real control plane — design it first, not last.</li>
+        <li>Default to <strong>one tenant</strong>; isolate with subscriptions and groups, not extra directories.</li>
+        <li>Use <strong>managed identities</strong> (and federation) so workloads never hold secrets.</li>
+        <li>Eliminate standing admin with <strong>PIM</strong>: eligible, time-boxed, approved, reviewed.</li>
+        <li>Keep break-glass accounts and a Conditional Access baseline owned by the platform.</li>
+      </ul>
+    </div>
+
+    <p>This is the identity layer of the foundation introduced in <a href="azure-landing-zones.html">Azure Landing Zones: A Practical Architect’s View</a>, and it pairs directly with the private-by-default networking in <a href="hub-spoke-vs-virtual-wan.html">Hub-and-Spoke vs Azure Virtual WAN</a>.</p>
+  </article>
+
+  <nav class="post-nav" aria-label="More posts">
+    <a href="hub-spoke-vs-virtual-wan.html">← Hub-and-Spoke vs Virtual WAN</a>
+    <a href="../categories/infrastructure.html">More Infrastructure →</a>
+  </nav>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <div>
+      <a class="brand" href="../index.html">
+        <span class="brand-mark">AC</span>
+        <span class="brand-text-title">AzureCraft</span>
+      </a>
+      <p style="color: var(--text-muted); margin-top: 0.75rem; max-width: 36ch;">Practical Azure architecture, without the noise.</p>
+    </div>
+    <div>
+      <h4>Topics</h4>
+      <ul>
+        <li><a href="../categories/infrastructure.html">Infrastructure</a></li>
+        <li><a href="../categories/data-ai.html">Data &amp; AI</a></li>
+        <li><a href="../categories/modern-apps.html">Modern Apps</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Site</h4>
+      <ul>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../about.html">About</a></li>
+        <li><a href="../index.html#roadmap">Roadmap</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="site-footer__bottom">
+    <p>© <span data-year>2026</span> AzureCraft. Built as a static site on Azure App Service.</p>
+  </div>
+</footer>
+
+<script src="../js/site.js"></script>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  const dark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  mermaid.initialize({ startOnLoad: true, theme: dark ? "dark" : "default", securityLevel: "strict" });
+</script>
+</body>
+</html>

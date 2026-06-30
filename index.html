@@ -2,36 +2,222 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>AzureCraft Blog</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AzureCraft — Practical Azure Architecture, Without the Noise</title>
+  <meta name="description" content="AzureCraft is a diagram-first blog on practical Azure architecture: landing zones, AI workloads, networking, identity, and modern app design." />
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <link rel="apple-touch-icon" href="assets/favicon.svg" />
+  <link rel="canonical" href="https://azurecraft-blog.azurewebsites.net/" />
+
+  <!-- Open Graph / social -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="AzureCraft" />
+  <meta property="og:title" content="AzureCraft — Practical Azure Architecture, Without the Noise" />
+  <meta property="og:description" content="Diagram-first guidance on Azure landing zones, AI workloads, networking, identity, and modern app design." />
+  <meta name="twitter:card" content="summary_large_image" />
+
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
 
-<header>
-  <h1>AzureCraft</h1>
-  <p>Practical Azure Architecture, Without the Noise</p>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="container site-nav">
+    <a class="brand" href="index.html">
+      <span class="brand-mark">AC</span>
+      <span>
+        <span class="brand-text-title">AzureCraft</span>
+        <span class="brand-text-sub">Infra · Data &amp; AI · Modern Apps</span>
+      </span>
+    </a>
+    <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+    <nav class="site-nav__links" aria-label="Primary">
+      <a href="index.html" aria-current="page">Home</a>
+      <a href="index.html#posts">Articles</a>
+      <a href="index.html#roadmap">Roadmap</a>
+      <a href="about.html">About</a>
+    </nav>
+  </div>
 </header>
 
-<nav>
-  <a href="index.html">Home</a>
-</nav>
+<main id="main">
 
-<main>
-  <article class="post-preview">
-    <h2><a href="post.html?post=post-1-welcome">Welcome to AzureCraft</a></h2>
-    <p>Why this blog exists and what it will cover.</p>
-  </article>
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <span class="hero__eyebrow">Azure architecture, demystified</span>
+      <h1>Practical Azure architecture, without the noise.</h1>
+      <p>AzureCraft turns hard cloud decisions into clear, reusable patterns. Opinionated, diagram-first write-ups on landing zones, AI workloads, networking, and identity — from real-world design work.</p>
+      <div class="hero__actions">
+        <a class="btn btn--primary" href="posts/azure-landing-zones.html">Start with Landing Zones →</a>
+        <a class="btn btn--ghost" href="about.html">What is AzureCraft?</a>
+      </div>
+    </div>
+  </section>
 
-  <article class="post-preview">
-    <h2><a href="post.html?post=post-2-landing-zone">Azure Landing Zones: A Practical Architect’s View</a></h2>
-    <p>A diagram‑first explanation of landing zones.</p>
-  </article>
+  <!-- Posts -->
+  <section class="section" id="posts">
+    <div class="container">
+      <div class="section__head">
+        <div>
+          <h2>Latest articles</h2>
+          <p>Hands-on guidance you can copy into your own architecture.</p>
+        </div>
+      </div>
+
+      <div class="card-grid">
+        <article class="card">
+          <div class="card__meta">
+            <span class="tag tag--infra">Infrastructure</span>
+            <span>· 10 min read</span>
+            <span>· Apr 2026</span>
+          </div>
+          <h3><a href="posts/identity-foundations.html">Identity Foundations for Platform Teams</a></h3>
+          <p>Identity is the real control plane. Entra ID tenant design, managed identities over secrets, and just-in-time admin with PIM — the identity layer of a landing zone.</p>
+          <span class="card__cta">Read the guide →</span>
+        </article>
+
+        <article class="card">
+          <div class="card__meta">
+            <span class="tag tag--infra">Infrastructure</span>
+            <span>· 10 min read</span>
+            <span>· Apr 2026</span>
+          </div>
+          <h3><a href="posts/hub-spoke-vs-virtual-wan.html">Hub-and-Spoke vs Azure Virtual WAN</a></h3>
+          <p>Two ways to wire up Azure connectivity. A practical, diagram-first comparison of when to operate your own hub and when to let Microsoft run the backbone.</p>
+          <span class="card__cta">Read the guide →</span>
+        </article>
+
+        <article class="card">
+          <div class="card__meta">
+            <span class="tag tag--infra">Infrastructure</span>
+            <span>· 9 min read</span>
+            <span>· Mar 2026</span>
+          </div>
+          <h3><a href="posts/azure-landing-zones.html">Azure Landing Zones: A Practical Architect’s View</a></h3>
+          <p>Management groups, subscription democratization, networking topology, and the guardrails that let teams move fast safely — explained diagram-first.</p>
+          <span class="card__cta">Read the guide →</span>
+        </article>
+
+        <article class="card">
+          <div class="card__meta">
+            <span class="tag tag--ai">Data &amp; AI</span>
+            <span>· 8 min read</span>
+            <span>· Mar 2026</span>
+          </div>
+          <h3><a href="posts/ai-workloads.html">AI Workloads in Azure Landing Zones</a></h3>
+          <p>How to land Azure OpenAI, vector search, and AI compute inside an enterprise landing zone — with private networking, governance, and a clear reference architecture.</p>
+          <span class="card__cta">Read the guide →</span>
+        </article>
+
+        <article class="card">
+          <div class="card__meta">
+            <span class="tag tag--apps">Start here</span>
+            <span>· 3 min read</span>
+            <span>· Mar 2026</span>
+          </div>
+          <h3><a href="posts/welcome.html">Welcome to AzureCraft</a></h3>
+          <p>Why this blog exists, who it’s for, and the principles behind every post: opinionated, diagram-first, and built to be reused.</p>
+          <span class="card__cta">Read the intro →</span>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Browse by category -->
+  <section class="section" id="categories">
+    <div class="container">
+      <div class="section__head">
+        <div>
+          <h2>Browse by category</h2>
+          <p>Three pillars, one focus: practical Azure architecture.</p>
+        </div>
+      </div>
+      <div class="cat-grid">
+        <a class="cat-card" href="categories/infrastructure.html">
+          <span class="tag tag--infra">Infrastructure</span>
+          <h3>Infrastructure</h3>
+          <p>Landing zones, networking, identity, governance, and cost guardrails.</p>
+        </a>
+        <a class="cat-card" href="categories/data-ai.html">
+          <span class="tag tag--ai">Data &amp; AI</span>
+          <h3>Data &amp; AI</h3>
+          <p>Landing AI workloads safely, private connectivity, and data platform patterns.</p>
+        </a>
+        <a class="cat-card" href="categories/modern-apps.html">
+          <span class="tag tag--apps">Modern Apps</span>
+          <h3>Modern Apps</h3>
+          <p>Application design that holds up under real load and real org structures.</p>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Roadmap -->
+  <section class="section" id="roadmap">
+    <div class="container">
+      <div class="section__head">
+        <div>
+          <h2>What’s coming next</h2>
+          <p>The content pipeline. Want one sooner? Let me know.</p>
+        </div>
+      </div>
+      <ul class="roadmap-list">
+        <li><span><strong>Bicep vs Terraform for landing zones</strong> — an honest, opinionated comparison.</span></li>
+        <li><span><strong>Zero-trust networking</strong> — Private Endpoints, Private DNS, and firewall patterns.</span></li>
+        <li><span><strong>FinOps guardrails</strong> — cost control with Azure Policy and budgets that actually hold.</span></li>
+        <li><span><strong>Observability baseline</strong> — Log Analytics, workbooks, and alerts that matter.</span></li>
+        <li><span><strong>Data platform reference architecture</strong> — landing analytics and AI data the governed way.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Newsletter CTA -->
+  <section class="container">
+    <div class="cta-band">
+      <h2>Get new architecture write-ups</h2>
+      <p>No spam, no fluff — just practical Azure patterns when a new post lands. Connect the form to your email provider to go live.</p>
+      <form class="cta-form" data-endpoint="" aria-label="Subscribe">
+        <input type="email" placeholder="you@company.com" aria-label="Email address" required />
+        <button class="btn btn--primary" type="submit">Subscribe</button>
+      </form>
+    </div>
+  </section>
+
 </main>
 
-<footer>
-  <p>© 2026 AzureCraft</p>
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <div>
+      <a class="brand" href="index.html">
+        <span class="brand-mark">AC</span>
+        <span class="brand-text-title">AzureCraft</span>
+      </a>
+      <p style="color: var(--text-muted); margin-top: 0.75rem; max-width: 36ch;">Practical Azure architecture, without the noise.</p>
+    </div>
+    <div>
+      <h4>Topics</h4>
+      <ul>
+        <li><a href="categories/infrastructure.html">Infrastructure</a></li>
+        <li><a href="categories/data-ai.html">Data &amp; AI</a></li>
+        <li><a href="categories/modern-apps.html">Modern Apps</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Site</h4>
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="index.html#roadmap">Roadmap</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="site-footer__bottom">
+    <p>© <span data-year>2026</span> AzureCraft. Built as a static site on Azure App Service.</p>
+  </div>
 </footer>
 
-<script src="js/main.js"></script>
+<script src="js/site.js"></script>
 </body>
 </html>
