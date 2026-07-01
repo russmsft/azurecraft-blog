@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>(function(){if(location.hostname==="www.rbcloud.co.uk"){location.replace("https://rbcloud.co.uk"+location.pathname+location.search+location.hash);}})();</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Projects for Cloud Solution Architects — AzureCraft</title>
+  <meta name="description" content="A portfolio of 12 hands-on AI project ideas (plus a production-hardening guide) for Cloud Solution Architects, built on Microsoft Foundry. Each has a full step-by-step build guide." />
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+  <link rel="canonical" href="https://rbcloud.co.uk/projects/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="AI Projects for Cloud Solution Architects" />
+  <meta property="og:description" content="12 hands-on AI projects on Microsoft Foundry — build real demos, not slides." />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="stylesheet" href="../css/azurecraft.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="container site-nav">
+    <a class="brand" href="../index.html">
+      <span class="brand-mark">AC</span>
+      <span>
+        <span class="brand-text-title">AzureCraft</span>
+        <span class="brand-text-sub">Infra · Data &amp; AI · Modern Apps</span>
+      </span>
+    </a>
+    <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+    <nav class="site-nav__links" aria-label="Primary">
+      <a href="../index.html">Home</a>
+      <a href="../index.html#posts">Articles</a>
+      <a href="index.html" aria-current="page">Projects</a>
+      <a href="../index.html#roadmap">Roadmap</a>
+      <a href="../about.html">About</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+
+  <section class="hero">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="../index.html">Home</a> / Projects
+      </nav>
+      <span class="hero__eyebrow">Hands-on portfolio · Microsoft Foundry</span>
+      <h1>AI Projects for Cloud Solution Architects</h1>
+      <p>A curated portfolio of <strong>12 AI project ideas</strong> — each with a complete step-by-step build guide — plus a production-hardening guide. Build them to sharpen your AI skills, show customers what’s possible, and kick-start co-build POCs. Working demos on your laptop, not slides.</p>
+      <div class="hero__actions">
+        <a class="btn btn--primary" href="01-ask-my-docs.html">Start with Ask My Docs →</a>
+        <a class="btn btn--ghost" href="https://github.com/russmsft/csa-ai-projects" target="_blank" rel="noopener">View the repo</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="projects">
+    <div class="container">
+      <div class="section__head">
+        <div>
+          <h2>The portfolio</h2>
+          <p>Ordered roughly by difficulty. Start at the top — the best demo is the one you’ve actually built, broken, and fixed.</p>
+        </div>
+      </div>
+      <div class="card-grid">
+        <article class="card">
+          <div class="card__meta">
+            <span class="tag tag--ai">Demo asset</span>
+            <span>· ★★☆☆☆</span>
+            <span>· 1–2 days</span>
+          </div>
+          <h3><a href="01-ask-my-docs.html">01. Ask My Docs — RAG Starter Kit</a></h3>
+          <p>Every customer asks &quot;can AI search our documents?&quot; This is your answer — grounded, cited RAG over your PDFs in an afternoon using Foundry File Search.</p>
+          <p style="margin:0 0 1rem;color:var(--text-muted);font-size:var(--step--1);"><strong>Uses:</strong> Foundry prompt agent, File Search, GPT-4.1-mini, Blob Storage</p>
+          <span class="card__cta">Build it →</span>
+        </article>
+
+        <article class="card">
+          <div class="card__meta">
+            <span class="tag tag--ai">Demo asset</span>
+            <span>· ★★☆☆☆</span>
+            <span>· 2–3 days</span>
+          </div>
+          <h3><a href="02-meeting-minutes-agent.html">02. Meeting Minutes Agent</a></h3>
+          <p>Audio in, structured notes out. Transcribe a meeting with Foundry audio models, then turn the transcript into decisions and action items people actually want.</p>
+          <p style="margin:0 0 1rem;color:var(--text-muted);font-size:var(--step--1);"><strong>Uses:</strong> Foundry audio models, prompt agent, GPT-4.1-mini</p>
+          <span class="card__cta">Build it →</span>
+        </article>
+
+        <article class="card">
+          <div class="card__meta">
+            <span class="tag tag--apps">Co-build</span>
+            <span>· ★★☆☆☆</span>
+            <span>· ~1 week</span>
+          </div>
+          <h3><a href="03-email-triage-agent.html">03. Customer Email Triage Agent</a></h3>
+          <p>Classify, route, and draft replies to inbound email with function calling and multi-model routing — a strong cross-industry co-build template.</p>
+          <p style="margin:0 0 1rem;color:var(--text-muted);font-size:var(--step--1);"><strong>Uses:</strong> Function calling, multi-model routing, GPT-4.1-mini</p>
+          <span class="card__cta">Build it →</span>
+        </article>
+
+        <article class="card">
+          <div class="card__meta">
+            <span class="tag tag--apps">Co-build</span>
+            <span>· ★★☆☆☆</span>
+            <span>· ~1 week</span>
+          </div>
+          <h3><a href="04-policy-chatbot.html">04. Internal Policy Chatbot</a></h3>
+          <p>Managed RAG with Foundry IQ — skip the pipeline, bring your docs. The first co-build template you can adapt to almost any customer.</p>
+          <p style="margin:0 0 1rem;color:var(--text-muted);font-size:var(--step--1);"><strong>Uses:</strong> Foundry IQ (managed RAG), prompt agent</p>
+          <span class="card__cta">Build it →</span>
+        </article>
+
+        <article class="card">
+          <div class="card__meta">
+            <span class="tag tag--apps">Co-build</span>
+            <span>· ★★★☆☆</span>
+            <span>· ~2 weeks</span>
+          </div>
+          <h3><a href="05-contract-clause-analyzer.html">05. Contract Clause Analyzer</a></h3>
+          <p>Long-context reasoning over entire contracts — extract clauses, flag risks, and compare against a playbook using GPT-5.4&#x27;s 1M-token window.</p>
+          <p style="margin:0 0 1rem;color:var(--text-muted);font-size:var(--step--1);"><strong>Uses:</strong> GPT-5.4 long context, structured output</p>
+          <span class="card__cta">Build it →</span>
+        </article>
+
+        <article class="card">
+          <div class="card__meta">
+            <span class="tag tag--ai">Demo asset</span>
+            <span>· ★★★☆☆</span>
+            <span>· ~2 weeks</span>
+          </div>
+          <h3><a href="06-multi-agent-incident-responder.html">06. Multi-Agent Incident Responder</a></h3>
+          <p>The project where multi-agent orchestration clicks: specialised agents triage, investigate, and remediate an incident together.</p>
+          <p style="margin:0 0 1rem;color:var(--text-muted);font-size:var(--step--1);"><strong>Uses:</strong> Workflow agents, multi-agent orchestration</p>
+          <span class="card__cta">Build it →</span>
+        </article>
+
+        <article class="card">
+          <div class="card__meta">
+            <span class="tag tag--apps">Co-build</span>
+            <span>· ★★★☆☆</span>
+            <span>· 2–3 weeks</span>
+          </div>
+          <h3><a href="07-data-pipeline-qa-agent.html">07. Data Pipeline QA Agent</a></h3>
+          <p>An event-driven agent that watches data pipelines, reasons about failures, and files quality issues with function calling.</p>
+          <p style="margin:0 0 1rem;color:var(--text-muted);font-size:var(--step--1);"><strong>Uses:</strong> Function calling, event-driven agents</p>
+          <span class="card__cta">Build it →</span>
+        </article>
+
+        <article class="card">
+          <div class="card__meta">
+            <span class="tag tag--ai">Demo asset</span>
+            <span>· ★★★☆☆</span>
+            <span>· 2–3 weeks</span>
+          </div>
+          <h3><a href="08-voice-field-assistant.html">08. Voice-Enabled Field Assistant</a></h3>
+          <p>Low-latency speech-in / speech-out assistant for hands-busy field workers, grounded in your equipment docs.</p>
+          <p style="margin:0 0 1rem;color:var(--text-muted);font-size:var(--step--1);"><strong>Uses:</strong> GPT-4o Realtime, Azure AI Search, custom embeddings</p>
+          <span class="card__cta">Build it →</span>
+        </article>
+
+        <article class="card">
+          <div class="card__meta">
+            <span class="tag tag--apps">Co-build</span>
+            <span>· ★★★★☆</span>
+            <span>· 3–4 weeks</span>
+          </div>
+          <h3><a href="09-competitive-intelligence-dashboard.html">09. Competitive Intelligence Dashboard</a></h3>
+          <p>Web-grounded research agents that monitor competitors and surface insights on a live dashboard.</p>
+          <p style="margin:0 0 1rem;color:var(--text-muted);font-size:var(--step--1);"><strong>Uses:</strong> Web grounding, custom embeddings, agents</p>
+          <span class="card__cta">Build it →</span>
+        </article>
+
+        <article class="card">
+          <div class="card__meta">
+            <span class="tag tag--apps">Co-build</span>
+            <span>· ★★★★☆</span>
+            <span>· 4–6 weeks</span>
+          </div>
+          <h3><a href="10-agentic-approval-workflow.html">10. Agentic Workflow for Approvals</a></h3>
+          <p>Enterprise workflow automation with human-in-the-loop approval gates, driven by a workflow agent and Foundry IQ.</p>
+          <p style="margin:0 0 1rem;color:var(--text-muted);font-size:var(--step--1);"><strong>Uses:</strong> Workflow agents, human-in-the-loop, Foundry IQ</p>
+          <span class="card__cta">Build it →</span>
+        </article>
+
+        <article class="card">
+          <div class="card__meta">
+            <span class="tag tag--ai">Demo asset</span>
+            <span>· ★★★★☆</span>
+            <span>· 4–6 weeks</span>
+          </div>
+          <h3><a href="11-computer-use-automator.html">11. Computer-Use Process Automator</a></h3>
+          <p>Bleeding-edge, high-wow-factor: a hosted agent that drives a UI to automate a real process end to end.</p>
+          <p style="margin:0 0 1rem;color:var(--text-muted);font-size:var(--step--1);"><strong>Uses:</strong> Hosted agent, computer-use tooling</p>
+          <span class="card__cta">Build it →</span>
+        </article>
+
+        <article class="card">
+          <div class="card__meta">
+            <span class="tag tag--apps">Co-build</span>
+            <span>· ★★★★★</span>
+            <span>· 6–8 weeks</span>
+          </div>
+          <h3><a href="12-multimodal-quality-inspector.html">12. Multi-Modal Quality Inspector</a></h3>
+          <p>A deep industry play: inspect images against a spec with multimodal reasoning and image-vector search.</p>
+          <p style="margin:0 0 1rem;color:var(--text-muted);font-size:var(--step--1);"><strong>Uses:</strong> Hosted agent, GPT-5.4 vision, image embeddings</p>
+          <span class="card__cta">Build it →</span>
+        </article>
+
+        <article class="card">
+          <div class="card__meta">
+            <span class="tag tag--infra">Production-hardening</span>
+            <span>· ★★★★★</span>
+            <span>· varies</span>
+          </div>
+          <h3><a href="13-cross-region-failover.html">13. Foundry Cross-Region Failover</a></h3>
+          <p>Make any project in the portfolio survive a region outage in production — the architecture guide that applies across the whole set.</p>
+          <p style="margin:0 0 1rem;color:var(--text-muted);font-size:var(--step--1);"><strong>Uses:</strong> Multi-region Foundry, Front Door, health probes</p>
+          <span class="card__cta">Build it →</span>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="build-order">
+    <div class="container">
+      <div class="section__head">
+        <div>
+          <h2>Suggested build order</h2>
+          <p>A difficulty-ordered path. The pace is yours.</p>
+        </div>
+      </div>
+      <div class="cat-grid">
+        <div class="cat-card">
+          <span class="tag tag--ai">Phase 1</span>
+          <h3>Foundations</h3>
+          <p>Get your hands dirty: Ask My Docs, Meeting Minutes, Policy Chatbot, Email Triage, and the Multi-Agent Incident Responder. Leaves you with 4–5 demos and the ability to spin up a POC in a week.</p>
+        </div>
+        <div class="cat-card">
+          <span class="tag tag--apps">Phase 2</span>
+          <h3>Co-build with customers</h3>
+          <p>Pick 2–3 based on who you’re working with: Contract Clause Analyzer, Data Pipeline QA, Voice Field Assistant, or Competitive Intelligence. Each teaches a different skill.</p>
+        </div>
+        <div class="cat-card">
+          <span class="tag tag--infra">Phase 3</span>
+          <h3>The hard stuff</h3>
+          <p>Agentic Approvals, Computer-Use Automator, Multi-Modal Inspector, and Cross-Region Failover. These make you the person teammates call.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="patterns">
+    <div class="container">
+      <div class="section__head">
+        <div>
+          <h2>Patterns you’ll keep using</h2>
+          <p>The same building blocks recur across the portfolio.</p>
+        </div>
+      </div>
+      <div class="prose" style="max-width:none;">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Pattern</th><th>What it means</th><th>Where you’ll see it</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Single prompt agent</strong></td><td>One agent, one job — Q&amp;A, classification, summarization</td><td>1, 2, 4</td></tr>
+              <tr><td><strong>Agent + function calling</strong></td><td>The agent reads from or writes to external systems</td><td>3, 5, 7</td></tr>
+              <tr><td><strong>Workflow agent</strong></td><td>Multi-step process with branching or human approval gates</td><td>6, 10</td></tr>
+              <tr><td><strong>Hosted agent</strong></td><td>Full code-level control over the orchestration loop</td><td>11, 12</td></tr>
+              <tr><td><strong>Foundry IQ</strong></td><td>Managed RAG — skip the pipeline, bring your docs</td><td>4, 10</td></tr>
+              <tr><td><strong>AI Search + custom embeddings</strong></td><td>Control over chunking, hybrid search, or image vectors</td><td>1, 8, 9, 12</td></tr>
+              <tr><td><strong>Multi-model routing</strong></td><td>Cheap model for easy work, expensive model for hard work</td><td>3</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <div>
+      <a class="brand" href="../index.html">
+        <span class="brand-mark">AC</span>
+        <span class="brand-text-title">AzureCraft</span>
+      </a>
+      <p style="color: var(--text-muted); margin-top: 0.75rem; max-width: 36ch;">Practical Azure architecture, without the noise.</p>
+    </div>
+    <div>
+      <h4>Topics</h4>
+      <ul>
+        <li><a href="../categories/infrastructure.html">Infrastructure</a></li>
+        <li><a href="../categories/data-ai.html">Data &amp; AI</a></li>
+        <li><a href="../categories/modern-apps.html">Modern Apps</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Site</h4>
+      <ul>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="index.html">Projects</a></li>
+        <li><a href="../about.html">About</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="site-footer__bottom">
+    <p>© <span data-year>2026</span> AzureCraft. Built as a static site on Azure App Service.</p>
+  </div>
+</footer>
+
+<script src="../js/site.js"></script>
+</body>
+</html>

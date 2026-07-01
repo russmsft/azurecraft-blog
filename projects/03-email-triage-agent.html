@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>(function(){if(location.hostname==="www.rbcloud.co.uk"){location.replace("https://rbcloud.co.uk"+location.pathname+location.search+location.hash);}})();</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Customer Email Triage Agent — AzureCraft Projects</title>
+  <meta name="description" content="Classify, route, and draft replies to inbound email with function calling and multi-model routing — a strong cross-industry co-build template." />
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+  <link rel="canonical" href="https://rbcloud.co.uk/projects/03-email-triage-agent.html" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Customer Email Triage Agent" />
+  <meta property="og:description" content="Classify, route, and draft replies to inbound email with function calling and multi-model routing — a strong cross-industry co-build template." />
+  <meta property="og:image" content="https://rbcloud.co.uk/assets/projects/03-email-triage-agent-architecture.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://rbcloud.co.uk/assets/projects/03-email-triage-agent-architecture.png" />
+  <link rel="stylesheet" href="../css/azurecraft.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github-dark.min.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="reading-progress" aria-hidden="true"></div>
+
+<header class="site-header">
+  <div class="container site-nav">
+    <a class="brand" href="../index.html">
+      <span class="brand-mark">AC</span>
+      <span>
+        <span class="brand-text-title">AzureCraft</span>
+        <span class="brand-text-sub">Infra · Data &amp; AI · Modern Apps</span>
+      </span>
+    </a>
+    <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+    <nav class="site-nav__links" aria-label="Primary">
+      <a href="../index.html">Home</a>
+      <a href="../index.html#posts">Articles</a>
+      <a href="../projects/index.html" aria-current="page">Projects</a>
+      <a href="../index.html#roadmap">Roadmap</a>
+      <a href="../about.html">About</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="article-wrap">
+
+  <div class="article-header">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a> /
+      <a href="index.html">Projects</a> /
+      Project 3
+    </nav>
+    <span class="tag tag--apps">Modern Apps</span>
+    <h1>Customer Email Triage Agent</h1>
+    <div class="article-meta">
+      <span>Co-build</span>
+      <span class="dot">•</span>
+      <span aria-label="Difficulty">Difficulty ★★☆☆☆</span>
+      <span class="dot">•</span>
+      <span>~1 week</span>
+    </div>
+  </div>
+
+  <article class="prose">
+    <div class="callout callout--note">
+      <span class="callout__icon">🔧</span>
+      <p><strong>Build it yourself.</strong> This project is part of the <a href="index.html">AI Projects for Cloud Solution Architects</a> portfolio. Full source, code, and the latest updates live in the <a href="https://github.com/russmsft/csa-ai-projects/blob/master/docs/how-to/03-email-triage-agent.md" target="_blank" rel="noopener">csa-ai-projects</a> repo on GitHub.</p>
+    </div>
+
+<p>Stop drowning in support email. This guide builds a multi-step agent pipeline that reads from a Service Bus queue, classifies urgency and category, drafts a response, and routes each email to the right team.</p>
+<hr />
+<h2 id="what-youre-building">What You're Building</h2>
+<p>An Azure Functions-triggered pipeline with three stages: GPT-4.1-mini classifies each incoming email (urgency: high/medium/low; category: billing/technical/general). GPT-5.4-mini drafts a response using a knowledge base. A <code>FunctionTool</code> routes the email to the correct downstream Service Bus queue based on classification. The whole flow is orchestrated in Python and runs end-to-end in under 10 seconds per email.</p>
+<hr />
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li>An <strong>Azure AI Services / Foundry resource</strong> with <code>gpt-4.1-mini</code> and <code>gpt-5.4-mini</code> deployments:
+  <code>bash
+  az cognitiveservices account deployment create --name &lt;res&gt; --resource-group &lt;rg&gt; \
+    --deployment-name gpt-4.1-mini --model-name gpt-4.1-mini --model-version 2025-04-14 \
+    --model-format OpenAI --sku-name Standard --sku-capacity 10
+  az cognitiveservices account deployment create --name &lt;res&gt; --resource-group &lt;rg&gt; \
+    --deployment-name gpt-5.4-mini --model-name gpt-5.4-mini --model-version 2026-03-17 \
+    --model-format OpenAI --sku-name GlobalStandard --sku-capacity 10</code></li>
+<li>An <strong>Azure Service Bus namespace</strong> (Standard) with <strong>four</strong> queues: <code>incoming-email</code>, <code>billing-team</code>, <code>technical-team</code>, <code>general-team</code> (created in Step 1).</li>
+<li>Azure CLI logged in with <strong>Cognitive Services OpenAI Contributor</strong> on the resource and <strong>Azure Service Bus Data Owner</strong> on the namespace. This demo uses <strong>Entra ID auth, not SAS connection strings</strong> — many enterprise tenants disable local/SAS auth (<code>disableLocalAuth=true</code>) by policy, which makes connection-string auth fail.</li>
+<li><code>AZURE_OPENAI_ENDPOINT</code> and <code>SERVICE_BUS_NAMESPACE</code> (the <code>&lt;namespace&gt;.servicebus.windows.net</code> host) set in <code>.env</code>.</li>
+<li>Python 3.11+</li>
+</ul>
+<pre><code class="language-bash">pip install &quot;openai&gt;=1.30.0&quot; azure-identity azure-servicebus websocket-client azure-functions python-dotenv
+</code></pre>
+<blockquote>
+<p><strong>Why <code>websocket-client</code>?</strong> Many corporate networks block the default AMQP port (5671). The Service Bus client below uses AMQP-over-WebSockets (443), which requires this package.</p>
+</blockquote>
+<hr />
+<h2 id="architecture">Architecture</h2>
+<p><img alt="Email Triage architecture: Service Bus queue → Azure Function → GPT-4.1-mini classify → GPT-5.4-mini draft → route_email to team queues" src="../assets/projects/03-email-triage-agent-architecture.png" /></p>
+<hr />
+<h2 id="step-by-step-build">Step-by-Step Build</h2>
+<h3 id="step-1-set-up-service-bus-queues">Step 1 — Set up Service Bus queues</h3>
+<pre><code class="language-bash">NAMESPACE=&quot;my-email-triage-ns&quot;
+RG=&quot;my-resource-group&quot;
+LOCATION=&quot;eastus2&quot;
+
+az servicebus namespace create \
+  --name $NAMESPACE \
+  --resource-group $RG \
+  --location $LOCATION \
+  --sku Standard
+
+for queue in incoming-email billing-team technical-team general-team; do
+  az servicebus queue create \
+    --name $queue \
+    --namespace-name $NAMESPACE \
+    --resource-group $RG
+done
+
+# Grant yourself data-plane access via Entra ID (SAS keys are often disabled by policy)
+az role assignment create \
+  --assignee $(az ad signed-in-user show --query id -o tsv) \
+  --role &quot;Azure Service Bus Data Owner&quot; \
+  --scope $(az servicebus namespace show --name $NAMESPACE --resource-group $RG --query id -o tsv)
+
+# Your SERVICE_BUS_NAMESPACE value is the namespace host:
+echo &quot;$NAMESPACE.servicebus.windows.net&quot;
+</code></pre>
+<h3 id="step-2-client-setup">Step 2 — Client setup</h3>
+<p>Both models run through a single <code>AzureOpenAI</code> client (Whisper-style routing isn't needed here, and the Foundry project client adds no value for chat). Service Bus uses the same <code>DefaultAzureCredential</code> — no connection strings.</p>
+<pre><code class="language-python">import os
+import json
+from dotenv import load_dotenv
+from azure.identity import DefaultAzureCredential, get_bearer_token_provider
+from openai import AzureOpenAI
+from azure.servicebus import ServiceBusClient, ServiceBusMessage, TransportType
+
+load_dotenv()
+
+ENDPOINT = os.environ[&quot;AZURE_OPENAI_ENDPOINT&quot;]       # https://&lt;resource&gt;.cognitiveservices.azure.com/
+SB_NAMESPACE = os.environ[&quot;SERVICE_BUS_NAMESPACE&quot;]   # &lt;namespace&gt;.servicebus.windows.net
+
+credential = DefaultAzureCredential()
+openai = AzureOpenAI(
+    azure_endpoint=ENDPOINT,
+    azure_ad_token_provider=get_bearer_token_provider(
+        credential, &quot;https://cognitiveservices.azure.com/.default&quot;
+    ),
+    api_version=&quot;2025-04-01-preview&quot;,
+)
+# Entra ID auth for Service Bus (no connection strings / SAS keys)
+sb_client = ServiceBusClient(
+    fully_qualified_namespace=SB_NAMESPACE,
+    credential=credential,
+    transport_type=TransportType.AmqpOverWebsocket,
+)
+</code></pre>
+<h3 id="step-3-stage-1-classification">Step 3 — Stage 1: Classification</h3>
+<pre><code class="language-python">CLASSIFICATION_SCHEMA = {
+    &quot;type&quot;: &quot;json_schema&quot;,
+    &quot;json_schema&quot;: {
+        &quot;name&quot;: &quot;email_classification&quot;,
+        &quot;strict&quot;: True,
+        &quot;schema&quot;: {
+            &quot;type&quot;: &quot;object&quot;,
+            &quot;properties&quot;: {
+                &quot;urgency&quot;: {
+                    &quot;type&quot;: &quot;string&quot;,
+                    &quot;enum&quot;: [&quot;high&quot;, &quot;medium&quot;, &quot;low&quot;]
+                },
+                &quot;category&quot;: {
+                    &quot;type&quot;: &quot;string&quot;,
+                    &quot;enum&quot;: [&quot;billing&quot;, &quot;technical&quot;, &quot;general&quot;]
+                },
+                &quot;reasoning&quot;: {
+                    &quot;type&quot;: &quot;string&quot;,
+                    &quot;description&quot;: &quot;One sentence explaining the classification.&quot;
+                },
+                &quot;sentiment&quot;: {
+                    &quot;type&quot;: &quot;string&quot;,
+                    &quot;enum&quot;: [&quot;frustrated&quot;, &quot;neutral&quot;, &quot;positive&quot;]
+                }
+            },
+            &quot;required&quot;: [&quot;urgency&quot;, &quot;category&quot;, &quot;reasoning&quot;, &quot;sentiment&quot;],
+            &quot;additionalProperties&quot;: False
+        }
+    }
+}
+
+def classify_email(subject: str, body: str) -&gt; dict:
+    &quot;&quot;&quot;Classify email urgency and category using GPT-4.1-mini.&quot;&quot;&quot;
+    response = openai.chat.completions.create(
+        model=&quot;gpt-4.1-mini&quot;,
+        messages=[
+            {
+                &quot;role&quot;: &quot;system&quot;,
+                &quot;content&quot;: (
+                    &quot;You are an email triage specialist. Classify incoming customer emails.\n&quot;
+                    &quot;Urgency: high=system down/data loss/SLA breach, &quot;
+                    &quot;medium=degraded functionality, low=question/general request.\n&quot;
+                    &quot;Category: billing=invoices/payments/pricing, &quot;
+                    &quot;technical=bugs/errors/performance, general=everything else.&quot;
+                )
+            },
+            {
+                &quot;role&quot;: &quot;user&quot;,
+                &quot;content&quot;: f&quot;Subject: {subject}\n\nBody:\n{body}&quot;
+            }
+        ],
+        response_format=CLASSIFICATION_SCHEMA,
+        temperature=0.0,
+        max_tokens=300
+    )
+    return json.loads(response.choices[0].message.content)
+</code></pre>
+<h3 id="step-4-stage-2-the-routing-tool">Step 4 — Stage 2: The routing tool</h3>
+<p>Expose the router to the model as a function tool. We use a standard chat completion with <code>tools=[...]</code> — not the legacy Assistants threads/runs API, which is no longer part of <code>azure-ai-projects</code>. When the model decides where to route, it emits a <code>route_email</code> tool call that we execute, actually sending the enriched message to the target Service Bus queue.</p>
+<pre><code class="language-python">ROUTE_FUNCTION = {
+    &quot;name&quot;: &quot;route_email&quot;,
+    &quot;description&quot;: (
+        &quot;Route the processed email to the appropriate team queue. &quot;
+        &quot;Call this after generating the draft response.&quot;
+    ),
+    &quot;parameters&quot;: {
+        &quot;type&quot;: &quot;object&quot;,
+        &quot;properties&quot;: {
+            &quot;target_queue&quot;: {
+                &quot;type&quot;: &quot;string&quot;,
+                &quot;enum&quot;: [&quot;billing-team&quot;, &quot;technical-team&quot;, &quot;general-team&quot;],
+                &quot;description&quot;: &quot;The Service Bus queue to send this email to.&quot;
+            },
+            &quot;priority&quot;: {
+                &quot;type&quot;: &quot;string&quot;,
+                &quot;enum&quot;: [&quot;high&quot;, &quot;medium&quot;, &quot;low&quot;],
+                &quot;description&quot;: &quot;Urgency level for queue prioritization.&quot;
+            },
+            &quot;assignee_hint&quot;: {
+                &quot;type&quot;: &quot;string&quot;,
+                &quot;description&quot;: &quot;Optional: suggested team member based on issue type.&quot;
+            }
+        },
+        &quot;required&quot;: [&quot;target_queue&quot;, &quot;priority&quot;]
+    }
+}
+
+def route_email(target_queue: str, priority: str,
+                assignee_hint: str = &quot;&quot;, payload: dict | None = None) -&gt; str:
+    &quot;&quot;&quot;Send the enriched message to the target Service Bus queue and return a receipt.&quot;&quot;&quot;
+    if payload is not None:
+        with sb_client.get_queue_sender(target_queue) as sender:
+            sender.send_messages(ServiceBusMessage(json.dumps(payload)))
+    return json.dumps({
+        &quot;status&quot;: &quot;queued&quot;,
+        &quot;queue&quot;: target_queue,
+        &quot;priority&quot;: priority,
+        &quot;assignee_hint&quot;: assignee_hint
+    })
+</code></pre>
+<h3 id="step-5-define-the-knowledge-base-and-triage-prompt">Step 5 — Define the knowledge base and triage prompt</h3>
+<p>No persistent agent registration is needed — the model, the tool, and the prompt are all it takes.</p>
+<pre><code class="language-python">TRIAGE_TOOLS = [{&quot;type&quot;: &quot;function&quot;, &quot;function&quot;: ROUTE_FUNCTION}]
+
+KNOWLEDGE_BASE = &quot;&quot;&quot;
+Common responses:
+- Billing issues: &quot;Our billing team reviews invoices within 2 business days. For urgent
+  billing disputes, please reference your invoice number.&quot;
+- Technical outages: &quot;Our SRE team is notified immediately for P1 issues.
+  Expected response time is 30 minutes.&quot;
+- Password resets: &quot;Use the self-service portal at https://aka.ms/resetpw&quot;
+- General inquiries: &quot;Our support team responds within 1 business day.&quot;
+&quot;&quot;&quot;
+
+TRIAGE_SYSTEM = (
+    &quot;You are a customer support triage agent. Given an email and its classification, &quot;
+    &quot;draft a professional, empathetic response (3-4 sentences max). &quot;
+    &quot;Then call route_email() to route to the correct team.\n\n&quot;
+    f&quot;Knowledge base:\n{KNOWLEDGE_BASE}&quot;
+)
+</code></pre>
+<h3 id="step-6-full-processing-pipeline">Step 6 — Full processing pipeline</h3>
+<p>Classify, then run one chat completion with the routing tool. If the model emits a <code>route_email</code> call, execute it (sending to Service Bus) and feed the result back so the model can finalize its draft — the standard tool-calling loop.</p>
+<pre><code class="language-python">def process_email(email_id: str, subject: str, body: str, sender: str) -&gt; dict:
+    &quot;&quot;&quot;Full pipeline: classify → draft → route.&quot;&quot;&quot;
+    # Stage 1: classify
+    classification = classify_email(subject, body)
+    print(f&quot;  Classified: {classification['category']} / {classification['urgency']}&quot;)
+
+    # Stage 2 &amp; 3: draft + route via a tool-calling chat completion
+    messages = [
+        {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: TRIAGE_SYSTEM},
+        {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: (
+            f&quot;From: {sender}\nSubject: {subject}\nBody:\n{body}\n\n&quot;
+            f&quot;Classification: {json.dumps(classification)}\n\n&quot;
+            &quot;Draft a response and route this email to the correct team.&quot;
+        )},
+    ]
+
+    resp = openai.chat.completions.create(
+        model=&quot;gpt-5.4-mini&quot;,
+        messages=messages,
+        tools=TRIAGE_TOOLS,
+        tool_choice=&quot;auto&quot;,
+    )
+    msg = resp.choices[0].message
+    draft = msg.content or &quot;&quot;
+    routing = {}
+
+    if msg.tool_calls:
+        messages.append(msg)
+        for call in msg.tool_calls:
+            if call.function.name == &quot;route_email&quot;:
+                args = json.loads(call.function.arguments)
+                enriched = {
+                    &quot;email_id&quot;: email_id, &quot;from&quot;: sender, &quot;subject&quot;: subject,
+                    &quot;classification&quot;: classification, &quot;routing&quot;: args,
+                }
+                routing = json.loads(route_email(**args, payload=enriched))
+                messages.append({
+                    &quot;role&quot;: &quot;tool&quot;, &quot;tool_call_id&quot;: call.id,
+                    &quot;content&quot;: json.dumps(routing),
+                })
+        # Follow-up call so the model can finalize the draft after routing
+        follow = openai.chat.completions.create(
+            model=&quot;gpt-5.4-mini&quot;, messages=messages, tools=TRIAGE_TOOLS,
+        )
+        draft = follow.choices[0].message.content or draft
+
+    return {
+        &quot;email_id&quot;: email_id,
+        &quot;classification&quot;: classification,
+        &quot;draft_response&quot;: draft,
+        &quot;routing&quot;: routing,
+    }
+</code></pre>
+<h3 id="step-7-azure-function-trigger">Step 7 — Azure Function trigger</h3>
+<pre><code class="language-python"># function_app.py
+import azure.functions as func
+import json
+import logging
+
+app = func.FunctionApp()
+
+@app.service_bus_queue_trigger(
+    arg_name=&quot;msg&quot;,
+    queue_name=&quot;incoming-email&quot;,
+    connection=&quot;ServiceBusConnection&quot;
+)
+def triage_email_trigger(msg: func.ServiceBusMessage):
+    payload = json.loads(msg.get_body().decode())
+    logging.info(f&quot;Processing email: {payload.get('subject', 'no subject')}&quot;)
+
+    result = process_email(
+        email_id=payload.get(&quot;id&quot;, &quot;unknown&quot;),
+        subject=payload.get(&quot;subject&quot;, &quot;&quot;),
+        body=payload.get(&quot;body&quot;, &quot;&quot;),
+        sender=payload.get(&quot;from&quot;, &quot;unknown&quot;)
+    )
+    logging.info(f&quot;Processed: {json.dumps(result, indent=2)}&quot;)
+</code></pre>
+<blockquote>
+<p><strong>Identity-based trigger:</strong> With SAS disabled, configure the trigger for a managed-identity connection. Set the app setting <code>ServiceBusConnection__fullyQualifiedNamespace = &lt;namespace&gt;.servicebus.windows.net</code> and grant the Function App's managed identity <strong>Azure Service Bus Data Receiver</strong> on the namespace — no connection strings.</p>
+</blockquote>
+<hr />
+<h2 id="test-it">Test It</h2>
+<p>Send a test message to the queue:</p>
+<pre><code class="language-python">def send_test_email():
+    with sb_client:
+        sender = sb_client.get_queue_sender(&quot;incoming-email&quot;)
+        with sender:
+            test_email = {
+                &quot;id&quot;: &quot;test-001&quot;,
+                &quot;from&quot;: &quot;customer@example.com&quot;,
+                &quot;subject&quot;: &quot;URGENT: Production system down - cannot process payments&quot;,
+                &quot;body&quot;: (
+                    &quot;Our entire payment processing system has been down for 2 hours. &quot;
+                    &quot;We are losing thousands of dollars per minute. &quot;
+                    &quot;This is completely unacceptable. We need help NOW.&quot;
+                )
+            }
+            sender.send_messages(ServiceBusMessage(json.dumps(test_email)))
+            print(&quot;Test email sent to queue&quot;)
+
+send_test_email()
+</code></pre>
+<p>Expected classification output (a payment <em>system outage</em> is a P1 technical incident, so it routes to <code>technical-team</code>):</p>
+<pre><code class="language-json">{
+  &quot;urgency&quot;: &quot;high&quot;,
+  &quot;category&quot;: &quot;technical&quot;,
+  &quot;reasoning&quot;: &quot;Payment processing system outage causing financial loss — P1 incident.&quot;,
+  &quot;sentiment&quot;: &quot;frustrated&quot;
+}
+</code></pre>
+<hr />
+<h2 id="common-mistakes">Common Mistakes</h2>
+<ul>
+<li><strong>Service Bus auth fails with <code>ServiceBusAuthenticationError</code>.</strong> Enterprise tenants often disable SAS keys (<code>disableLocalAuth=true</code>), so connection-string auth is rejected. Use <code>DefaultAzureCredential</code> with the <strong>Azure Service Bus Data Owner</strong> role (as shown), and AMQP-over-WebSockets if port 5671 is blocked.</li>
+<li><strong>Tool call never fires.</strong> If the model returns a draft but no <code>route_email</code> call, tighten the system prompt ("you MUST call route_email") or force it with <code>tool_choice={"type": "function", "function": {"name": "route_email"}}</code>. Always validate the function name matches exactly between <code>ROUTE_FUNCTION["name"]</code> and your handler.</li>
+<li><strong>Service Bus message ordering.</strong> Standard tier doesn't guarantee order. If you need FIFO for high-urgency emails, use Premium tier with sessions.</li>
+<li><strong>Draft responses leaking PII.</strong> Add a PII scan step between drafting and routing using Azure AI Language's <code>RecognizePiiEntities</code> before sending to downstream teams.</li>
+</ul>
+<hr />
+<h2 id="extend-it">Extend It</h2>
+<ol>
+<li><strong>Escalation timer:</strong> If a <code>high</code> urgency email isn't claimed from <code>technical-team</code> queue within 15 minutes, trigger a second Azure Function that pages the on-call engineer via PagerDuty API.</li>
+<li><strong>Feedback loop:</strong> After an agent responds, capture customer satisfaction (CSAT) score. Use it to fine-tune or adjust prompts monthly.</li>
+<li><strong>Multi-language support:</strong> Detect language with Azure AI Language, translate to English for processing, translate draft response back to original language before routing.</li>
+</ol>
+<hr />
+<h2 id="resources">Resources</h2>
+<ul>
+<li><a href="https://learn.microsoft.com/azure/ai-foundry/agents/how-to/tools/function-calling" target="_blank" rel="noopener">FunctionTool in Foundry agents</a></li>
+<li><a href="https://learn.microsoft.com/azure/service-bus-messaging/service-bus-python-how-to-use-queues" target="_blank" rel="noopener">Azure Service Bus Python SDK</a></li>
+<li><a href="https://learn.microsoft.com/azure/azure-functions/functions-bindings-service-bus-trigger" target="_blank" rel="noopener">Azure Functions Service Bus trigger</a></li>
+<li><a href="https://learn.microsoft.com/azure/ai-foundry/openai/how-to/structured-outputs" target="_blank" rel="noopener">Structured outputs reference</a></li>
+</ul>
+  </article>
+
+  <nav class="post-nav" aria-label="More projects">
+    <a href="02-meeting-minutes-agent.html">← Meeting Minutes Agent</a>
+    <a href="04-policy-chatbot.html">Internal Policy Chatbot →</a>
+  </nav>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <div>
+      <a class="brand" href="../index.html">
+        <span class="brand-mark">AC</span>
+        <span class="brand-text-title">AzureCraft</span>
+      </a>
+      <p style="color: var(--text-muted); margin-top: 0.75rem; max-width: 36ch;">Practical Azure architecture, without the noise.</p>
+    </div>
+    <div>
+      <h4>Topics</h4>
+      <ul>
+        <li><a href="../categories/infrastructure.html">Infrastructure</a></li>
+        <li><a href="../categories/data-ai.html">Data &amp; AI</a></li>
+        <li><a href="../categories/modern-apps.html">Modern Apps</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Site</h4>
+      <ul>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="index.html">Projects</a></li>
+        <li><a href="../about.html">About</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="site-footer__bottom">
+    <p>© <span data-year>2026</span> AzureCraft. Built as a static site on Azure App Service.</p>
+  </div>
+</footer>
+
+<script src="../js/site.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

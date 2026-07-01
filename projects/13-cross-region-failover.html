@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>(function(){if(location.hostname==="www.rbcloud.co.uk"){location.replace("https://rbcloud.co.uk"+location.pathname+location.search+location.hash);}})();</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Foundry Cross-Region Failover — AzureCraft Projects</title>
+  <meta name="description" content="Make any project in the portfolio survive a region outage in production — the architecture guide that applies across the whole set." />
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+  <link rel="canonical" href="https://rbcloud.co.uk/projects/13-cross-region-failover.html" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Foundry Cross-Region Failover" />
+  <meta property="og:description" content="Make any project in the portfolio survive a region outage in production — the architecture guide that applies across the whole set." />
+  <meta property="og:image" content="https://rbcloud.co.uk/assets/projects/13-cross-region-failover-architecture.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://rbcloud.co.uk/assets/projects/13-cross-region-failover-architecture.png" />
+  <link rel="stylesheet" href="../css/azurecraft.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github-dark.min.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="reading-progress" aria-hidden="true"></div>
+
+<header class="site-header">
+  <div class="container site-nav">
+    <a class="brand" href="../index.html">
+      <span class="brand-mark">AC</span>
+      <span>
+        <span class="brand-text-title">AzureCraft</span>
+        <span class="brand-text-sub">Infra · Data &amp; AI · Modern Apps</span>
+      </span>
+    </a>
+    <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+    <nav class="site-nav__links" aria-label="Primary">
+      <a href="../index.html">Home</a>
+      <a href="../index.html#posts">Articles</a>
+      <a href="../projects/index.html" aria-current="page">Projects</a>
+      <a href="../index.html#roadmap">Roadmap</a>
+      <a href="../about.html">About</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="article-wrap">
+
+  <div class="article-header">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a> /
+      <a href="index.html">Projects</a> /
+      Project 13
+    </nav>
+    <span class="tag tag--infra">Infrastructure</span>
+    <h1>Foundry Cross-Region Failover</h1>
+    <div class="article-meta">
+      <span>Production-hardening</span>
+      <span class="dot">•</span>
+      <span aria-label="Difficulty">Difficulty ★★★★★</span>
+      <span class="dot">•</span>
+      <span>varies</span>
+    </div>
+  </div>
+
+  <article class="prose">
+    <div class="callout callout--note">
+      <span class="callout__icon">🔧</span>
+      <p><strong>Build it yourself.</strong> This project is part of the <a href="index.html">AI Projects for Cloud Solution Architects</a> portfolio. Full source, code, and the latest updates live in the <a href="https://github.com/russmsft/csa-ai-projects/blob/master/docs/how-to/13-cross-region-failover.md" target="_blank" rel="noopener">csa-ai-projects</a> repo on GitHub.</p>
+    </div>
+
+<p>Microsoft Foundry has <strong>no native cross-region failover</strong> — if your primary region goes dark, traffic does not automatically move. This guide is the blueprint for the failover layer you have to build yourself, so a regional outage degrades to a blip instead of an incident bridge.</p>
+<blockquote>
+<p><strong>Platform note:</strong> This is the portfolio's <strong>production-hardening guide</strong> — an <strong>architecture and resilience</strong> guide, not a single-script build. It assumes you've shipped a few of the earlier projects (<a href="01-ask-my-docs.html">01</a>, <a href="04-policy-chatbot.html">04</a>, <a href="06-multi-agent-incident-responder.html">06</a>) and now need to make one of them survive a region outage in front of a customer's risk and compliance team.</p>
+</blockquote>
+<hr />
+<h2 id="what-youre-building">What You're Building</h2>
+<p>A two-region, customer-built failover topology for a Foundry workload: client traffic enters through <strong>Azure Front Door</strong>, routes to <strong>Azure API Management</strong> as an AI gateway in each region, and lands on <strong>identical Foundry model deployments</strong> backed by a geo-replicated data layer. You'll stand up the routing and detection layer, deploy the same model into a paired region, replicate the data services, and wire a <strong>failover runbook</strong> (script + IaC) that promotes the secondary region — including the part Foundry won't do for you: <strong>recreating stateful Agent Service agents</strong> from version-controlled definitions.</p>
+<p>The deliverable is a working <strong>Hot/Warm (active-passive)</strong> demo you can fail over on command, plus the decision framework to pick Hot/Hot, Hot/Warm, or Hot/Cold for a given customer's RTO/RPO and budget.</p>
+<hr />
+<h2 id="business-value">Business Value</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Who</strong></td>
+<td>Platform, SRE, and enterprise-architecture teams putting a Foundry workload into production under an availability SLA</td>
+</tr>
+<tr>
+<td><strong>Why</strong></td>
+<td>Foundry offers no built-in regional failover; without this layer a single-region outage is a full outage. Customers in regulated industries can't go to production without a documented, tested DR story</td>
+</tr>
+<tr>
+<td><strong>Outcome</strong></td>
+<td>A tested failover topology with defined RTO/RPO, an IaC + runbook you can clone per customer, and a live demo that simulates a region outage and recovers in front of the room</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="key-constraints-design-around-these">Key Constraints (Design Around These)</h2>
+<p>These are the realities that shape every decision below:</p>
+<ul>
+<li><strong>No native automatic cross-region failover.</strong> You orchestrate it. There is no "make it multi-region" switch.</li>
+<li><strong>Model availability is region-dependent.</strong> A model offered as Global / Data-Zone / Standard in one region may not exist in another. Confirm your exact model <em>and version</em> in both regions before committing to a pair.</li>
+<li><strong>Agent Service is stateful and cannot run active-active.</strong> Agents are <strong>recreated on failover, not failed over</strong>. In-flight conversation history (threads) is lost unless you persist it yourself.</li>
+<li><strong>Every customer-managed service needs its own resilience design.</strong> Cosmos DB, AI Search, Storage, Key Vault, and ACR each fail over differently — there is no single global toggle.</li>
+</ul>
+<hr />
+<h2 id="architecture">Architecture</h2>
+<p><img alt="Cross-region failover architecture: Client → Azure Front Door → primary and secondary regions (each with APIM AI Gateway and Foundry models + Agent Service) → shared geo-replicated data layer" src="../assets/projects/13-cross-region-failover-architecture.png" /></p>
+<p>Traffic routing and detection live above the regions; the data layer is replicated beneath them. The two regions are mirror images — that symmetry is what makes failover a routing change instead of a rebuild.</p>
+<hr />
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li><strong>Two Azure regions</strong> — use an <a href="https://learn.microsoft.com/azure/reliability/cross-region-replication-azure" target="_blank" rel="noopener">Azure paired region</a> in the same geography (e.g. <code>eastus2</code> / <code>centralus</code>) so data-residency and replication stay in-geo.</li>
+<li><strong>A Microsoft Foundry / Azure AI Services resource in each region</strong>, each with the <strong>same model and version</strong> deployed under the <strong>same deployment name</strong>:
+  ```bash
+  # Confirm the model + version exists in BOTH regions before committing to a pair
+  for region in eastus2 centralus; do
+    echo "== $region =="
+    az cognitiveservices account list-models \
+      --name <res-$region> --resource-group <rg> \
+      --query "[?name=='gpt-4.1-mini'].{model:name,version:version,sku:skus[0].name}" -o table
+  done</li>
+</ul>
+<p># Deploy identically in each region (same --deployment-name, --model-version, --sku)
+  az cognitiveservices account deployment create \
+    --name <res-eastus2> --resource-group <rg> \
+    --deployment-name gpt-4.1-mini --model-name gpt-4.1-mini \
+    --model-version <version> --model-format OpenAI \
+    --sku-name GlobalStandard --sku-capacity 10
+  ```
+- <strong>Quota validated in both regions</strong> — a deployment that succeeds in the primary can be blocked by quota in the secondary. Check before you need it.
+- <strong>Azure Front Door (Standard/Premium)</strong> for global routing and health probes.
+- <strong>Azure API Management</strong> deployed per region (the AI gateway tier).
+- <strong>Data services</strong> you intend to make resilient: Cosmos DB, Azure AI Search, Storage, Key Vault, ACR.
+- Azure CLI logged in with Contributor (or scoped equivalents) on the resource groups, plus <strong>Cognitive Services OpenAI Contributor</strong> on each AI Services resource.
+- IaC tooling: <strong>Bicep</strong> or <strong>Terraform</strong> (the failover runbook deploys missing resources from code).</p>
+<blockquote>
+<p><strong>Cost flag:</strong> Two live regions is roughly double the steady-state cost of one. The pattern you choose (below) is the primary cost lever. Tear demo resources down with the cleanup steps at the end.</p>
+</blockquote>
+<hr />
+<h2 id="choose-your-pattern-first">Choose Your Pattern First</h2>
+<p>Everything downstream depends on this. Pick the cheapest pattern that meets the customer's <strong>RTO</strong> (how fast you must recover) and <strong>RPO</strong> (how much data you can lose).</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Pattern</th>
+<th>Secondary state</th>
+<th>RTO / RPO</th>
+<th>Cost</th>
+<th>Use when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Hot/Hot</strong> (active-active)</td>
+<td>Both regions live, load-balanced</td>
+<td>Near-zero</td>
+<td>Highest</td>
+<td>Strict SLA, latency-sensitive, budget available</td>
+</tr>
+<tr>
+<td><strong>Hot/Warm</strong> (active-passive) ✅</td>
+<td>Pre-provisioned, idle</td>
+<td>Minutes</td>
+<td>Balanced</td>
+<td><strong>Most enterprise workloads — recommended default</strong></td>
+</tr>
+<tr>
+<td><strong>Hot/Cold</strong> (active-passive)</td>
+<td>Minimal footprint, deployed on failover</td>
+<td>Hours, possible data loss</td>
+<td>Lowest</td>
+<td>Cost-sensitive, generous RTO, tolerant of data loss</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>⚠️ <strong>Agent caveat for Hot/Hot:</strong> Agent Service cannot run active-active. A true Hot/Hot agent topology only works for <strong>stateless</strong> request patterns. If your agents rely on server-side threads/state, Hot/Warm is your real ceiling.</p>
+</blockquote>
+<p>The rest of this guide builds the <strong>recommended Hot/Warm</strong> pattern and notes where Hot/Hot and Hot/Cold diverge.</p>
+<hr />
+<h2 id="step-by-step-build">Step-by-Step Build</h2>
+<h3 id="step-1-traffic-routing-layer-azure-front-door">Step 1 — Traffic routing layer (Azure Front Door)</h3>
+<p>Front Door is the single global entry point. Configure both regional APIM gateways as origins in one origin group, with health probes that mark a region unhealthy and reroute automatically.</p>
+<pre><code class="language-bash"># Create the profile
+az afd profile create --profile-name foundry-fd \
+  --resource-group &lt;rg&gt; --sku Premium_AzureFrontDoor
+
+# One origin group with health probes (probe the APIM health endpoint)
+az afd origin-group create --profile-name foundry-fd --resource-group &lt;rg&gt; \
+  --origin-group-name foundry-origins \
+  --probe-request-type GET --probe-protocol Https \
+  --probe-interval-in-seconds 30 --probe-path /status-0123456789abcdef \
+  --sample-size 4 --successful-samples-required 3 --additional-latency-in-milliseconds 50
+
+# Primary origin (priority 1) and secondary origin (priority 2 = failover target)
+az afd origin create --profile-name foundry-fd --resource-group &lt;rg&gt; \
+  --origin-group-name foundry-origins --origin-name primary-apim \
+  --host-name &lt;apim-eastus2&gt;.azure-api.net --priority 1 --weight 1000 --enabled-state Enabled
+az afd origin create --profile-name foundry-fd --resource-group &lt;rg&gt; \
+  --origin-group-name foundry-origins --origin-name secondary-apim \
+  --host-name &lt;apim-centralus&gt;.azure-api.net --priority 2 --weight 1000 --enabled-state Enabled
+</code></pre>
+<ul>
+<li><strong>Hot/Warm / Hot/Cold:</strong> priority-based routing (primary = 1, secondary = 2). Front Door only sends traffic to the secondary when the primary probe fails.</li>
+<li><strong>Hot/Hot:</strong> set both origins to the same priority and use weighted/latency routing to load-balance live.</li>
+</ul>
+<blockquote>
+<p><strong>Traffic Manager</strong> is the DNS-based alternative if you need to front non-HTTP endpoints, but Front Door's layer-7 health probes and faster failover make it the default here.</p>
+</blockquote>
+<h3 id="step-2-api-layer-apim-as-ai-gateway">Step 2 — API layer (APIM as AI gateway)</h3>
+<p>Deploy APIM in <strong>both</strong> regions. It abstracts the backend region switch so the client never sees a Foundry endpoint directly, and centralizes auth, rate limiting, logging, and routing. Point each regional APIM at its <strong>local</strong> Foundry endpoint as the backend — keep the data path in-region.</p>
+<p>Key configuration:
+- <strong>Backend</strong> per region → the local <code>https://&lt;res-region&gt;.cognitiveservices.azure.com/</code> Foundry endpoint.
+- <strong>Named values</strong> for endpoints/keys so a failover is a config switch, not a redeploy.
+- <strong>Managed identity</strong> on APIM with <strong>Cognitive Services OpenAI User</strong> on the Foundry resource — no keys in policy.
+- <strong>Health endpoint</strong> (<code>/status-...</code>) that Front Door probes; have it check the backend, not just APIM liveness.</p>
+<blockquote>
+<p>In Hot/Hot, both APIM instances are live. In Hot/Warm the secondary is deployed and idle; in Hot/Cold the secondary APIM is itself deployed on failover via IaC (Step 6).</p>
+</blockquote>
+<h3 id="step-3-model-layer-identical-deployments">Step 3 — Model layer (identical deployments)</h3>
+<p>The secondary region's models must be a byte-for-byte match of the primary: same <strong>model name</strong>, <strong>version</strong>, <strong>deployment name</strong>, and <strong>SKU/capacity</strong>. Any drift means requests that work in one region fail in the other. This is the single most common cause of a "failover that didn't".</p>
+<ul>
+<li>Pin the model version explicitly (no floating "latest").</li>
+<li>Keep the deployment definition in IaC so both regions deploy from the same source.</li>
+<li>Re-validate quota in the secondary on a schedule — quota can be reclaimed while a region sits idle.</li>
+</ul>
+<blockquote>
+<p>The <strong>deployment type</strong> (Global Standard / Data Zone Standard / Standard / Provisioned) decides where inference is processed and how much model availability you get in each region. That choice constrains which region pairs are even viable — see <a href="#deployment-types--data-residency">Deployment Types &amp; Data Residency</a> below.</p>
+</blockquote>
+<h3 id="step-4-agent-layer-warm-standby-recreate-on-failover">Step 4 — Agent layer (warm standby, recreate on failover)</h3>
+<p>This is where Foundry's constraints bite hardest. <strong>You do not fail an agent over — you recreate it.</strong> Treat agent definitions as code:</p>
+<ul>
+<li>Version-control every agent's <strong>instructions/prompt</strong>, <strong>tool configs</strong>, <strong>model binding</strong>, and <strong>policies</strong>.</li>
+<li>On failover, recreate the agents in the secondary region's Agent Service from those definitions (the runbook in Step 5 does this).</li>
+<li><strong>Conversation history (threads) is lost</strong> unless you persist it yourself. If continuity matters, write thread state to the geo-replicated data layer (Step 5) and rehydrate after failover.</li>
+</ul>
+<p>A minimal "agent definition as code" record you can store in Cosmos and replay:</p>
+<pre><code class="language-json">{
+  &quot;name&quot;: &quot;policy-bot&quot;,
+  &quot;model&quot;: &quot;gpt-4.1-mini&quot;,
+  &quot;instructions&quot;: &quot;You are an internal policy assistant. Cite the source document for every answer.&quot;,
+  &quot;tools&quot;: [{ &quot;type&quot;: &quot;file_search&quot; }],
+  &quot;metadata&quot;: { &quot;version&quot;: &quot;2026-06-26&quot;, &quot;owner&quot;: &quot;platform-team&quot; }
+}
+</code></pre>
+<blockquote>
+<p>For <strong>Hot/Hot</strong>, duplicated agents only work for stateless patterns — there's no shared server-side agent state across regions.</p>
+<p>An agent is more than its definition — it depends on threads, knowledge sources, tool connections, and backing stores, each with its own DR implication. For the full dependency breakdown and the production-grade rehydration pattern, see <a href="#agent-service-dr-the-stateful-nuance">Agent Service DR: The Stateful Nuance</a> below.</p>
+</blockquote>
+<h3 id="step-5-data-layer-replicate-or-restore">Step 5 — Data layer (replicate or restore)</h3>
+<p>Each service has its own resilience switch. Match the replication mode to the pattern you picked.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Service</th>
+<th>Hot/Warm + Hot/Hot</th>
+<th>Hot/Cold</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Cosmos DB</strong></td>
+<td>Add the secondary region + enable automatic failover</td>
+<td>Continuous backup → restore on failover</td>
+</tr>
+<tr>
+<td><strong>Azure AI Search</strong></td>
+<td>Maintain a secondary index (replicate on write or scheduled rebuild)</td>
+<td>Rebuild index from source on failover</td>
+</tr>
+<tr>
+<td><strong>Storage</strong></td>
+<td><strong>RA-GRS</strong> or <strong>GZRS</strong></td>
+<td>GRS / backup-restore</td>
+</tr>
+<tr>
+<td><strong>Key Vault</strong></td>
+<td>One vault <strong>per region</strong>, secrets synced</td>
+<td>Per-region vault, restore on failover</td>
+</tr>
+<tr>
+<td><strong>ACR</strong></td>
+<td><strong>Geo-replication</strong> enabled</td>
+<td>Re-push / import on failover</td>
+</tr>
+</tbody>
+</table></div>
+<pre><code class="language-bash"># Cosmos DB — add the secondary region and enable automatic failover
+az cosmosdb update --name &lt;cosmos&gt; --resource-group &lt;rg&gt; \
+  --locations regionName=eastus2 failoverPriority=0 isZoneRedundant=False \
+  --locations regionName=centralus failoverPriority=1 isZoneRedundant=False
+az cosmosdb update --name &lt;cosmos&gt; --resource-group &lt;rg&gt; --enable-automatic-failover true
+
+# Storage — geo-zone-redundant with read access in the secondary
+az storage account update --name &lt;storage&gt; --resource-group &lt;rg&gt; --sku Standard_RAGZRS
+
+# ACR — geo-replicate the registry to the secondary region
+az acr replication create --registry &lt;acr&gt; --location centralus
+</code></pre>
+<blockquote>
+<p><strong>RPO reality check:</strong> Cosmos automatic failover with the default consistency can lose the last few seconds of writes. If the customer's RPO is zero, you need strong consistency (and the latency cost) or synchronous app-level writes — say so explicitly in the design doc.</p>
+</blockquote>
+<h3 id="step-6-networking-parity">Step 6 — Networking parity</h3>
+<p>The secondary region's network must mirror the primary or private traffic breaks on failover:</p>
+<ul>
+<li><strong>Identical VNets</strong> and subnet layout per region.</li>
+<li><strong>Private endpoints</strong> for Foundry, APIM, Cosmos, Search, Storage, and Key Vault — no public exposure.</li>
+<li><strong>Private DNS zones</strong> replicated so name resolution works post-failover.</li>
+<li><strong>Hub-spoke alignment</strong> consistent with the customer's landing zone.</li>
+</ul>
+<h3 id="step-7-failover-orchestration">Step 7 — Failover orchestration</h3>
+<p>Detection → trigger → execution → validation. Automate as much as the customer's risk appetite allows.</p>
+<p><strong>Detect</strong>
+- Front Door health probe failure (automatic).
+- Azure <strong>Service Health</strong> and <strong>Resource Health</strong> alerts.
+- Application Insights availability tests.</p>
+<p><strong>Trigger</strong>
+- Automatic via Front Door probe failure (routing flips on its own), <strong>or</strong>
+- Alert-driven via a Logic App / Azure Automation runbook for the steps Front Door can't do (recreating agents, promoting data, deploying Hot/Cold resources).</p>
+<p><strong>Execute</strong> — the runbook below captures the manual/scripted half:</p>
+<pre><code class="language-python">&quot;&quot;&quot;failover.py — promote the secondary region for a Foundry workload.
+Routing flips at Front Door automatically; this handles the stateful + on-demand pieces.
+&quot;&quot;&quot;
+import json
+import subprocess
+import sys
+
+RG = &quot;&lt;rg&gt;&quot;
+SECONDARY = &quot;centralus&quot;
+
+def run(cmd: str) -&gt; str:
+    print(f&quot;$ {cmd}&quot;)
+    return subprocess.run(cmd, shell=True, check=True, capture_output=True, text=True).stdout
+
+def deploy_missing_resources():
+    &quot;&quot;&quot;Hot/Cold only: stand up the secondary stack from IaC.&quot;&quot;&quot;
+    run(f'az deployment group create -g {RG} '
+        f'--template-file infra/main.bicep --parameters region={SECONDARY}')
+
+def promote_data_layer():
+    &quot;&quot;&quot;Trigger Cosmos manual failover if automatic failover is not enabled.&quot;&quot;&quot;
+    run(f'az cosmosdb failover-priority-change --name &lt;cosmos&gt; -g {RG} '
+        f'--failover-policies {SECONDARY}=0 eastus2=1')
+
+def recreate_agents():
+    &quot;&quot;&quot;Agents are recreated, not failed over. Replay definitions from version control.&quot;&quot;&quot;
+    for path in (&quot;agents/policy-bot.json&quot;, &quot;agents/triage.json&quot;):
+        with open(path, encoding=&quot;utf-8&quot;) as f:
+            definition = json.load(f)
+        print(f&quot;Recreating agent '{definition['name']}' in {SECONDARY}...&quot;)
+        # Call Foundry Agent Service in the secondary region to (re)create the agent
+        # from `definition`, then rehydrate any persisted threads from Cosmos.
+
+def validate():
+    &quot;&quot;&quot;Confirm the secondary is actually serving before declaring success.&quot;&quot;&quot;
+    run('curl -fsS https://&lt;frontdoor-endpoint&gt;/health')
+
+def main(mode: str = &quot;warm&quot;):
+    if mode == &quot;cold&quot;:
+        deploy_missing_resources()
+    promote_data_layer()
+    recreate_agents()
+    validate()
+    print(&quot;Failover to&quot;, SECONDARY, &quot;complete.&quot;)
+
+if __name__ == &quot;__main__&quot;:
+    main(sys.argv[1] if len(sys.argv) &gt; 1 else &quot;warm&quot;)
+</code></pre>
+<p><strong>Validate</strong> — never declare failover done on routing alone. Hit the Front Door health endpoint, run a real inference request, and confirm an agent responds in the secondary.</p>
+<h3 id="step-8-iac-devops-prevent-drift">Step 8 — IaC &amp; DevOps (prevent drift)</h3>
+<p>The whole pattern collapses if the two regions drift apart. Lock it down:</p>
+<ul>
+<li><strong>Bicep / Terraform modules</strong> for Foundry, APIM, networking, and each data service — parameterized by region so both deploy from one source of truth.</li>
+<li><strong>Dual-region CI/CD pipelines</strong> that deploy to primary and secondary from the same commit.</li>
+<li><strong>Version-controlled agent definitions and model configs</strong> (Steps 3–4) deployed by the same pipeline.</li>
+<li>A scheduled <strong>drift-detection</strong> job (e.g. <code>terraform plan</code> / <code>what-if</code>) that fails the build if the regions diverge.</li>
+</ul>
+<hr />
+<h2 id="deployment-types-data-residency">Deployment Types &amp; Data Residency</h2>
+<p>The Foundry <strong>deployment type</strong> decides <em>where</em> inference is processed, <em>how</em> capacity is allocated, and <em>how predictable</em> performance is. It directly constrains which region pairs are viable for failover — a model you can reach in one region under Global Standard may not be deployable as Standard in your secondary at all.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Deployment type</th>
+<th>Data processing</th>
+<th>Capacity model</th>
+<th>Best for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Global Standard</strong></td>
+<td>Prompts/responses may be processed in <strong>any</strong> Azure region where the model is available</td>
+<td>Pay-per-token, shared</td>
+<td>Broadest model access, highest default quota, fastest access to new models</td>
+</tr>
+<tr>
+<td><strong>Data Zone Standard</strong></td>
+<td>Processed only within a <strong>Microsoft-defined data zone</strong> (typically US or EU)</td>
+<td>Pay-per-token, shared</td>
+<td>US/EU data-boundary control without pinning to a single region</td>
+</tr>
+<tr>
+<td><strong>Standard</strong></td>
+<td>Processed only in the <strong>selected Azure region</strong></td>
+<td>Pay-per-token, shared regional</td>
+<td>Strict single-region data residency, or lower/medium-volume workloads</td>
+</tr>
+<tr>
+<td><strong>Provisioned</strong></td>
+<td>Depends on the chosen flavour: global, data zone, or regional</td>
+<td><strong>Reserved PTU</strong> capacity</td>
+<td>Predictable throughput, low latency variance, mission-critical workloads</td>
+</tr>
+</tbody>
+</table></div>
+<p>In customer terms:</p>
+<ul>
+<li><strong>Global Standard</strong> gives the widest model availability and quota, but inference can be processed anywhere globally.</li>
+<li><strong>Data Zone Standard</strong> keeps processing inside a defined boundary such as the EU or US.</li>
+<li><strong>Standard</strong> pins processing to one Azure region, but model availability and quota may be more limited there.</li>
+<li><strong>Provisioned</strong> reserves dedicated capacity via PTUs — best where predictable performance matters.</li>
+</ul>
+<p><strong>Failover implication:</strong> for a customer needing a model that isn't offered in their current region, Global Standard or Data Zone Standard may unlock broader availability. But if they require strict regional processing, both the primary and secondary must run <strong>Standard</strong> (or <strong>Regional Provisioned</strong>) in regions where that exact model and version exist — confirm this before committing to a region pair (see <a href="#prerequisites">Prerequisites</a>).</p>
+<hr />
+<h2 id="agent-service-dr-the-stateful-nuance">Agent Service DR: The Stateful Nuance</h2>
+<p>Do not position Foundry Agent Service as a simple active-active service. Unlike a model endpoint, <strong>an agent is stateful</strong> — it depends on runtime data, tool connections, knowledge sources, and backing stores. Models can be duplicated across regions; <strong>agents must be rebuilt or rehydrated</strong> from controlled configuration and recoverable state stores.</p>
+<p>An agent typically depends on:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Dependency</th>
+<th>DR implication</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Agent definition</strong></td>
+<td>Instructions, model choice, tools, policies, and configuration must be reproducible</td>
+</tr>
+<tr>
+<td><strong>Conversation threads</strong></td>
+<td>Session history depends on backing state stores</td>
+</tr>
+<tr>
+<td><strong>Knowledge sources</strong></td>
+<td>Files, indexes, vector stores, and search indexes must exist or be rebuildable in the recovery region</td>
+</tr>
+<tr>
+<td><strong>Tool connections</strong></td>
+<td>APIs, Functions, Logic Apps, credentials, managed identities, and RBAC must work in the secondary region</td>
+</tr>
+<tr>
+<td><strong>Cosmos DB, AI Search, Storage</strong></td>
+<td>These determine what can <em>actually</em> be recovered after an outage</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Prefer Standard agent mode for production DR.</strong> In Standard mode, state sits in <strong>customer-managed</strong> Cosmos DB, Azure AI Search, and Storage — which gives the customer control over backup, replication, restore, and regional recovery. (In the fully managed mode, you don't own those stores and can't drive their failover.)</p>
+<p><strong>Recommended pattern:</strong></p>
+<ol>
+<li>Store agent <strong>definitions, prompts, tools, policies, model deployment names, and knowledge bindings</strong> in source control.</li>
+<li><strong>Pre-provision</strong> the secondary Foundry project, models, identities, networking, Key Vault, Search, Cosmos DB, Storage, and tool endpoints.</li>
+<li><strong>Replicate or restore</strong> stateful dependencies using each service's own DR capabilities (see <a href="#step-5--data-layer-replicate-or-restore">Step 5</a>).</li>
+<li><strong>Rehydrate</strong> the agent during failover by redeploying its definition and reconnecting tools and knowledge sources (see <a href="#step-7--failover-orchestration">Step 7</a>).</li>
+<li><strong>Validate</strong> with a test conversation and an end-to-end tool invocation.</li>
+<li>Treat <strong>thread-uploaded files as transient</strong> unless they're written to authoritative storage and indexed from there.</li>
+</ol>
+<blockquote>
+<p><strong>Customer message:</strong> models can be duplicated across regions; agents must be rebuilt or rehydrated from controlled configuration and recoverable state stores.</p>
+</blockquote>
+<hr />
+<h2 id="enterprise-landing-zone-alignment">Enterprise Landing Zone Alignment</h2>
+<p>To pass a customer's architecture review, the design has to land cleanly in their landing zone:</p>
+<ul>
+<li><strong>Governance:</strong> Azure Policy enforced in both regions, RBAC parity, resource locks on the failover-critical resources.</li>
+<li><strong>Security:</strong> private endpoints only, no public exposure, a Key Vault per region.</li>
+<li><strong>Observability:</strong> Application Insights per region feeding a <strong>centralized Log Analytics</strong> workspace so you can watch the failover happen end-to-end.</li>
+</ul>
+<hr />
+<h2 id="test-it">Test It</h2>
+<p>A failover you haven't tested is a hope, not a plan. Make region-outage simulation a recurring drill:</p>
+<ol>
+<li><strong>Simulate the outage.</strong> Disable the primary origin in Front Door (or block the primary APIM health endpoint) and confirm probes mark it unhealthy.
+   <code>bash
+   az afd origin update --profile-name foundry-fd --resource-group &lt;rg&gt; \
+     --origin-group-name foundry-origins --origin-name primary-apim --enabled-state Disabled</code></li>
+<li><strong>Watch the reroute.</strong> Send requests through the Front Door endpoint and confirm they land in the secondary region (check Log Analytics for the serving region).</li>
+<li><strong>Run the runbook.</strong> Execute <code>python failover.py warm</code> (or <code>cold</code>) and confirm agents are recreated and the data layer is promoted.</li>
+<li><strong>Validate end-to-end.</strong> Run a real inference + agent request against the secondary and confirm a correct, grounded response.</li>
+<li><strong>Measure.</strong> Record actual RTO/RPO against the target and feed the gap back into the design.</li>
+<li><strong>Fail back.</strong> Re-enable the primary origin and confirm traffic returns cleanly.</li>
+</ol>
+<hr />
+<h2 id="common-mistakes">Common Mistakes</h2>
+<ul>
+<li><strong>Assuming Foundry fails over for you.</strong> It doesn't. No routing, no agent promotion, no data movement happens automatically across regions — all of it is the layer you built here.</li>
+<li><strong>Model/version drift between regions.</strong> The deployment name matches but the version doesn't, so failover requests 404 or behave differently. Pin versions in IaC and validate both regions.</li>
+<li><strong>Forgetting agents are recreated, not failed over.</strong> Teams design a perfect data-layer failover and then discover their agents — and all in-flight conversations — vanished. Treat agent definitions as code and persist thread state if continuity matters.</li>
+<li><strong>Unvalidated secondary quota.</strong> The secondary deployment was fine at design time, then quota got reclaimed while it sat idle. Re-check on a schedule.</li>
+<li><strong>Network asymmetry.</strong> Private endpoints or DNS zones exist in primary but not secondary, so private traffic dies the moment you fail over. Mirror the network exactly.</li>
+<li><strong>Never actually testing.</strong> Untested DR fails when it matters. Drill it.</li>
+</ul>
+<hr />
+<h2 id="extend-it">Extend It</h2>
+<ol>
+<li><strong>Fully automated failover:</strong> Wire the Step 7 runbook to a Logic App triggered by a Service Health alert so promotion, agent recreation, and validation run with zero human steps — then add a human-approval gate for production using the pattern from <a href="10-agentic-approval-workflow.html">Guide 10</a>.</li>
+<li><strong>Thread continuity:</strong> Persist Agent Service thread state to geo-replicated Cosmos on every turn and rehydrate after failover, so conversations survive a regional outage instead of dropping.</li>
+<li><strong>Chaos drills:</strong> Schedule automated region-outage simulations (Azure Chaos Studio) and assert RTO/RPO in CI so resilience is continuously verified, not assumed.</li>
+<li><strong>Three-region active-active:</strong> Extend Front Door to weighted/latency routing across three regions for a stateless inference tier, keeping the stateful agent tier Hot/Warm.</li>
+</ol>
+<hr />
+<h2 id="resources">Resources</h2>
+<ul>
+<li><a href="https://learn.microsoft.com/azure/reliability/cross-region-replication-azure" target="_blank" rel="noopener">Azure paired regions &amp; cross-region replication</a></li>
+<li><a href="https://learn.microsoft.com/azure/frontdoor/front-door-routing-methods" target="_blank" rel="noopener">Azure Front Door routing &amp; health probes</a></li>
+<li><a href="https://learn.microsoft.com/azure/api-management/api-management-howto-deploy-multi-region" target="_blank" rel="noopener">API Management multi-region deployment</a></li>
+<li><a href="https://learn.microsoft.com/azure/cosmos-db/high-availability" target="_blank" rel="noopener">Cosmos DB global distribution &amp; automatic failover</a></li>
+<li><a href="https://learn.microsoft.com/azure/storage/common/storage-redundancy" target="_blank" rel="noopener">Storage redundancy (GZRS / RA-GRS)</a></li>
+<li><a href="https://learn.microsoft.com/azure/container-registry/container-registry-geo-replication" target="_blank" rel="noopener">Azure Container Registry geo-replication</a></li>
+<li><a href="https://learn.microsoft.com/azure/architecture/ai-ml/architecture/baseline-microsoft-foundry-chat" target="_blank" rel="noopener">Baseline Microsoft Foundry reference architecture</a></li>
+<li><a href="https://learn.microsoft.com/azure/ai-foundry/agents/overview" target="_blank" rel="noopener">Foundry Agent Service overview</a></li>
+</ul>
+  </article>
+
+  <nav class="post-nav" aria-label="More projects">
+    <a href="12-multimodal-quality-inspector.html">← Multi-Modal Quality Inspector</a>
+    <a href="index.html">All projects →</a>
+  </nav>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <div>
+      <a class="brand" href="../index.html">
+        <span class="brand-mark">AC</span>
+        <span class="brand-text-title">AzureCraft</span>
+      </a>
+      <p style="color: var(--text-muted); margin-top: 0.75rem; max-width: 36ch;">Practical Azure architecture, without the noise.</p>
+    </div>
+    <div>
+      <h4>Topics</h4>
+      <ul>
+        <li><a href="../categories/infrastructure.html">Infrastructure</a></li>
+        <li><a href="../categories/data-ai.html">Data &amp; AI</a></li>
+        <li><a href="../categories/modern-apps.html">Modern Apps</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Site</h4>
+      <ul>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="index.html">Projects</a></li>
+        <li><a href="../about.html">About</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="site-footer__bottom">
+    <p>© <span data-year>2026</span> AzureCraft. Built as a static site on Azure App Service.</p>
+  </div>
+</footer>
+
+<script src="../js/site.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

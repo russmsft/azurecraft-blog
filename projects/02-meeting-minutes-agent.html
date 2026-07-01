@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>(function(){if(location.hostname==="www.rbcloud.co.uk"){location.replace("https://rbcloud.co.uk"+location.pathname+location.search+location.hash);}})();</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Meeting Minutes Agent — AzureCraft Projects</title>
+  <meta name="description" content="Audio in, structured notes out. Transcribe a meeting with Foundry audio models, then turn the transcript into decisions and action items people actually want." />
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+  <link rel="canonical" href="https://rbcloud.co.uk/projects/02-meeting-minutes-agent.html" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Meeting Minutes Agent" />
+  <meta property="og:description" content="Audio in, structured notes out. Transcribe a meeting with Foundry audio models, then turn the transcript into decisions and action items people actually want." />
+  <meta property="og:image" content="https://rbcloud.co.uk/assets/projects/02-meeting-minutes-agent-architecture.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://rbcloud.co.uk/assets/projects/02-meeting-minutes-agent-architecture.png" />
+  <link rel="stylesheet" href="../css/azurecraft.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github-dark.min.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="reading-progress" aria-hidden="true"></div>
+
+<header class="site-header">
+  <div class="container site-nav">
+    <a class="brand" href="../index.html">
+      <span class="brand-mark">AC</span>
+      <span>
+        <span class="brand-text-title">AzureCraft</span>
+        <span class="brand-text-sub">Infra · Data &amp; AI · Modern Apps</span>
+      </span>
+    </a>
+    <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+    <nav class="site-nav__links" aria-label="Primary">
+      <a href="../index.html">Home</a>
+      <a href="../index.html#posts">Articles</a>
+      <a href="../projects/index.html" aria-current="page">Projects</a>
+      <a href="../index.html#roadmap">Roadmap</a>
+      <a href="../about.html">About</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="article-wrap">
+
+  <div class="article-header">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a> /
+      <a href="index.html">Projects</a> /
+      Project 2
+    </nav>
+    <span class="tag tag--ai">Data & AI</span>
+    <h1>Meeting Minutes Agent</h1>
+    <div class="article-meta">
+      <span>Demo asset</span>
+      <span class="dot">•</span>
+      <span aria-label="Difficulty">Difficulty ★★☆☆☆</span>
+      <span class="dot">•</span>
+      <span>2–3 days</span>
+    </div>
+  </div>
+
+  <article class="prose">
+    <div class="callout callout--note">
+      <span class="callout__icon">🔧</span>
+      <p><strong>Build it yourself.</strong> This project is part of the <a href="index.html">AI Projects for Cloud Solution Architects</a> portfolio. Full source, code, and the latest updates live in the <a href="https://github.com/russmsft/csa-ai-projects/blob/master/docs/how-to/02-meeting-minutes-agent.md" target="_blank" rel="noopener">csa-ai-projects</a> repo on GitHub.</p>
+    </div>
+
+<p>Turn a messy audio recording into a clean JSON summary with action items, owners, deadlines, and key decisions — automatically.</p>
+<hr />
+<h2 id="what-youre-building">What You're Building</h2>
+<p>A two-stage Python pipeline. Stage one sends an MP3 or WAV file to Whisper via Foundry and gets back a full transcript. Stage two passes that transcript to a GPT-4.1-mini agent that extracts a structured JSON object: meeting summary, action items (with owner and deadline), and key decisions. The whole thing runs in under 30 seconds for a 1-hour recording.</p>
+<hr />
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li>An <strong>Azure AI Services / Foundry resource</strong> (kind <code>AIServices</code>, SKU <code>S0</code>) with <strong>two model deployments</strong>: <code>whisper</code> (transcription) and <code>gpt-4.1-mini</code> (extraction). Create the resource and deployments via CLI:
+  ```bash
+  # Resource (skip if you already have one)
+  az cognitiveservices account create \
+    --name <your-resource-name> --resource-group <your-rg> \
+    --kind AIServices --sku S0 --location eastus2 --custom-domain <your-resource-name> --yes</li>
+</ul>
+<p># Whisper deployment (deployment name must be 'whisper' to match the script)
+  az cognitiveservices account deployment create \
+    --name <your-resource-name> --resource-group <your-rg> \
+    --deployment-name whisper --model-name whisper --model-version 001 \
+    --model-format OpenAI --sku-name Standard --sku-capacity 3</p>
+<p># gpt-4.1-mini deployment
+  az cognitiveservices account deployment create \
+    --name <your-resource-name> --resource-group <your-rg> \
+    --deployment-name gpt-4.1-mini --model-name gpt-4.1-mini --model-version 2025-04-14 \
+    --model-format OpenAI --sku-name Standard --sku-capacity 10
+  ```</p>
+<blockquote>
+<p>Whisper isn't in every region — <code>eastus2</code>, <code>northcentralus</code>, <code>swedencentral</code>, and <code>westeurope</code> all have it. Deploy <strong>both</strong> models on the <strong>same</strong> resource. Confirm versions for your region with <code>az cognitiveservices account list-models --name &lt;name&gt; --resource-group &lt;rg&gt; -o table</code>.
+- Azure CLI logged in (<code>az login</code>) with <strong>Cognitive Services OpenAI Contributor</strong> on the resource.
+- Python 3.11+
+- <code>openai &gt;= 1.30.0</code>, <code>azure-identity</code>, <code>python-dotenv</code>
+- <code>AZURE_OPENAI_ENDPOINT</code> set in <code>.env</code> to your resource endpoint (<code>https://&lt;your-resource-name&gt;.cognitiveservices.azure.com/</code>)
+- An MP3 or WAV file to test with (any meeting recording, or use the sample transcript in <a href="#test-it">Test It</a>)</p>
+</blockquote>
+<pre><code class="language-bash">pip install &quot;openai&gt;=1.30.0&quot; azure-identity python-dotenv
+</code></pre>
+<hr />
+<h2 id="architecture">Architecture</h2>
+<p><img alt="Meeting Minutes architecture: audio file → Foundry Whisper transcription → GPT-4.1-mini structured prompt → structured JSON output" src="../assets/projects/02-meeting-minutes-agent-architecture.png" /></p>
+<hr />
+<h2 id="step-by-step-build">Step-by-Step Build</h2>
+<h3 id="step-1-set-up-client">Step 1 — Set up client</h3>
+<p>Whisper transcription and chat extraction both run through a single <code>AzureOpenAI</code> client pointed at your Foundry resource's Azure OpenAI endpoint, authenticated with <code>DefaultAzureCredential</code> (no API keys).</p>
+<pre><code class="language-python">import os
+import json
+from dotenv import load_dotenv
+from azure.identity import DefaultAzureCredential, get_bearer_token_provider
+from openai import AzureOpenAI
+
+load_dotenv()
+
+ENDPOINT = os.environ[&quot;AZURE_OPENAI_ENDPOINT&quot;]  # https://&lt;resource&gt;.cognitiveservices.azure.com/
+token_provider = get_bearer_token_provider(
+    DefaultAzureCredential(), &quot;https://cognitiveservices.azure.com/.default&quot;
+)
+openai = AzureOpenAI(
+    azure_endpoint=ENDPOINT,
+    azure_ad_token_provider=token_provider,
+    api_version=&quot;2025-04-01-preview&quot;,
+)
+</code></pre>
+<blockquote>
+<p><strong>Why not the Foundry project client?</strong> <code>AIProjectClient.get_openai_client()</code> routes to the project's <code>/openai/v1/</code> surface, which serves chat completions but <strong>returns 404 for Whisper audio transcription</strong>. The Azure OpenAI endpoint above serves both audio and chat, so one client covers the whole pipeline. (Structured outputs with <code>strict: true</code> require api-version <code>2024-08-01-preview</code> or later — <code>2025-04-01-preview</code> is used here.)</p>
+</blockquote>
+<h3 id="step-2-transcribe-the-audio">Step 2 — Transcribe the audio</h3>
+<pre><code class="language-python">def transcribe(audio_path: str) -&gt; str:
+    &quot;&quot;&quot;Send audio file to Whisper, return transcript text.&quot;&quot;&quot;
+    with open(audio_path, &quot;rb&quot;) as f:
+        response = openai.audio.transcriptions.create(
+            model=&quot;whisper&quot;,       # Foundry deployment name for Whisper
+            file=f,
+            response_format=&quot;text&quot;
+        )
+    print(f&quot;Transcript length: {len(response)} characters&quot;)
+    return response
+</code></pre>
+<blockquote>
+<p><strong>Gotcha:</strong> Whisper via Foundry has a 25 MB file size limit. For longer recordings, split the audio first using <code>pydub</code>:</p>
+<p>```python
+from pydub import AudioSegment</p>
+<p>def split_audio(path: str, chunk_ms: int = 600_000) -&gt; list[str]:
+    """Split audio into N-minute chunks, return list of temp file paths."""
+    audio = AudioSegment.from_file(path)
+    chunks = []
+    for i, start in enumerate(range(0, len(audio), chunk_ms)):
+        chunk = audio[start:start + chunk_ms]
+        out = f"chunk_{i:03d}.mp3"
+        chunk.export(out, format="mp3")
+        chunks.append(out)
+    return chunks
+```</p>
+<p><strong>Gotcha:</strong> Whisper doesn't know who is speaking. For speaker diarization, use Azure AI Speech service (<code>speechsdk</code> with <code>ConversationTranscriber</code>) before this step, then pass the diarized transcript to the extraction agent.</p>
+</blockquote>
+<h3 id="step-3-define-the-extraction-schema">Step 3 — Define the extraction schema</h3>
+<p>Use JSON Schema to force the model to return a predictable structure. This avoids the fragile "parse the markdown table" pattern.</p>
+<pre><code class="language-python">EXTRACTION_SCHEMA = {
+    &quot;type&quot;: &quot;json_schema&quot;,
+    &quot;json_schema&quot;: {
+        &quot;name&quot;: &quot;meeting_minutes&quot;,
+        &quot;strict&quot;: True,
+        &quot;schema&quot;: {
+            &quot;type&quot;: &quot;object&quot;,
+            &quot;properties&quot;: {
+                &quot;summary&quot;: {
+                    &quot;type&quot;: &quot;string&quot;,
+                    &quot;description&quot;: &quot;3-5 sentence summary of what was discussed and decided.&quot;
+                },
+                &quot;action_items&quot;: {
+                    &quot;type&quot;: &quot;array&quot;,
+                    &quot;items&quot;: {
+                        &quot;type&quot;: &quot;object&quot;,
+                        &quot;properties&quot;: {
+                            &quot;task&quot;: {&quot;type&quot;: &quot;string&quot;},
+                            &quot;owner&quot;: {&quot;type&quot;: &quot;string&quot;},
+                            &quot;deadline&quot;: {
+                                &quot;type&quot;: &quot;string&quot;,
+                                &quot;description&quot;: &quot;ISO 8601 date if mentioned, else 'unspecified'.&quot;
+                            },
+                            &quot;priority&quot;: {
+                                &quot;type&quot;: &quot;string&quot;,
+                                &quot;enum&quot;: [&quot;high&quot;, &quot;medium&quot;, &quot;low&quot;]
+                            }
+                        },
+                        &quot;required&quot;: [&quot;task&quot;, &quot;owner&quot;, &quot;deadline&quot;, &quot;priority&quot;],
+                        &quot;additionalProperties&quot;: False
+                    }
+                },
+                &quot;key_decisions&quot;: {
+                    &quot;type&quot;: &quot;array&quot;,
+                    &quot;items&quot;: {&quot;type&quot;: &quot;string&quot;}
+                },
+                &quot;participants&quot;: {
+                    &quot;type&quot;: &quot;array&quot;,
+                    &quot;items&quot;: {&quot;type&quot;: &quot;string&quot;},
+                    &quot;description&quot;: &quot;Names mentioned in the transcript.&quot;
+                },
+                &quot;meeting_date&quot;: {
+                    &quot;type&quot;: &quot;string&quot;,
+                    &quot;description&quot;: &quot;ISO 8601 date if mentioned in transcript, else 'unknown'.&quot;
+                }
+            },
+            &quot;required&quot;: [
+                &quot;summary&quot;, &quot;action_items&quot;, &quot;key_decisions&quot;,
+                &quot;participants&quot;, &quot;meeting_date&quot;
+            ],
+            &quot;additionalProperties&quot;: False
+        }
+    }
+}
+</code></pre>
+<h3 id="step-4-extract-structured-data-from-transcript">Step 4 — Extract structured data from transcript</h3>
+<pre><code class="language-python">SYSTEM_PROMPT = &quot;&quot;&quot;You are an expert meeting analyst. Given a raw meeting transcript,
+extract:
+1. A concise summary (3-5 sentences)
+2. All action items — include owner (person who committed), deadline (exact date if stated,
+   else 'unspecified'), and priority (high/medium/low based on urgency language used)
+3. Key decisions made during the meeting
+4. Participant names mentioned
+5. Meeting date if stated
+
+Be precise. Only include action items that were explicitly committed to by a named person.
+Do not invent owners or deadlines that weren't stated.&quot;&quot;&quot;
+
+def extract_minutes(transcript: str) -&gt; dict:
+    &quot;&quot;&quot;Run GPT-4.1-mini extraction, return parsed dict.&quot;&quot;&quot;
+    response = openai.chat.completions.create(
+        model=&quot;gpt-4.1-mini&quot;,
+        messages=[
+            {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: SYSTEM_PROMPT},
+            {
+                &quot;role&quot;: &quot;user&quot;,
+                &quot;content&quot;: f&quot;Here is the meeting transcript:\n\n{transcript}&quot;
+            }
+        ],
+        response_format=EXTRACTION_SCHEMA,
+        temperature=0.1,   # low temp for deterministic extraction
+        max_tokens=2000
+    )
+
+    raw = response.choices[0].message.content
+    return json.loads(raw)
+</code></pre>
+<blockquote>
+<p><strong>Why temperature=0.1?</strong> Extraction tasks need consistency, not creativity. Low temperature means you get the same output for the same input — critical when this feeds downstream automation.</p>
+</blockquote>
+<h3 id="step-5-format-and-save-the-output">Step 5 — Format and save the output</h3>
+<pre><code class="language-python">import pathlib
+from datetime import datetime
+
+def save_minutes(minutes: dict, output_dir: str = &quot;outputs&quot;) -&gt; str:
+    &quot;&quot;&quot;Save minutes as JSON and a human-readable markdown summary.&quot;&quot;&quot;
+    pathlib.Path(output_dir).mkdir(exist_ok=True)
+    ts = datetime.now().strftime(&quot;%Y%m%d_%H%M%S&quot;)
+
+    # Save raw JSON
+    json_path = f&quot;{output_dir}/minutes_{ts}.json&quot;
+    with open(json_path, &quot;w&quot;, encoding=&quot;utf-8&quot;) as f:
+        json.dump(minutes, f, indent=2)
+
+    # Generate readable markdown
+    md_lines = [
+        f&quot;# Meeting Minutes — {minutes.get('meeting_date', 'Unknown Date')}&quot;,
+        &quot;&quot;,
+        &quot;## Summary&quot;,
+        minutes[&quot;summary&quot;],
+        &quot;&quot;,
+        &quot;## Action Items&quot;,
+    ]
+    for item in minutes[&quot;action_items&quot;]:
+        md_lines.append(
+            f&quot;- [ ] **{item['task']}** — {item['owner']} &quot;
+            f&quot;(due: {item['deadline']}, priority: {item['priority']})&quot;
+        )
+    md_lines += [
+        &quot;&quot;,
+        &quot;## Key Decisions&quot;,
+    ]
+    for decision in minutes[&quot;key_decisions&quot;]:
+        md_lines.append(f&quot;- {decision}&quot;)
+
+    md_path = f&quot;{output_dir}/minutes_{ts}.md&quot;
+    with open(md_path, &quot;w&quot;, encoding=&quot;utf-8&quot;) as f:
+        f.write(&quot;\n&quot;.join(md_lines))
+
+    print(f&quot;Saved: {json_path}\nSaved: {md_path}&quot;)
+    return json_path
+</code></pre>
+<h3 id="step-6-wire-it-together">Step 6 — Wire it together</h3>
+<pre><code class="language-python">def main(audio_path: str):
+    print(&quot;Step 1: Transcribing audio...&quot;)
+    transcript = transcribe(audio_path)
+
+    print(&quot;Step 2: Extracting meeting minutes...&quot;)
+    minutes = extract_minutes(transcript)
+
+    print(&quot;Step 3: Saving output...&quot;)
+    save_minutes(minutes)
+
+    # Quick console preview
+    print(f&quot;\n📋 Summary: {minutes['summary'][:200]}...&quot;)
+    print(f&quot;✅ Action items: {len(minutes['action_items'])}&quot;)
+    print(f&quot;🎯 Key decisions: {len(minutes['key_decisions'])}&quot;)
+
+if __name__ == &quot;__main__&quot;:
+    import sys
+    main(sys.argv[1] if len(sys.argv) &gt; 1 else &quot;meeting.mp3&quot;)
+</code></pre>
+<pre><code class="language-bash">python meeting_minutes.py my-recording.mp3
+</code></pre>
+<hr />
+<h2 id="test-it">Test It</h2>
+<p>Don't have a recording handy? Create a test transcript directly:</p>
+<pre><code class="language-python"># Test without audio — paste a fake transcript
+TEST_TRANSCRIPT = &quot;&quot;&quot;
+Sarah: Good morning everyone. Let's start. Today is March 15th.
+The main agenda is the Q2 product launch.
+
+Tom: I'll handle the landing page redesign. I can have it done by March 22nd.
+
+Sarah: Great. Maria, can you own the press release?
+
+Maria: Yes, I'll have a draft by March 18th. This is urgent.
+
+Tom: We decided to delay the mobile app feature to Q3.
+Sarah: Agreed. That's confirmed. Any other decisions?
+
+Maria: We're going with the blue color scheme — final decision.
+&quot;&quot;&quot;
+
+minutes = extract_minutes(TEST_TRANSCRIPT)
+print(json.dumps(minutes, indent=2))
+</code></pre>
+<p>Expected output structure:</p>
+<pre><code class="language-json">{
+  &quot;summary&quot;: &quot;The team met on March 15th to discuss the Q2 product launch...&quot;,
+  &quot;action_items&quot;: [
+    {
+      &quot;task&quot;: &quot;Landing page redesign&quot;,
+      &quot;owner&quot;: &quot;Tom&quot;,
+      &quot;deadline&quot;: &quot;2024-03-22&quot;,
+      &quot;priority&quot;: &quot;medium&quot;
+    },
+    {
+      &quot;task&quot;: &quot;Press release draft&quot;,
+      &quot;owner&quot;: &quot;Maria&quot;,
+      &quot;deadline&quot;: &quot;2024-03-18&quot;,
+      &quot;priority&quot;: &quot;high&quot;
+    }
+  ],
+  &quot;key_decisions&quot;: [
+    &quot;Mobile app feature delayed to Q3&quot;,
+    &quot;Blue color scheme selected for final design&quot;
+  ],
+  &quot;participants&quot;: [&quot;Sarah&quot;, &quot;Tom&quot;, &quot;Maria&quot;],
+  &quot;meeting_date&quot;: &quot;2024-03-15&quot;
+}
+</code></pre>
+<hr />
+<h2 id="common-mistakes">Common Mistakes</h2>
+<ul>
+<li><strong>Whisper returns garbage for heavily accented or noisy audio.</strong> Pre-process with noise reduction (e.g., <code>noisereduce</code> library) before sending to Whisper.</li>
+<li><strong><code>strict: True</code> in the schema breaks if the model can't satisfy all required fields.</strong> Start with <code>strict: False</code> during development; enable strict mode once you've validated the schema.</li>
+<li><strong>Large transcripts hit token limits.</strong> GPT-4.1-mini has a 128K context window — enough for a 2-hour meeting (~60K tokens). For all-day summits, chunk by agenda section.</li>
+</ul>
+<hr />
+<h2 id="extend-it">Extend It</h2>
+<ol>
+<li><strong>Auto-send action items to Planner:</strong> After extraction, POST each action item to Microsoft Planner via Graph API, assigning tasks directly to the named owners (requires Entra ID user lookup by name).</li>
+<li><strong>Teams integration:</strong> Deploy as an Azure Function triggered by a Teams bot command. Users upload recordings directly in Teams and get minutes in the same channel.</li>
+<li><strong>Speaker-aware extraction:</strong> Pipe the transcript through Azure AI Speech's <code>ConversationTranscriber</code> first to get <code>Speaker 1: ...</code> format, then update the extraction prompt to preserve speaker attribution in action items.</li>
+</ol>
+<hr />
+<h2 id="resources">Resources</h2>
+<ul>
+<li><a href="https://learn.microsoft.com/azure/ai-foundry/openai/whisper-quickstart" target="_blank" rel="noopener">Whisper via Azure AI Foundry</a></li>
+<li><a href="https://learn.microsoft.com/azure/ai-foundry/openai/how-to/structured-outputs" target="_blank" rel="noopener">Structured outputs (JSON Schema)</a></li>
+<li><a href="https://learn.microsoft.com/azure/ai-services/openai/how-to/managed-identity" target="_blank" rel="noopener">Keyless auth with DefaultAzureCredential</a></li>
+<li><a href="https://github.com/jiaaro/pydub" target="_blank" rel="noopener">pydub audio splitting</a></li>
+</ul>
+  </article>
+
+  <nav class="post-nav" aria-label="More projects">
+    <a href="01-ask-my-docs.html">← Ask My Docs — RAG Starter Kit</a>
+    <a href="03-email-triage-agent.html">Customer Email Triage Agent →</a>
+  </nav>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <div>
+      <a class="brand" href="../index.html">
+        <span class="brand-mark">AC</span>
+        <span class="brand-text-title">AzureCraft</span>
+      </a>
+      <p style="color: var(--text-muted); margin-top: 0.75rem; max-width: 36ch;">Practical Azure architecture, without the noise.</p>
+    </div>
+    <div>
+      <h4>Topics</h4>
+      <ul>
+        <li><a href="../categories/infrastructure.html">Infrastructure</a></li>
+        <li><a href="../categories/data-ai.html">Data &amp; AI</a></li>
+        <li><a href="../categories/modern-apps.html">Modern Apps</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Site</h4>
+      <ul>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="index.html">Projects</a></li>
+        <li><a href="../about.html">About</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="site-footer__bottom">
+    <p>© <span data-year>2026</span> AzureCraft. Built as a static site on Azure App Service.</p>
+  </div>
+</footer>
+
+<script src="../js/site.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

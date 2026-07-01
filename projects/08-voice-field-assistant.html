@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>(function(){if(location.hostname==="www.rbcloud.co.uk"){location.replace("https://rbcloud.co.uk"+location.pathname+location.search+location.hash);}})();</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Voice-Enabled Field Assistant — AzureCraft Projects</title>
+  <meta name="description" content="Low-latency speech-in / speech-out assistant for hands-busy field workers, grounded in your equipment docs." />
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+  <link rel="canonical" href="https://rbcloud.co.uk/projects/08-voice-field-assistant.html" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Voice-Enabled Field Assistant" />
+  <meta property="og:description" content="Low-latency speech-in / speech-out assistant for hands-busy field workers, grounded in your equipment docs." />
+  <meta property="og:image" content="https://rbcloud.co.uk/assets/projects/08-voice-field-assistant-architecture.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://rbcloud.co.uk/assets/projects/08-voice-field-assistant-architecture.png" />
+  <link rel="stylesheet" href="../css/azurecraft.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github-dark.min.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="reading-progress" aria-hidden="true"></div>
+
+<header class="site-header">
+  <div class="container site-nav">
+    <a class="brand" href="../index.html">
+      <span class="brand-mark">AC</span>
+      <span>
+        <span class="brand-text-title">AzureCraft</span>
+        <span class="brand-text-sub">Infra · Data &amp; AI · Modern Apps</span>
+      </span>
+    </a>
+    <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+    <nav class="site-nav__links" aria-label="Primary">
+      <a href="../index.html">Home</a>
+      <a href="../index.html#posts">Articles</a>
+      <a href="../projects/index.html" aria-current="page">Projects</a>
+      <a href="../index.html#roadmap">Roadmap</a>
+      <a href="../about.html">About</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="article-wrap">
+
+  <div class="article-header">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a> /
+      <a href="index.html">Projects</a> /
+      Project 8
+    </nav>
+    <span class="tag tag--ai">Data & AI</span>
+    <h1>Voice-Enabled Field Assistant</h1>
+    <div class="article-meta">
+      <span>Demo asset</span>
+      <span class="dot">•</span>
+      <span aria-label="Difficulty">Difficulty ★★★☆☆</span>
+      <span class="dot">•</span>
+      <span>2–3 weeks</span>
+    </div>
+  </div>
+
+  <article class="prose">
+    <div class="callout callout--note">
+      <span class="callout__icon">🔧</span>
+      <p><strong>Build it yourself.</strong> This project is part of the <a href="index.html">AI Projects for Cloud Solution Architects</a> portfolio. Full source, code, and the latest updates live in the <a href="https://github.com/russmsft/csa-ai-projects/blob/master/docs/how-to/08-voice-field-assistant.md" target="_blank" rel="noopener">csa-ai-projects</a> repo on GitHub.</p>
+    </div>
+
+<p>A field technician speaks a question; the assistant searches equipment manuals and speaks an answer back — all in under two seconds. This guide builds the WebSocket backend and the mobile web frontend.</p>
+<hr />
+<h2 id="what-youre-building">What You're Building</h2>
+<p>A FastAPI WebSocket server that bridges browser microphone audio to the GPT-4o Realtime API via Foundry. Azure AI Search provides manual retrieval grounding. The mobile HTML/JS frontend records voice, streams audio to the backend, and plays the response through the device speaker. The whole stack runs on Azure App Service.</p>
+<hr />
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li>Microsoft Foundry project with <strong>GPT-4o Realtime</strong> deployed (check: Models → gpt-4o-realtime-preview)</li>
+<li>Azure AI Search index with equipment manual chunks (PDFs pre-processed and indexed)</li>
+<li>Azure App Service (B2 or higher — WebSocket needs it)</li>
+<li>Python 3.11+</li>
+<li><code>fastapi</code>, <code>uvicorn[standard]</code>, <code>websockets</code>, <code>azure-search-documents</code>, <code>azure-identity</code></li>
+</ul>
+<pre><code class="language-bash">pip install fastapi &quot;uvicorn[standard]&quot; websockets \
+  azure-search-documents azure-identity python-dotenv
+</code></pre>
+<hr />
+<h2 id="architecture">Architecture</h2>
+<p><img alt="Voice Field Assistant architecture: mobile browser → FastAPI on App Service grounding with Azure AI Search and streaming to GPT-4o Realtime" src="../assets/projects/08-voice-field-assistant-architecture.png" /></p>
+<hr />
+<h2 id="step-by-step-build">Step-by-Step Build</h2>
+<h3 id="step-1-index-equipment-manuals-in-azure-ai-search">Step 1 — Index equipment manuals in Azure AI Search</h3>
+<pre><code class="language-bash">SEARCH_NAME=&quot;field-assistant-search&quot;
+
+az search service create \
+  --name $SEARCH_NAME \
+  --resource-group $RG \
+  --sku Basic \
+  --location eastus2
+
+# Create index
+az search index create \
+  --service-name $SEARCH_NAME \
+  --resource-group $RG \
+  --name equipment-manuals \
+  --fields '[
+    {&quot;name&quot;:&quot;id&quot;,&quot;type&quot;:&quot;Edm.String&quot;,&quot;key&quot;:true},
+    {&quot;name&quot;:&quot;content&quot;,&quot;type&quot;:&quot;Edm.String&quot;,&quot;searchable&quot;:true},
+    {&quot;name&quot;:&quot;source&quot;,&quot;type&quot;:&quot;Edm.String&quot;,&quot;filterable&quot;:true},
+    {&quot;name&quot;:&quot;page&quot;,&quot;type&quot;:&quot;Edm.Int32&quot;},
+    {&quot;name&quot;:&quot;content_vector&quot;,&quot;type&quot;:&quot;Collection(Edm.Single)&quot;,&quot;searchable&quot;:true,
+     &quot;dimensions&quot;:1536,&quot;vectorSearchProfile&quot;:&quot;hnsw-profile&quot;}
+  ]'
+</code></pre>
+<p>For bulk PDF ingestion, use the Foundry portal's <strong>Data Ingestion</strong> wizard or the <code>azure-ai-projects</code> data pipeline:</p>
+<pre><code class="language-python"># Quick manual indexing for testing
+from azure.search.documents import SearchClient
+from azure.core.credentials import AzureKeyCredential
+import json
+
+search_client = SearchClient(
+    endpoint=os.environ[&quot;SEARCH_ENDPOINT&quot;],
+    index_name=&quot;equipment-manuals&quot;,
+    credential=AzureKeyCredential(os.environ[&quot;SEARCH_KEY&quot;])
+)
+
+# Upload sample manual chunks
+sample_docs = [
+    {
+        &quot;id&quot;: &quot;manual-001-p1&quot;,
+        &quot;content&quot;: &quot;To reset the pressure valve on Model X500: 1. Turn off main power. &quot;
+                   &quot;2. Wait 30 seconds for pressure to equalize. &quot;
+                   &quot;3. Turn valve counterclockwise 3 full rotations. &quot;
+                   &quot;4. Restore power and check pressure gauge — should read 45-50 PSI.&quot;,
+        &quot;source&quot;: &quot;X500-maintenance-manual.pdf&quot;,
+        &quot;page&quot;: 12
+    },
+    {
+        &quot;id&quot;: &quot;manual-001-p2&quot;,
+        &quot;content&quot;: &quot;Error code E-47 on X500 indicates pump cavitation. &quot;
+                   &quot;Check inlet filter (should be &lt;15% blocked). &quot;
+                   &quot;If filter is clear, inspect impeller for wear.&quot;,
+        &quot;source&quot;: &quot;X500-maintenance-manual.pdf&quot;,
+        &quot;page&quot;: 34
+    }
+]
+search_client.upload_documents(sample_docs)
+</code></pre>
+<h3 id="step-2-search-helper">Step 2 — Search helper</h3>
+<pre><code class="language-python"># search.py
+import os
+from azure.search.documents import SearchClient
+from azure.core.credentials import AzureKeyCredential
+
+_search_client = None
+
+def get_search_client() -&gt; SearchClient:
+    global _search_client
+    if not _search_client:
+        _search_client = SearchClient(
+            endpoint=os.environ[&quot;SEARCH_ENDPOINT&quot;],
+            index_name=os.environ.get(&quot;SEARCH_INDEX&quot;, &quot;equipment-manuals&quot;),
+            credential=AzureKeyCredential(os.environ[&quot;SEARCH_KEY&quot;])
+        )
+    return _search_client
+
+
+def search_manuals(query: str, top: int = 3) -&gt; str:
+    &quot;&quot;&quot;Full-text search over equipment manuals. Returns context string.&quot;&quot;&quot;
+    results = get_search_client().search(search_text=query, top=top)
+    chunks = []
+    for r in results:
+        chunks.append(
+            f&quot;[Source: {r.get('source','unknown')}, page {r.get('page','?')}]\n&quot;
+            f&quot;{r.get('content','')}&quot;
+        )
+    return &quot;\n\n---\n\n&quot;.join(chunks) if chunks else &quot;No relevant manual content found.&quot;
+</code></pre>
+<h3 id="step-3-fastapi-websocket-server">Step 3 — FastAPI WebSocket server</h3>
+<pre><code class="language-python"># server.py
+import os
+import json
+import asyncio
+import websockets
+import logging
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.staticfiles import StaticFiles
+from dotenv import load_dotenv
+from azure.identity import DefaultAzureCredential
+from search import search_manuals
+
+load_dotenv()
+logger = logging.getLogger(&quot;field-assistant&quot;)
+app = FastAPI()
+
+# The Realtime API is reached over a raw WebSocket (below), not the
+# azure-ai-projects client — so we only need the endpoint and a token here.
+PROJECT_ENDPOINT = os.environ[&quot;AZURE_OPENAI_ENDPOINT&quot;]
+
+def get_realtime_url() -&gt; str:
+    &quot;&quot;&quot;Build the Realtime API WebSocket URL for Foundry.&quot;&quot;&quot;
+    # wss:// scheme on the Foundry/Azure OpenAI endpoint
+    base = PROJECT_ENDPOINT.rstrip(&quot;/&quot;).replace(&quot;https://&quot;, &quot;wss://&quot;, 1)
+    return f&quot;{base}/openai/realtime?api-version=2024-12-01-preview&amp;deployment=gpt-4o-realtime-preview&quot;
+
+
+def get_auth_header() -&gt; dict:
+    &quot;&quot;&quot;Get Bearer token for Foundry.&quot;&quot;&quot;
+    credential = DefaultAzureCredential()
+    token = credential.get_token(&quot;https://cognitiveservices.azure.com/.default&quot;)
+    return {&quot;Authorization&quot;: f&quot;Bearer {token.token}&quot;}
+
+
+SYSTEM_PROMPT = &quot;&quot;&quot;You are a voice assistant for field technicians working with industrial equipment.
+You have access to equipment manuals. When a technician asks a question:
+1. Give a direct, actionable answer in plain spoken language (no markdown)
+2. Keep responses under 3 sentences — technicians need quick answers
+3. If you're unsure, say so clearly and suggest contacting the supervisor
+4. Speak numbers clearly: say &quot;four-five PSI&quot; not &quot;45PSI&quot;
+&quot;&quot;&quot;
+
+
+@app.websocket(&quot;/ws/voice&quot;)
+async def voice_ws(client_ws: WebSocket):
+    &quot;&quot;&quot;Bridge browser audio to GPT-4o Realtime.&quot;&quot;&quot;
+    await client_ws.accept()
+    logger.info(&quot;Client connected&quot;)
+
+    realtime_url = get_realtime_url()
+    headers = get_auth_header()
+
+    try:
+        async with websockets.connect(
+            realtime_url,
+            additional_headers=headers,
+            ping_interval=20
+        ) as rt_ws:
+            # Initialize Realtime session
+            await rt_ws.send(json.dumps({
+                &quot;type&quot;: &quot;session.update&quot;,
+                &quot;session&quot;: {
+                    &quot;modalities&quot;: [&quot;text&quot;, &quot;audio&quot;],
+                    &quot;instructions&quot;: SYSTEM_PROMPT,
+                    &quot;voice&quot;: &quot;alloy&quot;,
+                    &quot;input_audio_format&quot;: &quot;pcm16&quot;,
+                    &quot;output_audio_format&quot;: &quot;pcm16&quot;,
+                    &quot;input_audio_transcription&quot;: {&quot;model&quot;: &quot;whisper-1&quot;},
+                    &quot;turn_detection&quot;: {
+                        &quot;type&quot;: &quot;server_vad&quot;,
+                        &quot;threshold&quot;: 0.5,
+                        &quot;silence_duration_ms&quot;: 800
+                    }
+                }
+            }))
+
+            async def browser_to_realtime():
+                &quot;&quot;&quot;Forward browser audio to Realtime API.&quot;&quot;&quot;
+                async for message in client_ws.iter_bytes():
+                    # Browser sends raw PCM16 audio chunks
+                    import base64
+                    audio_b64 = base64.b64encode(message).decode()
+                    await rt_ws.send(json.dumps({
+                        &quot;type&quot;: &quot;input_audio_buffer.append&quot;,
+                        &quot;audio&quot;: audio_b64
+                    }))
+
+            async def realtime_to_browser():
+                &quot;&quot;&quot;Forward Realtime API events to browser.&quot;&quot;&quot;
+                async for raw in rt_ws:
+                    event = json.loads(raw)
+                    event_type = event.get(&quot;type&quot;, &quot;&quot;)
+
+                    # Forward audio deltas directly to browser
+                    if event_type == &quot;response.audio.delta&quot;:
+                        await client_ws.send_json(event)
+
+                    # Handle transcript for grounding
+                    elif event_type == &quot;conversation.item.input_audio_transcription.completed&quot;:
+                        transcript = event.get(&quot;transcript&quot;, &quot;&quot;)
+                        if transcript:
+                            logger.info(f&quot;Technician said: {transcript}&quot;)
+                            context = search_manuals(transcript)
+                            # Inject context as a system message
+                            await rt_ws.send(json.dumps({
+                                &quot;type&quot;: &quot;conversation.item.create&quot;,
+                                &quot;item&quot;: {
+                                    &quot;type&quot;: &quot;message&quot;,
+                                    &quot;role&quot;: &quot;system&quot;,
+                                    &quot;content&quot;: [{
+                                        &quot;type&quot;: &quot;input_text&quot;,
+                                        &quot;text&quot;: f&quot;Relevant manual context:\n\n{context}&quot;
+                                    }]
+                                }
+                            }))
+
+                    # Forward status events for UI feedback
+                    elif event_type in (
+                        &quot;response.done&quot;,
+                        &quot;input_audio_buffer.speech_started&quot;,
+                        &quot;input_audio_buffer.speech_stopped&quot;
+                    ):
+                        await client_ws.send_json(event)
+
+            # Run both directions concurrently
+            await asyncio.gather(
+                browser_to_realtime(),
+                realtime_to_browser()
+            )
+
+    except WebSocketDisconnect:
+        logger.info(&quot;Client disconnected&quot;)
+    except Exception as e:
+        logger.error(f&quot;Session error: {e}&quot;)
+        await client_ws.close()
+
+
+@app.get(&quot;/health&quot;)
+def health():
+    return {&quot;status&quot;: &quot;ok&quot;}
+
+
+app.mount(&quot;/&quot;, StaticFiles(directory=&quot;static&quot;, html=True), name=&quot;static&quot;)
+</code></pre>
+<h3 id="step-4-mobile-voice-ui">Step 4 — Mobile voice UI</h3>
+<pre><code class="language-html">&lt;!-- static/index.html --&gt;
+&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;UTF-8&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0, user-scalable=no&quot;&gt;
+  &lt;title&gt;Field Assistant&lt;/title&gt;
+  &lt;style&gt;
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: &quot;Segoe UI&quot;, sans-serif; background: #1a1a2e;
+           color: white; display: flex; flex-direction: column;
+           align-items: center; justify-content: center; min-height: 100vh; }
+    h1 { font-size: 1.5rem; margin-bottom: 8px; }
+    p.subtitle { color: #8888aa; font-size: 0.9rem; margin-bottom: 40px; }
+    #mic-btn { width: 100px; height: 100px; border-radius: 50%;
+               background: #0078d4; border: none; cursor: pointer;
+               font-size: 2.5rem; transition: all 0.2s; box-shadow: 0 4px 20px rgba(0,120,212,0.4); }
+    #mic-btn.listening { background: #d40000; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(212,0,0,0.4); }
+                       50% { box-shadow: 0 0 0 20px rgba(212,0,0,0); } }
+    #status { margin-top: 20px; font-size: 0.9rem; color: #8888aa; min-height: 24px; }
+    #transcript { margin-top: 30px; max-width: 340px; text-align: center;
+                  color: #cccccc; font-size: 0.9rem; line-height: 1.5; min-height: 60px; }
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;h1&gt;Field Assistant&lt;/h1&gt;
+  &lt;p class=&quot;subtitle&quot;&gt;Press and hold to ask a question&lt;/p&gt;
+  &lt;button id=&quot;mic-btn&quot;&gt;🎤&lt;/button&gt;
+  &lt;div id=&quot;status&quot;&gt;Ready&lt;/div&gt;
+  &lt;div id=&quot;transcript&quot;&gt;&lt;/div&gt;
+
+&lt;script&gt;
+  const btn = document.getElementById('mic-btn');
+  const status = document.getElementById('status');
+  const transcript = document.getElementById('transcript');
+
+  let ws, audioCtx, mediaStream, processor, source;
+  let isRecording = false;
+  const SAMPLE_RATE = 24000;
+
+  function connectWS() {
+    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    ws = new WebSocket(`${proto}//${location.host}/ws/voice`);
+
+    ws.onopen = () =&gt; status.textContent = 'Connected';
+    ws.onclose = () =&gt; { status.textContent = 'Disconnected'; setTimeout(connectWS, 3000); };
+    ws.onerror = () =&gt; status.textContent = 'Connection error';
+
+    ws.onmessage = async (e) =&gt; {
+      const event = JSON.parse(e.data);
+      if (event.type === 'response.audio.delta') {
+        playAudioDelta(event.delta);
+      } else if (event.type === 'input_audio_buffer.speech_started') {
+        status.textContent = 'Listening...';
+      } else if (event.type === 'response.done') {
+        status.textContent = 'Done';
+        btn.classList.remove('listening');
+      }
+    };
+  }
+
+  async function startRecording() {
+    if (!navigator.mediaDevices) {
+      alert('Microphone not available. Please use HTTPS.');
+      return;
+    }
+    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    audioCtx = new AudioContext({ sampleRate: SAMPLE_RATE });
+    source = audioCtx.createMediaStreamSource(mediaStream);
+    processor = audioCtx.createScriptProcessor(4096, 1, 1);
+
+    processor.onaudioprocess = (e) =&gt; {
+      if (!isRecording || ws.readyState !== WebSocket.OPEN) return;
+      const float32 = e.inputBuffer.getChannelData(0);
+      // Convert to PCM16
+      const int16 = new Int16Array(float32.length);
+      for (let i = 0; i &lt; float32.length; i++) {
+        int16[i] = Math.max(-32768, Math.min(32767, float32[i] * 32768));
+      }
+      ws.send(int16.buffer);
+    };
+
+    source.connect(processor);
+    processor.connect(audioCtx.destination);
+    isRecording = true;
+    status.textContent = 'Listening...';
+    btn.classList.add('listening');
+  }
+
+  function stopRecording() {
+    isRecording = false;
+    if (processor) processor.disconnect();
+    if (source) source.disconnect();
+    if (mediaStream) mediaStream.getTracks().forEach(t =&gt; t.stop());
+    status.textContent = 'Processing...';
+    btn.classList.remove('listening');
+  }
+
+  // Audio playback queue
+  let playbackQueue = [];
+  let isPlaying = false;
+
+  function playAudioDelta(base64Delta) {
+    const bytes = Uint8Array.from(atob(base64Delta), c =&gt; c.charCodeAt(0));
+    const int16 = new Int16Array(bytes.buffer);
+    const float32 = new Float32Array(int16.length);
+    for (let i = 0; i &lt; int16.length; i++) float32[i] = int16[i] / 32768;
+    playbackQueue.push(float32);
+    if (!isPlaying) drainQueue();
+  }
+
+  function drainQueue() {
+    if (!playbackQueue.length) { isPlaying = false; return; }
+    isPlaying = true;
+    const chunk = playbackQueue.shift();
+    const buf = audioCtx.createBuffer(1, chunk.length, SAMPLE_RATE);
+    buf.getChannelData(0).set(chunk);
+    const src = audioCtx.createBufferSource();
+    src.buffer = buf;
+    src.connect(audioCtx.destination);
+    src.onended = drainQueue;
+    src.start();
+  }
+
+  btn.addEventListener('pointerdown', e =&gt; { e.preventDefault(); startRecording(); });
+  btn.addEventListener('pointerup', stopRecording);
+  btn.addEventListener('pointerleave', stopRecording);
+
+  connectWS();
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+<h3 id="step-5-deploy-to-app-service">Step 5 — Deploy to App Service</h3>
+<pre><code class="language-bash"># Enable WebSocket on App Service
+az webapp config set \
+  --name field-assistant-app \
+  --resource-group $RG \
+  --web-sockets-enabled true
+
+# Set startup command
+az webapp config set \
+  --name field-assistant-app \
+  --resource-group $RG \
+  --startup-file &quot;uvicorn server:app --host 0.0.0.0 --port 8000&quot;
+</code></pre>
+<hr />
+<h2 id="test-it">Test It</h2>
+<p>Open <code>https://&lt;your-app&gt;.azurewebsites.net</code> on your phone. Press and hold the microphone button and ask:</p>
+<ul>
+<li>"How do I reset the pressure valve on the X500?"</li>
+<li>"What does error code E-47 mean?"</li>
+</ul>
+<p>Expect a spoken response within 1-2 seconds of releasing the button.</p>
+<p><strong>Latency check:</strong> GPT-4o Realtime targets &lt;500ms first audio token. If you see &gt;2 second latency, ensure your App Service is in the same region as your Foundry deployment.</p>
+<hr />
+<h2 id="common-mistakes">Common Mistakes</h2>
+<ul>
+<li><strong>Audio not playing on iOS.</strong> iOS requires a user gesture to create an <code>AudioContext</code>. The <code>pointerdown</code> handler satisfies this — don't initialize <code>AudioContext</code> on page load.</li>
+<li><strong>PCM format mismatch.</strong> GPT-4o Realtime expects <code>pcm16</code> at 24kHz. If your <code>AudioContext</code> runs at 44.1kHz, resample before sending.</li>
+<li><strong>WebSocket disconnects after 5 minutes.</strong> App Service has a 3-minute idle timeout. Set <code>ping_interval=20</code> in <code>websockets.connect()</code> to keep the connection alive.</li>
+</ul>
+<hr />
+<h2 id="extend-it">Extend It</h2>
+<ol>
+<li><strong>Offline fallback:</strong> Cache the last 50 search results in the browser's IndexedDB so technicians can still get answers in dead zones.</li>
+<li><strong>Photo attachment:</strong> Add a camera button. Send the photo to GPT-5.4 vision mode alongside the spoken question for visual troubleshooting ("What's wrong with this connection?").</li>
+<li><strong>Multi-language:</strong> Detect language from Whisper transcription output, set <code>voice</code> accordingly (Foundry supports multiple voice characters), and return answers in the same language.</li>
+</ol>
+<hr />
+<h2 id="resources">Resources</h2>
+<ul>
+<li><a href="https://learn.microsoft.com/azure/ai-foundry/openai/realtime-audio-quickstart" target="_blank" rel="noopener">GPT-4o Realtime API</a></li>
+<li><a href="https://learn.microsoft.com/azure/ai-foundry/openai/realtime-audio-reference" target="_blank" rel="noopener">Realtime API events reference</a></li>
+<li><a href="https://learn.microsoft.com/python/api/overview/azure/search-documents-readme" target="_blank" rel="noopener">Azure AI Search Python SDK</a></li>
+<li><a href="https://learn.microsoft.com/azure/app-service/faq-availability-performance-application-issues#how-do-i-use-websockets" target="_blank" rel="noopener">App Service WebSocket support</a></li>
+</ul>
+  </article>
+
+  <nav class="post-nav" aria-label="More projects">
+    <a href="07-data-pipeline-qa-agent.html">← Data Pipeline QA Agent</a>
+    <a href="09-competitive-intelligence-dashboard.html">Competitive Intelligence Dashboard →</a>
+  </nav>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <div>
+      <a class="brand" href="../index.html">
+        <span class="brand-mark">AC</span>
+        <span class="brand-text-title">AzureCraft</span>
+      </a>
+      <p style="color: var(--text-muted); margin-top: 0.75rem; max-width: 36ch;">Practical Azure architecture, without the noise.</p>
+    </div>
+    <div>
+      <h4>Topics</h4>
+      <ul>
+        <li><a href="../categories/infrastructure.html">Infrastructure</a></li>
+        <li><a href="../categories/data-ai.html">Data &amp; AI</a></li>
+        <li><a href="../categories/modern-apps.html">Modern Apps</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Site</h4>
+      <ul>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="index.html">Projects</a></li>
+        <li><a href="../about.html">About</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="site-footer__bottom">
+    <p>© <span data-year>2026</span> AzureCraft. Built as a static site on Azure App Service.</p>
+  </div>
+</footer>
+
+<script src="../js/site.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

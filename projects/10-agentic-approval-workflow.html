@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>(function(){if(location.hostname==="www.rbcloud.co.uk"){location.replace("https://rbcloud.co.uk"+location.pathname+location.search+location.hash);}})();</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Agentic Workflow for Approvals — AzureCraft Projects</title>
+  <meta name="description" content="Enterprise workflow automation with human-in-the-loop approval gates, driven by a workflow agent and Foundry IQ." />
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+  <link rel="canonical" href="https://rbcloud.co.uk/projects/10-agentic-approval-workflow.html" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Agentic Workflow for Approvals" />
+  <meta property="og:description" content="Enterprise workflow automation with human-in-the-loop approval gates, driven by a workflow agent and Foundry IQ." />
+  <meta property="og:image" content="https://rbcloud.co.uk/assets/projects/10-agentic-approval-workflow-architecture.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://rbcloud.co.uk/assets/projects/10-agentic-approval-workflow-architecture.png" />
+  <link rel="stylesheet" href="../css/azurecraft.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github-dark.min.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="reading-progress" aria-hidden="true"></div>
+
+<header class="site-header">
+  <div class="container site-nav">
+    <a class="brand" href="../index.html">
+      <span class="brand-mark">AC</span>
+      <span>
+        <span class="brand-text-title">AzureCraft</span>
+        <span class="brand-text-sub">Infra · Data &amp; AI · Modern Apps</span>
+      </span>
+    </a>
+    <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+    <nav class="site-nav__links" aria-label="Primary">
+      <a href="../index.html">Home</a>
+      <a href="../index.html#posts">Articles</a>
+      <a href="../projects/index.html" aria-current="page">Projects</a>
+      <a href="../index.html#roadmap">Roadmap</a>
+      <a href="../about.html">About</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="article-wrap">
+
+  <div class="article-header">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a> /
+      <a href="index.html">Projects</a> /
+      Project 10
+    </nav>
+    <span class="tag tag--apps">Modern Apps</span>
+    <h1>Agentic Workflow for Approvals</h1>
+    <div class="article-meta">
+      <span>Co-build</span>
+      <span class="dot">•</span>
+      <span aria-label="Difficulty">Difficulty ★★★★☆</span>
+      <span class="dot">•</span>
+      <span>4–6 weeks</span>
+    </div>
+  </div>
+
+  <article class="prose">
+    <div class="callout callout--note">
+      <span class="callout__icon">🔧</span>
+      <p><strong>Build it yourself.</strong> This project is part of the <a href="index.html">AI Projects for Cloud Solution Architects</a> portfolio. Full source, code, and the latest updates live in the <a href="https://github.com/russmsft/csa-ai-projects/blob/master/docs/how-to/10-agentic-approval-workflow.md" target="_blank" rel="noopener">csa-ai-projects</a> repo on GitHub.</p>
+    </div>
+
+<p>Some decisions shouldn't be fully automated. This guide builds a workflow where an agent handles the routing and policy checks, but a human approves or rejects via a Teams message — and every decision is logged immutably.</p>
+<hr />
+<h2 id="what-youre-building">What You're Building</h2>
+<p>A Service Bus-triggered Azure Function kicks off a Foundry agent workflow. The agent checks policy via Foundry IQ, determines the right approver using a function call, sends that person a Teams Adaptive Card via Microsoft Graph API, and then waits. When the human responds (approve/reject), a second Function captures the decision, logs it to Cosmos DB, and sends a confirmation. Uses GPT-5.4-mini for reasoning.</p>
+<hr />
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li>Microsoft Foundry / Azure AI Services resource with Foundry IQ + GPT-5.4-mini deployed</li>
+<li>Azure Service Bus namespace (request queue)</li>
+<li>Azure Cosmos DB (for decision audit log)</li>
+<li>Microsoft Graph API access (Delegated or App permissions: <code>Chat.Create</code>, <code>TeamsMessage.Send</code>)</li>
+<li>Entra ID app registration with Graph permissions</li>
+<li>Azure CLI logged in (<code>az login</code>) with <strong>Cognitive Services OpenAI User</strong> on the AI Services resource and <strong>Cosmos DB Built-in Data Contributor</strong> on the Cosmos account</li>
+<li>Python 3.11+, <code>azure-functions</code>, <code>openai</code>, <code>azure-servicebus</code>, <code>azure-cosmos</code>, <code>msal</code></li>
+</ul>
+<pre><code class="language-bash">pip install &quot;openai&gt;=1.30.0&quot; azure-identity azure-functions \
+  azure-servicebus azure-cosmos msal python-dotenv
+</code></pre>
+<hr />
+<h2 id="architecture">Architecture</h2>
+<p><img alt="Agentic Approval Workflow architecture: Service Bus → Azure Function → Foundry Agent GPT-5.4-mini with Foundry IQ → Microsoft Graph Adaptive Card in Teams → human approver → Azure Function → Cosmos DB decisions" src="../assets/projects/10-agentic-approval-workflow-architecture.png" /></p>
+<hr />
+<h2 id="step-by-step-build">Step-by-Step Build</h2>
+<h3 id="step-1-register-entra-id-app-for-graph-api">Step 1 — Register Entra ID app for Graph API</h3>
+<pre><code class="language-bash"># Create app registration
+APP_ID=$(az ad app create \
+  --display-name &quot;approval-workflow-app&quot; \
+  --query appId -o tsv)
+
+# Add Microsoft Graph permissions (TeamsMessage.Send, Chat.Create)
+az ad app permission add \
+  --id $APP_ID \
+  --api 00000003-0000-0000-c000-000000000000 \
+  --api-permissions 75359482-378d-4052-8f01-80520e7db3cd=Role \
+                    ebf0f66e-9fb1-49e4-a278-222f76911cf4=Role
+
+# Grant admin consent
+az ad app permission admin-consent --id $APP_ID
+
+# Create client secret
+SECRET=$(az ad app credential reset --id $APP_ID --query password -o tsv)
+TENANT_ID=$(az account show --query tenantId -o tsv)
+</code></pre>
+<h3 id="step-2-create-cosmos-db-audit-log-container">Step 2 — Create Cosmos DB audit log container</h3>
+<pre><code class="language-bash">az cosmosdb sql container create \
+  --account-name $COSMOS_ACCOUNT \
+  --resource-group $RG \
+  --database-name approval-workflow \
+  --name decisions \
+  --partition-key-path &quot;/request_id&quot;
+</code></pre>
+<h3 id="step-3-approver-lookup-function">Step 3 — Approver lookup function</h3>
+<pre><code class="language-python"># approver_rules.py
+# In production, this would query HR systems or an LDAP directory
+APPROVER_RULES = {
+    &quot;purchase&quot;: {
+        &quot;0-1000&quot;: &quot;manager@company.com&quot;,
+        &quot;1001-10000&quot;: &quot;director@company.com&quot;,
+        &quot;10001+&quot;: &quot;vp@company.com&quot;
+    },
+    &quot;access&quot;: {
+        &quot;standard&quot;: &quot;it-manager@company.com&quot;,
+        &quot;privileged&quot;: &quot;security-officer@company.com&quot;
+    },
+    &quot;exception&quot;: {
+        &quot;default&quot;: &quot;compliance@company.com&quot;
+    }
+}
+
+def determine_approver(request_type: str, amount: float = 0, access_level: str = &quot;&quot;) -&gt; dict:
+    &quot;&quot;&quot;Return approver email and display name for a request.&quot;&quot;&quot;
+    rules = APPROVER_RULES.get(request_type, APPROVER_RULES[&quot;exception&quot;])
+
+    if request_type == &quot;purchase&quot;:
+        if amount &lt;= 1000:
+            email = rules[&quot;0-1000&quot;]
+        elif amount &lt;= 10000:
+            email = rules[&quot;1001-10000&quot;]
+        else:
+            email = rules[&quot;10001+&quot;]
+    elif request_type == &quot;access&quot;:
+        email = rules.get(access_level, rules.get(&quot;standard&quot;, &quot;it-manager@company.com&quot;))
+    else:
+        email = rules.get(&quot;default&quot;, &quot;compliance@company.com&quot;)
+
+    return {
+        &quot;approver_email&quot;: email,
+        &quot;approver_name&quot;: email.split(&quot;@&quot;)[0].replace(&quot;-&quot;, &quot; &quot;).title(),
+        &quot;approver_id&quot;: email   # In production: look up Entra Object ID
+    }
+
+
+APPROVER_TOOL_DEF = {
+    &quot;name&quot;: &quot;determine_approver&quot;,
+    &quot;description&quot;: &quot;Look up who should approve this request based on type and amount.&quot;,
+    &quot;parameters&quot;: {
+        &quot;type&quot;: &quot;object&quot;,
+        &quot;properties&quot;: {
+            &quot;request_type&quot;: {
+                &quot;type&quot;: &quot;string&quot;,
+                &quot;enum&quot;: [&quot;purchase&quot;, &quot;access&quot;, &quot;exception&quot;],
+                &quot;description&quot;: &quot;Category of the approval request&quot;
+            },
+            &quot;amount&quot;: {
+                &quot;type&quot;: &quot;number&quot;,
+                &quot;description&quot;: &quot;Dollar amount for purchase requests&quot;
+            },
+            &quot;access_level&quot;: {
+                &quot;type&quot;: &quot;string&quot;,
+                &quot;enum&quot;: [&quot;standard&quot;, &quot;privileged&quot;],
+                &quot;description&quot;: &quot;Access sensitivity for access requests&quot;
+            }
+        },
+        &quot;required&quot;: [&quot;request_type&quot;]
+    }
+}
+</code></pre>
+<h3 id="step-4-teams-message-via-graph-api">Step 4 — Teams message via Graph API</h3>
+<pre><code class="language-python"># graph_client.py
+import os
+import json
+import urllib.request
+import msal
+
+def get_graph_token() -&gt; str:
+    &quot;&quot;&quot;Get Microsoft Graph access token using client credentials.&quot;&quot;&quot;
+    app = msal.ConfidentialClientApplication(
+        client_id=os.environ[&quot;ENTRA_CLIENT_ID&quot;],
+        client_credential=os.environ[&quot;ENTRA_CLIENT_SECRET&quot;],
+        authority=f&quot;https://login.microsoftonline.com/{os.environ['ENTRA_TENANT_ID']}&quot;
+    )
+    result = app.acquire_token_for_client(
+        scopes=[&quot;https://graph.microsoft.com/.default&quot;]
+    )
+    if &quot;access_token&quot; not in result:
+        raise RuntimeError(f&quot;Token acquisition failed: {result.get('error_description')}&quot;)
+    return result[&quot;access_token&quot;]
+
+
+def send_approval_card(
+    approver_id: str,
+    request_id: str,
+    request_summary: str,
+    requester_name: str,
+    callback_url: str
+) -&gt; str:
+    &quot;&quot;&quot;Send an Adaptive Card to the approver in Teams.&quot;&quot;&quot;
+    token = get_graph_token()
+
+    # First: create or find a 1:1 chat with the approver
+    chat_payload = json.dumps({
+        &quot;chatType&quot;: &quot;oneOnOne&quot;,
+        &quot;members&quot;: [
+            {
+                &quot;@odata.type&quot;: &quot;#microsoft.graph.aadUserConversationMember&quot;,
+                &quot;roles&quot;: [&quot;owner&quot;],
+                &quot;user@odata.bind&quot;: (
+                    f&quot;https://graph.microsoft.com/v1.0/users/{approver_id}&quot;
+                )
+            }
+        ]
+    }).encode()
+
+    req = urllib.request.Request(
+        &quot;https://graph.microsoft.com/v1.0/chats&quot;,
+        data=chat_payload,
+        headers={
+            &quot;Authorization&quot;: f&quot;Bearer {token}&quot;,
+            &quot;Content-Type&quot;: &quot;application/json&quot;
+        }
+    )
+    with urllib.request.urlopen(req) as resp:
+        chat = json.loads(resp.read())
+    chat_id = chat[&quot;id&quot;]
+
+    # Send Adaptive Card
+    card = {
+        &quot;type&quot;: &quot;AdaptiveCard&quot;,
+        &quot;$schema&quot;: &quot;http://adaptivecards.io/schemas/adaptive-card.json&quot;,
+        &quot;version&quot;: &quot;1.4&quot;,
+        &quot;body&quot;: [
+            {&quot;type&quot;: &quot;TextBlock&quot;, &quot;size&quot;: &quot;Large&quot;, &quot;weight&quot;: &quot;Bolder&quot;,
+             &quot;text&quot;: &quot;Approval Required&quot;},
+            {&quot;type&quot;: &quot;TextBlock&quot;, &quot;text&quot;: f&quot;**Request ID:** {request_id}&quot;},
+            {&quot;type&quot;: &quot;TextBlock&quot;, &quot;text&quot;: f&quot;**From:** {requester_name}&quot;},
+            {&quot;type&quot;: &quot;TextBlock&quot;, &quot;wrap&quot;: True,
+             &quot;text&quot;: f&quot;**Summary:** {request_summary}&quot;}
+        ],
+        &quot;actions&quot;: [
+            {
+                &quot;type&quot;: &quot;Action.Http&quot;,
+                &quot;title&quot;: &quot;Approve&quot;,
+                &quot;method&quot;: &quot;POST&quot;,
+                &quot;url&quot;: callback_url,
+                &quot;body&quot;: json.dumps({
+                    &quot;request_id&quot;: request_id,
+                    &quot;decision&quot;: &quot;approved&quot;,
+                    &quot;approver_id&quot;: approver_id
+                }),
+                &quot;style&quot;: &quot;positive&quot;
+            },
+            {
+                &quot;type&quot;: &quot;Action.Http&quot;,
+                &quot;title&quot;: &quot;Reject&quot;,
+                &quot;method&quot;: &quot;POST&quot;,
+                &quot;url&quot;: callback_url,
+                &quot;body&quot;: json.dumps({
+                    &quot;request_id&quot;: request_id,
+                    &quot;decision&quot;: &quot;rejected&quot;,
+                    &quot;approver_id&quot;: approver_id
+                }),
+                &quot;style&quot;: &quot;destructive&quot;
+            }
+        ]
+    }
+
+    message_payload = json.dumps({
+        &quot;body&quot;: {
+            &quot;contentType&quot;: &quot;html&quot;,
+            &quot;content&quot;: &quot;&lt;attachment id=\&quot;approval-card\&quot;&gt;&lt;/attachment&gt;&quot;
+        },
+        &quot;attachments&quot;: [{
+            &quot;id&quot;: &quot;approval-card&quot;,
+            &quot;contentType&quot;: &quot;application/vnd.microsoft.card.adaptive&quot;,
+            &quot;content&quot;: json.dumps(card)
+        }]
+    }).encode()
+
+    req2 = urllib.request.Request(
+        f&quot;https://graph.microsoft.com/v1.0/chats/{chat_id}/messages&quot;,
+        data=message_payload,
+        headers={
+            &quot;Authorization&quot;: f&quot;Bearer {token}&quot;,
+            &quot;Content-Type&quot;: &quot;application/json&quot;
+        }
+    )
+    with urllib.request.urlopen(req2) as resp:
+        msg = json.loads(resp.read())
+
+    return msg[&quot;id&quot;]
+</code></pre>
+<h3 id="step-5-azure-functions-workflow">Step 5 — Azure Functions workflow</h3>
+<pre><code class="language-python"># function_app.py
+import azure.functions as func
+import json, os, logging, uuid
+from datetime import datetime, timezone
+from azure.cosmos import CosmosClient
+from azure.identity import DefaultAzureCredential, get_bearer_token_provider
+from openai import AzureOpenAI
+from approver_rules import determine_approver, APPROVER_TOOL_DEF
+from graph_client import send_approval_card
+
+app = func.FunctionApp()
+credential = DefaultAzureCredential()
+
+# One Responses-API client drives the policy agent (Foundry IQ file_search +
+# the determine_approver function tool). azure-ai-projects 2.x removed the
+# Assistants threads/runs surface; the Responses API replaces it.
+client = AzureOpenAI(
+    azure_endpoint=os.environ[&quot;AZURE_OPENAI_ENDPOINT&quot;],
+    azure_ad_token_provider=get_bearer_token_provider(
+        credential, &quot;https://cognitiveservices.azure.com/.default&quot;),
+    api_version=&quot;2025-04-01-preview&quot;,
+)
+cosmos = CosmosClient(
+    url=os.environ[&quot;COSMOS_ENDPOINT&quot;],
+    credential=credential
+)
+decisions = cosmos.get_database_client(&quot;approval-workflow&quot;).get_container_client(&quot;decisions&quot;)
+
+CALLBACK_BASE_URL = os.environ[&quot;FUNCTION_APP_BASE_URL&quot;]
+MODEL = os.environ.get(&quot;APPROVAL_MODEL&quot;, &quot;gpt-5.4-mini&quot;)
+
+# Responses API tools: Foundry IQ grounding via file_search + a flat function tool.
+TOOLS = [
+    {&quot;type&quot;: &quot;file_search&quot;, &quot;vector_store_ids&quot;: [os.environ[&quot;POLICY_VECTOR_STORE_ID&quot;]]},
+    {&quot;type&quot;: &quot;function&quot;, **APPROVER_TOOL_DEF},
+]
+
+INSTRUCTIONS = (
+    &quot;You are an approval workflow agent. For each request:\n&quot;
+    &quot;1. Check the policy documents to determine if the request is in-policy\n&quot;
+    &quot;2. If in-policy, call determine_approver() to find the right approver\n&quot;
+    &quot;3. Summarize the request in 2 sentences for the approver\n\n&quot;
+    &quot;If the request violates policy, return {is_in_policy: false, reason: '...'}&quot;
+)
+
+
+@app.service_bus_queue_trigger(
+    arg_name=&quot;msg&quot;,
+    queue_name=&quot;approval-requests&quot;,
+    connection=&quot;SERVICE_BUS_CONNECTION_STRING&quot;
+)
+def process_approval_request(msg: func.ServiceBusMessage):
+    payload = json.loads(msg.get_body().decode())
+    request_id = payload.get(&quot;request_id&quot;, str(uuid.uuid4()))
+    logging.info(f&quot;Processing approval request: {request_id}&quot;)
+
+    # file_search runs server-side; only determine_approver needs a round-trip.
+    response = client.responses.create(
+        model=MODEL,
+        instructions=INSTRUCTIONS,
+        input=f&quot;Process this approval request:\n\n{json.dumps(payload, indent=2)}&quot;,
+        tools=TOOLS,
+    )
+
+    approver_info = {}
+    for _ in range(8):  # safety cap on function-call rounds
+        fn_calls = [it for it in response.output
+                    if getattr(it, &quot;type&quot;, None) == &quot;function_call&quot;]
+        if not fn_calls:
+            break
+        tool_outputs = []
+        for call in fn_calls:
+            if call.name == &quot;determine_approver&quot;:
+                args = json.loads(call.arguments or &quot;{}&quot;)
+                approver_info = determine_approver(**args)
+                result = json.dumps(approver_info)
+            else:
+                result = json.dumps({&quot;error&quot;: f&quot;Unknown function: {call.name}&quot;})
+            tool_outputs.append({
+                &quot;type&quot;: &quot;function_call_output&quot;,
+                &quot;call_id&quot;: call.call_id,
+                &quot;output&quot;: result,
+            })
+        response = client.responses.create(
+            model=MODEL,
+            previous_response_id=response.id,
+            input=tool_outputs,
+            tools=TOOLS,
+        )
+
+    agent_summary = response.output_text
+
+    # Record pending decision
+    decisions.upsert_item({
+        &quot;id&quot;: request_id,
+        &quot;request_id&quot;: request_id,
+        &quot;status&quot;: &quot;pending&quot;,
+        &quot;payload&quot;: payload,
+        &quot;approver&quot;: approver_info,
+        &quot;agent_summary&quot;: agent_summary,
+        &quot;created_at&quot;: datetime.now(timezone.utc).isoformat()
+    })
+
+    # Send Teams card to approver
+    if approver_info.get(&quot;approver_id&quot;):
+        callback_url = f&quot;{CALLBACK_BASE_URL}/api/handle_approval?code={os.environ['FUNC_KEY']}&quot;
+        send_approval_card(
+            approver_id=approver_info[&quot;approver_id&quot;],
+            request_id=request_id,
+            request_summary=agent_summary[:300],
+            requester_name=payload.get(&quot;requester_name&quot;, &quot;Unknown&quot;),
+            callback_url=callback_url
+        )
+        logging.info(f&quot;Teams card sent to {approver_info['approver_id']}&quot;)
+
+
+@app.route(route=&quot;handle_approval&quot;, methods=[&quot;POST&quot;])
+def handle_approval_response(req: func.HttpRequest) -&gt; func.HttpResponse:
+    &quot;&quot;&quot;Called by Teams Adaptive Card button press.&quot;&quot;&quot;
+    body = req.get_json()
+    request_id = body.get(&quot;request_id&quot;)
+    decision = body.get(&quot;decision&quot;)
+    approver_id = body.get(&quot;approver_id&quot;)
+
+    if not all([request_id, decision, approver_id]):
+        return func.HttpResponse(&quot;Missing fields&quot;, status_code=400)
+
+    # Update decision record
+    item = decisions.read_item(item=request_id, partition_key=request_id)
+    item.update({
+        &quot;status&quot;: decision,
+        &quot;decided_at&quot;: datetime.now(timezone.utc).isoformat(),
+        &quot;decided_by&quot;: approver_id
+    })
+    decisions.upsert_item(item)
+    logging.info(f&quot;Decision recorded: {request_id} → {decision}&quot;)
+
+    return func.HttpResponse(
+        json.dumps({&quot;status&quot;: &quot;recorded&quot;, &quot;decision&quot;: decision}),
+        status_code=200,
+        mimetype=&quot;application/json&quot;
+    )
+</code></pre>
+<hr />
+<h2 id="test-it">Test It</h2>
+<pre><code class="language-python"># Send a test approval request to Service Bus
+import json
+from azure.servicebus import ServiceBusClient, ServiceBusMessage
+
+sb = ServiceBusClient.from_connection_string(os.environ[&quot;SERVICE_BUS_CONNECTION_STRING&quot;])
+with sb:
+    sender = sb.get_queue_sender(&quot;approval-requests&quot;)
+    with sender:
+        msg = {
+            &quot;request_id&quot;: &quot;REQ-2024-0042&quot;,
+            &quot;request_type&quot;: &quot;purchase&quot;,
+            &quot;amount&quot;: 3500.00,
+            &quot;requester_name&quot;: &quot;Alex Johnson&quot;,
+            &quot;requester_email&quot;: &quot;alex.johnson@company.com&quot;,
+            &quot;description&quot;: &quot;Ergonomic desk chair for home office setup&quot;,
+            &quot;business_justification&quot;: &quot;Current chair causing back issues affecting productivity&quot;
+        }
+        sender.send_messages(ServiceBusMessage(json.dumps(msg)))
+        print(&quot;Test request sent&quot;)
+</code></pre>
+<p>Check Cosmos DB for the pending decision, then simulate the Teams approval:</p>
+<pre><code class="language-bash">curl -X POST &quot;http://localhost:7071/api/handle_approval&quot; \
+  -H &quot;Content-Type: application/json&quot; \
+  -d '{&quot;request_id&quot;:&quot;REQ-2024-0042&quot;,&quot;decision&quot;:&quot;approved&quot;,&quot;approver_id&quot;:&quot;director@company.com&quot;}'
+</code></pre>
+<hr />
+<h2 id="common-mistakes">Common Mistakes</h2>
+<ul>
+<li><strong>Reaching for the old Assistants <code>agents</code> API.</strong> <code>azure-ai-projects</code> 2.x removed the threads/runs Assistants surface — <code>AIProjectClient</code> has no <code>.agents</code>, and <code>FunctionTool</code>/<code>FileSearchTool</code>/<code>PromptAgentDefinition</code>/<code>MessageRole</code>/<code>SubmitToolOutputsAction</code> no longer drive a run. Use <code>client.responses.create(..., tools=[{"type":"file_search", "vector_store_ids":[...]}, {"type":"function", ...}])</code> and a function-call loop keyed off <code>previous_response_id</code>, as shown above.</li>
+<li><strong>Adaptive Card Action.Http not supported in all Teams clients.</strong> <code>Action.Http</code> requires the Teams client to support it — older desktop clients may not. Test on both desktop and mobile Teams.</li>
+<li><strong>Graph API Chat creation fails with 403.</strong> Ensure <code>Chat.Create</code> permission was granted admin consent. Check with <code>az ad app permission list --id $APP_ID</code>.</li>
+<li><strong>Cosmos DB optimistic concurrency.</strong> Two approvers clicking simultaneously can cause conflicts. Add an <code>_etag</code> check when updating the decision record.</li>
+</ul>
+<hr />
+<h2 id="extend-it">Extend It</h2>
+<ol>
+<li><strong>Escalation timer:</strong> If no decision within 48 hours, an Azure Function timer escalates the request to the approver's manager automatically.</li>
+<li><strong>Approval chain:</strong> For high-value requests (&gt;$50K), require two sequential approvals. Store the approval chain in Cosmos DB as an array and gate each step.</li>
+<li><strong>Power Apps UI:</strong> Replace the Teams card with a Power Apps canvas app that shows all pending approvals in a dashboard, with bulk-approve capability for managers.</li>
+</ol>
+<hr />
+<h2 id="resources">Resources</h2>
+<ul>
+<li><a href="https://learn.microsoft.com/graph/api/chat-post-messages" target="_blank" rel="noopener">Microsoft Graph API — Send Teams message</a></li>
+<li><a href="https://learn.microsoft.com/microsoftteams/platform/task-modules-and-cards/cards/cards-reference" target="_blank" rel="noopener">Teams Adaptive Cards</a></li>
+<li><a href="https://learn.microsoft.com/azure/ai-foundry/agents/concepts/knowledge-grounding" target="_blank" rel="noopener">Foundry IQ knowledge grounding</a></li>
+<li><a href="https://learn.microsoft.com/python/api/overview/azure/cosmos-readme" target="_blank" rel="noopener">Cosmos DB Python SDK</a></li>
+<li><a href="https://learn.microsoft.com/python/api/overview/azure/active-directory" target="_blank" rel="noopener">MSAL Python for Graph auth</a></li>
+</ul>
+  </article>
+
+  <nav class="post-nav" aria-label="More projects">
+    <a href="09-competitive-intelligence-dashboard.html">← Competitive Intelligence Dashboard</a>
+    <a href="11-computer-use-automator.html">Computer-Use Process Automator →</a>
+  </nav>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <div>
+      <a class="brand" href="../index.html">
+        <span class="brand-mark">AC</span>
+        <span class="brand-text-title">AzureCraft</span>
+      </a>
+      <p style="color: var(--text-muted); margin-top: 0.75rem; max-width: 36ch;">Practical Azure architecture, without the noise.</p>
+    </div>
+    <div>
+      <h4>Topics</h4>
+      <ul>
+        <li><a href="../categories/infrastructure.html">Infrastructure</a></li>
+        <li><a href="../categories/data-ai.html">Data &amp; AI</a></li>
+        <li><a href="../categories/modern-apps.html">Modern Apps</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Site</h4>
+      <ul>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="index.html">Projects</a></li>
+        <li><a href="../about.html">About</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="site-footer__bottom">
+    <p>© <span data-year>2026</span> AzureCraft. Built as a static site on Azure App Service.</p>
+  </div>
+</footer>
+
+<script src="../js/site.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>(function(){if(location.hostname==="www.rbcloud.co.uk"){location.replace("https://rbcloud.co.uk"+location.pathname+location.search+location.hash);}})();</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Data Pipeline QA Agent — AzureCraft Projects</title>
+  <meta name="description" content="An event-driven agent that watches data pipelines, reasons about failures, and files quality issues with function calling." />
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+  <link rel="canonical" href="https://rbcloud.co.uk/projects/07-data-pipeline-qa-agent.html" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Data Pipeline QA Agent" />
+  <meta property="og:description" content="An event-driven agent that watches data pipelines, reasons about failures, and files quality issues with function calling." />
+  <meta property="og:image" content="https://rbcloud.co.uk/assets/projects/07-data-pipeline-qa-agent-architecture.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://rbcloud.co.uk/assets/projects/07-data-pipeline-qa-agent-architecture.png" />
+  <link rel="stylesheet" href="../css/azurecraft.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github-dark.min.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="reading-progress" aria-hidden="true"></div>
+
+<header class="site-header">
+  <div class="container site-nav">
+    <a class="brand" href="../index.html">
+      <span class="brand-mark">AC</span>
+      <span>
+        <span class="brand-text-title">AzureCraft</span>
+        <span class="brand-text-sub">Infra · Data &amp; AI · Modern Apps</span>
+      </span>
+    </a>
+    <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+    <nav class="site-nav__links" aria-label="Primary">
+      <a href="../index.html">Home</a>
+      <a href="../index.html#posts">Articles</a>
+      <a href="../projects/index.html" aria-current="page">Projects</a>
+      <a href="../index.html#roadmap">Roadmap</a>
+      <a href="../about.html">About</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="article-wrap">
+
+  <div class="article-header">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a> /
+      <a href="index.html">Projects</a> /
+      Project 7
+    </nav>
+    <span class="tag tag--apps">Modern Apps</span>
+    <h1>Data Pipeline QA Agent</h1>
+    <div class="article-meta">
+      <span>Co-build</span>
+      <span class="dot">•</span>
+      <span aria-label="Difficulty">Difficulty ★★★☆☆</span>
+      <span class="dot">•</span>
+      <span>2–3 weeks</span>
+    </div>
+  </div>
+
+  <article class="prose">
+    <div class="callout callout--note">
+      <span class="callout__icon">🔧</span>
+      <p><strong>Build it yourself.</strong> This project is part of the <a href="index.html">AI Projects for Cloud Solution Architects</a> portfolio. Full source, code, and the latest updates live in the <a href="https://github.com/russmsft/csa-ai-projects/blob/master/docs/how-to/07-data-pipeline-qa-agent.md" target="_blank" rel="noopener">csa-ai-projects</a> repo on GitHub.</p>
+    </div>
+
+<p>Your data pipeline finished. Did it produce good data? This guide builds an Azure Functions trigger that runs statistical anomaly detection on pipeline output and fires an alert when something looks wrong.</p>
+<hr />
+<h2 id="what-youre-building">What You're Building</h2>
+<p>An Azure Function triggered by an Event Grid pipeline-completion event. The function collects run stats (row count, null rates, schema) and sends them to a Foundry agent with Code Interpreter. The agent runs Python-based anomaly detection against historical baselines, generates a QA report, and calls a function to raise an alert if anomalies exceed thresholds. Uses GPT-4.1-mini + Code Interpreter — cheap and effective for statistical work.</p>
+<hr />
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li>Microsoft Foundry / Azure AI Services resource with a <strong><code>gpt-4.1-mini</code></strong> deployment (the code calls the model by this deployment name)</li>
+<li>Azure Data Factory or Synapse pipeline (as the event source) — optional for a local demo; <code>test_qa_locally()</code> simulates the event without one</li>
+<li>Azure Event Grid subscription on the pipeline completion event</li>
+<li>Azure Storage Account for baseline stats history</li>
+<li>Azure CLI logged in (<code>az login</code>) with <strong>Cognitive Services OpenAI User</strong> on the AI Services resource and <strong>Storage Blob Data Contributor</strong> on the storage account — this demo uses <strong>Entra ID auth, not keys</strong></li>
+<li><code>AZURE_OPENAI_ENDPOINT</code> and <code>STORAGE_ACCOUNT</code> set in the environment (or <code>.env</code>)</li>
+<li>Python 3.11+, <code>azure-functions</code>, <code>openai</code>, <code>azure-storage-blob</code></li>
+</ul>
+<pre><code class="language-bash">pip install &quot;openai&gt;=1.30.0&quot; azure-identity azure-functions \
+  azure-storage-blob python-dotenv
+</code></pre>
+<hr />
+<h2 id="architecture">Architecture</h2>
+<p><img alt="Data Pipeline QA architecture: ADF/Synapse pipeline → Event Grid → Azure Function → Blob Storage baselines → Foundry Agent GPT-4.1-mini with Code Interpreter → QA report and alert" src="../assets/projects/07-data-pipeline-qa-agent-architecture.png" /></p>
+<hr />
+<h2 id="step-by-step-build">Step-by-Step Build</h2>
+<h3 id="step-1-create-the-event-grid-subscription">Step 1 — Create the Event Grid subscription</h3>
+<pre><code class="language-bash"># Subscribe to ADF pipeline run completion events
+PIPELINE_ID=$(az datafactory pipeline list \
+  --resource-group $RG \
+  --factory-name $ADF_NAME \
+  --query &quot;[0].id&quot; -o tsv)
+
+az eventgrid event-subscription create \
+  --name pipeline-qa-trigger \
+  --source-resource-id /subscriptions/$SUB/resourceGroups/$RG/providers/Microsoft.DataFactory/factories/$ADF_NAME \
+  --endpoint-type azurefunction \
+  --endpoint /subscriptions/$SUB/resourceGroups/$RG/providers/Microsoft.Web/sites/$FUNC_APP/functions/pipeline_qa_trigger \
+  --included-event-types Microsoft.DataFactory.PipelineRunCompleted
+</code></pre>
+<h3 id="step-2-azure-function-definition">Step 2 — Azure Function definition</h3>
+<pre><code class="language-python"># function_app.py
+import os
+import json
+import logging
+from datetime import datetime, timezone
+import azure.functions as func
+from azure.storage.blob import BlobServiceClient
+from azure.identity import DefaultAzureCredential, get_bearer_token_provider
+from openai import AzureOpenAI
+
+app = func.FunctionApp()
+logger = logging.getLogger(__name__)
+
+credential = DefaultAzureCredential()
+blob_client = BlobServiceClient(
+    account_url=f&quot;https://{os.environ['STORAGE_ACCOUNT']}.blob.core.windows.net&quot;,
+    credential=credential
+)
+# One Responses-API client drives the QA agent (Code Interpreter + function
+# calling). azure-ai-projects 2.x removed the Assistants threads/runs surface;
+# the Responses API replaces it and needs no separate agent registration.
+client = AzureOpenAI(
+    azure_endpoint=os.environ[&quot;AZURE_OPENAI_ENDPOINT&quot;],
+    azure_ad_token_provider=get_bearer_token_provider(
+        credential, &quot;https://cognitiveservices.azure.com/.default&quot;),
+    api_version=&quot;2025-04-01-preview&quot;,
+)
+MODEL = os.environ.get(&quot;QA_MODEL&quot;, &quot;gpt-4.1-mini&quot;)
+
+
+@app.event_grid_trigger(arg_name=&quot;event&quot;)
+def pipeline_qa_trigger(event: func.EventGridEvent):
+    &quot;&quot;&quot;Triggered when an ADF pipeline run completes.&quot;&quot;&quot;
+    data = event.get_json()
+    logger.info(f&quot;Pipeline event: {json.dumps(data)}&quot;)
+
+    pipeline_name = data.get(&quot;pipelineName&quot;, &quot;unknown&quot;)
+    run_id = data.get(&quot;runId&quot;, &quot;unknown&quot;)
+    status = data.get(&quot;status&quot;, &quot;unknown&quot;)
+
+    if status != &quot;Succeeded&quot;:
+        logger.info(f&quot;Pipeline {pipeline_name} did not succeed (status={status}), skipping QA.&quot;)
+        return
+
+    # Collect pipeline run stats
+    stats = collect_pipeline_stats(pipeline_name, run_id, data)
+    logger.info(f&quot;Stats collected: {json.dumps(stats)}&quot;)
+
+    # Load historical baseline
+    baseline = load_baseline(pipeline_name)
+
+    # Run QA analysis — no agent registration; the Responses API takes the
+    # instructions + tools on each call
+    report = run_qa_analysis(pipeline_name, stats, baseline)
+
+    # Save updated baseline
+    save_baseline(pipeline_name, stats)
+
+    # Log report
+    logger.info(f&quot;QA Report for {pipeline_name}:\n{report}&quot;)
+</code></pre>
+<h3 id="step-3-collect-stats-from-the-pipeline-run">Step 3 — Collect stats from the pipeline run</h3>
+<pre><code class="language-python">def collect_pipeline_stats(
+    pipeline_name: str,
+    run_id: str,
+    event_data: dict
+) -&gt; dict:
+    &quot;&quot;&quot;
+    In production: query ADF API or Synapse output tables.
+    Here we extract from the event payload and ADF activity outputs.
+    &quot;&quot;&quot;
+    # These come from the Event Grid event data
+    return {
+        &quot;pipeline_name&quot;: pipeline_name,
+        &quot;run_id&quot;: run_id,
+        &quot;timestamp&quot;: datetime.now(timezone.utc).isoformat(),
+        &quot;duration_seconds&quot;: event_data.get(&quot;durationInMs&quot;, 0) / 1000,
+        &quot;rows_read&quot;: event_data.get(&quot;output&quot;, {}).get(&quot;rowsRead&quot;, 0),
+        &quot;rows_written&quot;: event_data.get(&quot;output&quot;, {}).get(&quot;rowsWritten&quot;, 0),
+        &quot;tables&quot;: event_data.get(&quot;output&quot;, {}).get(&quot;tables&quot;, []),
+        # In production, compute these from the actual output data:
+        &quot;null_rates&quot;: event_data.get(&quot;output&quot;, {}).get(&quot;nullRates&quot;, {}),
+        &quot;schema_hash&quot;: event_data.get(&quot;output&quot;, {}).get(&quot;schemaHash&quot;, &quot;&quot;),
+    }
+</code></pre>
+<h3 id="step-4-baseline-storage-helpers">Step 4 — Baseline storage helpers</h3>
+<pre><code class="language-python">BASELINE_CONTAINER = &quot;pipeline-baselines&quot;
+
+def load_baseline(pipeline_name: str) -&gt; dict | None:
+    &quot;&quot;&quot;Load historical stats baseline from blob storage.&quot;&quot;&quot;
+    blob_name = f&quot;{pipeline_name}/baseline.json&quot;
+    try:
+        blob = blob_client.get_blob_client(
+            container=BASELINE_CONTAINER,
+            blob=blob_name
+        )
+        data = blob.download_blob().readall()
+        return json.loads(data)
+    except Exception:
+        logger.info(f&quot;No baseline found for {pipeline_name} — first run.&quot;)
+        return None
+
+
+def save_baseline(pipeline_name: str, stats: dict):
+    &quot;&quot;&quot;Update baseline with latest run stats (rolling average).&quot;&quot;&quot;
+    existing = load_baseline(pipeline_name) or {
+        &quot;run_count&quot;: 0,
+        &quot;avg_rows_written&quot;: 0,
+        &quot;avg_duration_seconds&quot;: 0,
+        &quot;schema_hash&quot;: stats.get(&quot;schema_hash&quot;, &quot;&quot;),
+        &quot;null_rate_history&quot;: {}
+    }
+
+    n = existing[&quot;run_count&quot;]
+    existing[&quot;run_count&quot;] = n + 1
+    existing[&quot;avg_rows_written&quot;] = (
+        (existing[&quot;avg_rows_written&quot;] * n + stats[&quot;rows_written&quot;]) / (n + 1)
+    )
+    existing[&quot;avg_duration_seconds&quot;] = (
+        (existing[&quot;avg_duration_seconds&quot;] * n + stats[&quot;duration_seconds&quot;]) / (n + 1)
+    )
+    existing[&quot;schema_hash&quot;] = stats.get(&quot;schema_hash&quot;, existing[&quot;schema_hash&quot;])
+
+    blob = blob_client.get_blob_client(
+        container=BASELINE_CONTAINER,
+        blob=f&quot;{pipeline_name}/baseline.json&quot;
+    )
+    blob.upload_blob(
+        json.dumps(existing, indent=2),
+        overwrite=True
+    )
+</code></pre>
+<h3 id="step-5-run-qa-analysis-with-code-interpreter-alerts">Step 5 — Run QA analysis with Code Interpreter + alerts</h3>
+<p>There's no separate agent to register. The Responses API takes the instructions and the tools — <code>code_interpreter</code> (for the statistical checks) and a <code>send_alert</code> <strong>function</strong> tool — on each call. Code Interpreter runs its tool loop server-side; only the custom <code>send_alert</code> function needs a round-trip from your code.</p>
+<pre><code class="language-python"># Responses API tools: Code Interpreter + a custom function tool.
+# Function tools are FLAT in the Responses API (no nested &quot;function&quot; key).
+TOOLS = [
+    {&quot;type&quot;: &quot;code_interpreter&quot;, &quot;container&quot;: {&quot;type&quot;: &quot;auto&quot;}},
+    {
+        &quot;type&quot;: &quot;function&quot;,
+        &quot;name&quot;: &quot;send_alert&quot;,
+        &quot;description&quot;: &quot;Send a data quality alert when anomalies exceed thresholds.&quot;,
+        &quot;parameters&quot;: {
+            &quot;type&quot;: &quot;object&quot;,
+            &quot;properties&quot;: {
+                &quot;severity&quot;: {&quot;type&quot;: &quot;string&quot;, &quot;enum&quot;: [&quot;critical&quot;, &quot;warning&quot;, &quot;info&quot;]},
+                &quot;anomaly_type&quot;: {&quot;type&quot;: &quot;string&quot;},
+                &quot;pipeline_name&quot;: {&quot;type&quot;: &quot;string&quot;},
+                &quot;details&quot;: {&quot;type&quot;: &quot;string&quot;},
+            },
+            &quot;required&quot;: [&quot;severity&quot;, &quot;anomaly_type&quot;, &quot;pipeline_name&quot;, &quot;details&quot;],
+        },
+    },
+]
+
+INSTRUCTIONS = (
+    &quot;You are a data pipeline QA analyst. Given current run statistics and &quot;
+    &quot;historical baseline, perform anomaly detection.\n\n&quot;
+    &quot;Use the python (code_interpreter) tool to run these checks:\n&quot;
+    &quot;1. Row count deviation: flag if &gt;20% from baseline average\n&quot;
+    &quot;2. Null rate spike: flag if any column null rate increased &gt;5 percentage points\n&quot;
+    &quot;3. Schema drift: flag if schema hash differs from baseline\n&quot;
+    &quot;4. Duration anomaly: flag if run took &gt;50% longer than baseline average\n\n&quot;
+    &quot;Compute z-scores for row count and duration. Generate a QA report as markdown.\n\n&quot;
+    &quot;If any check fails with severity WARNING or higher, call send_alert().&quot;
+)
+
+
+def send_alert(severity: str, anomaly_type: str, pipeline_name: str, details: str) -&gt; str:
+    &quot;&quot;&quot;Real alert: POST to Teams webhook or Azure Monitor.&quot;&quot;&quot;
+    webhook_url = os.environ.get(&quot;TEAMS_WEBHOOK_URL&quot;)
+    if webhook_url:
+        import urllib.request
+        payload = json.dumps({
+            &quot;@type&quot;: &quot;MessageCard&quot;,
+            &quot;summary&quot;: f&quot;Data Quality Alert: {pipeline_name}&quot;,
+            &quot;themeColor&quot;: &quot;FF0000&quot; if severity == &quot;critical&quot; else &quot;FFA500&quot;,
+            &quot;sections&quot;: [{
+                &quot;activityTitle&quot;: f&quot;[{severity.upper()}] {anomaly_type}&quot;,
+                &quot;activityText&quot;: f&quot;Pipeline: **{pipeline_name}**\n\n{details}&quot;
+            }]
+        }).encode()
+        req = urllib.request.Request(webhook_url, data=payload,
+                                     headers={&quot;Content-Type&quot;: &quot;application/json&quot;})
+        urllib.request.urlopen(req)
+    logger.warning(f&quot;ALERT [{severity}] {pipeline_name}: {anomaly_type} — {details}&quot;)
+    return json.dumps({&quot;sent&quot;: True, &quot;severity&quot;: severity})
+
+
+TOOL_HANDLERS = {&quot;send_alert&quot;: send_alert}
+
+
+def run_qa_analysis(pipeline_name: str, stats: dict, baseline: dict | None) -&gt; str:
+    &quot;&quot;&quot;Run QA analysis via the Responses API; satisfy any send_alert calls.&quot;&quot;&quot;
+    response = client.responses.create(
+        model=MODEL,
+        instructions=INSTRUCTIONS,
+        input=(
+            f&quot;Run QA analysis for pipeline: **{pipeline_name}**\n\n&quot;
+            f&quot;Current run stats:\n```json\n{json.dumps(stats, indent=2)}\n```\n\n&quot;
+            f&quot;Historical baseline:\n```json\n{json.dumps(baseline or {}, indent=2)}\n```\n\n&quot;
+            &quot;Generate a QA report and alert on any anomalies.&quot;
+        ),
+        tools=TOOLS,
+    )
+
+    # Code Interpreter runs server-side; only the custom function needs a round-trip.
+    for _ in range(8):  # safety cap on function-call rounds
+        fn_calls = [it for it in response.output
+                    if getattr(it, &quot;type&quot;, None) == &quot;function_call&quot;]
+        if not fn_calls:
+            break
+        tool_outputs = []
+        for call in fn_calls:
+            handler = TOOL_HANDLERS.get(call.name)
+            args = json.loads(call.arguments or &quot;{}&quot;)
+            result = handler(**args) if handler else json.dumps(
+                {&quot;error&quot;: f&quot;Unknown function: {call.name}&quot;})
+            tool_outputs.append({
+                &quot;type&quot;: &quot;function_call_output&quot;,
+                &quot;call_id&quot;: call.call_id,
+                &quot;output&quot;: result,
+            })
+        response = client.responses.create(
+            model=MODEL,
+            previous_response_id=response.id,
+            input=tool_outputs,
+            tools=TOOLS,
+        )
+
+    return response.output_text
+</code></pre>
+<hr />
+<h2 id="test-it">Test It</h2>
+<p>Send a simulated Event Grid event locally:</p>
+<pre><code class="language-python">def test_qa_locally():
+    &quot;&quot;&quot;Test the QA pipeline without a real Event Grid event.&quot;&quot;&quot;
+    pipeline_name = &quot;sales-data-pipeline&quot;
+
+    # Simulate a run with a row count anomaly
+    stats = {
+        &quot;pipeline_name&quot;: pipeline_name,
+        &quot;run_id&quot;: &quot;test-run-001&quot;,
+        &quot;timestamp&quot;: datetime.now(timezone.utc).isoformat(),
+        &quot;duration_seconds&quot;: 45,
+        &quot;rows_read&quot;: 15000,
+        &quot;rows_written&quot;: 500,   # Suspiciously low (normally ~14000)
+        &quot;null_rates&quot;: {&quot;customer_id&quot;: 0.0, &quot;amount&quot;: 0.35},  # amount spiked!
+        &quot;schema_hash&quot;: &quot;abc123&quot;
+    }
+
+    baseline = {
+        &quot;run_count&quot;: 30,
+        &quot;avg_rows_written&quot;: 13800,
+        &quot;avg_duration_seconds&quot;: 42,
+        &quot;schema_hash&quot;: &quot;abc123&quot;,
+        &quot;null_rate_history&quot;: {&quot;customer_id&quot;: 0.001, &quot;amount&quot;: 0.02}
+    }
+
+    report = run_qa_analysis(pipeline_name, stats, baseline)
+    print(report)
+
+test_qa_locally()
+</code></pre>
+<hr />
+<h2 id="common-mistakes">Common Mistakes</h2>
+<ul>
+<li><strong>Reaching for the old Assistants <code>agents</code> API.</strong> <code>azure-ai-projects</code> 2.x removed the threads/runs Assistants surface — <code>AIProjectClient</code> has no <code>.agents</code>, and <code>MessageRole</code>/<code>SubmitToolOutputsAction</code> aren't importable from <code>azure.ai.projects.models</code>. Drive the QA agent with <code>client.responses.create(..., tools=[code_interpreter, send_alert])</code> and a function-call loop, as shown above.</li>
+<li><strong>Nesting the function tool like Chat Completions.</strong> In the Responses API a function tool is flat — <code>{"type": "function", "name": ..., "parameters": ...}</code> — not <code>{"type": "function", "function": {...}}</code>. Parsing also differs: function calls arrive as <code>output</code> items with <code>type == "function_call"</code> (use <code>call.name</code>, <code>call.arguments</code>, <code>call.call_id</code>), and you return results as <code>{"type": "function_call_output", "call_id": ..., "output": ...}</code>.</li>
+<li><strong>Agent not detecting anomalies because baseline is None.</strong> On first run, there's no baseline. Have the agent document that baselines are being established rather than failing silently.</li>
+<li><strong>Code Interpreter output not included in report.</strong> Always check that <code>content</code> blocks include the code output. If the agent generates charts, retrieve them with <code>get_file_content</code>.</li>
+<li><strong>Event Grid event schema varies by ADF version.</strong> Test with <code>az eventgrid event-subscription show</code> to confirm the actual fields in your pipeline completion events before coding against them.</li>
+</ul>
+<hr />
+<h2 id="extend-it">Extend It</h2>
+<ol>
+<li><strong>Great Expectations integration:</strong> Replace the hardcoded thresholds with a Great Expectations suite stored in blob storage. The agent loads and runs expectations as Python code.</li>
+<li><strong>Slack digest:</strong> Batch QA results from all pipelines that run overnight. At 8 AM, a timer-triggered function sends a single digest message to Slack with a summary table.</li>
+<li><strong>Auto-remediation:</strong> For known failure modes (e.g., null spike in <code>amount</code> column always means upstream API was down), the agent doesn't just alert — it calls a remediation function that triggers a pipeline re-run with the backup data source.</li>
+</ol>
+<hr />
+<h2 id="resources">Resources</h2>
+<ul>
+<li><a href="https://learn.microsoft.com/azure/azure-functions/functions-bindings-event-grid-trigger" target="_blank" rel="noopener">Azure Functions Event Grid trigger</a></li>
+<li><a href="https://learn.microsoft.com/azure/data-factory/how-to-create-event-trigger" target="_blank" rel="noopener">ADF pipeline run events</a></li>
+<li><a href="https://learn.microsoft.com/azure/ai-foundry/agents/how-to/tools/code-interpreter" target="_blank" rel="noopener">Code Interpreter tool</a></li>
+<li><a href="https://learn.microsoft.com/python/api/overview/azure/storage-blob-readme" target="_blank" rel="noopener">azure-storage-blob Python SDK</a></li>
+</ul>
+  </article>
+
+  <nav class="post-nav" aria-label="More projects">
+    <a href="06-multi-agent-incident-responder.html">← Multi-Agent Incident Responder</a>
+    <a href="08-voice-field-assistant.html">Voice-Enabled Field Assistant →</a>
+  </nav>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <div>
+      <a class="brand" href="../index.html">
+        <span class="brand-mark">AC</span>
+        <span class="brand-text-title">AzureCraft</span>
+      </a>
+      <p style="color: var(--text-muted); margin-top: 0.75rem; max-width: 36ch;">Practical Azure architecture, without the noise.</p>
+    </div>
+    <div>
+      <h4>Topics</h4>
+      <ul>
+        <li><a href="../categories/infrastructure.html">Infrastructure</a></li>
+        <li><a href="../categories/data-ai.html">Data &amp; AI</a></li>
+        <li><a href="../categories/modern-apps.html">Modern Apps</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Site</h4>
+      <ul>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="index.html">Projects</a></li>
+        <li><a href="../about.html">About</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="site-footer__bottom">
+    <p>© <span data-year>2026</span> AzureCraft. Built as a static site on Azure App Service.</p>
+  </div>
+</footer>
+
+<script src="../js/site.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

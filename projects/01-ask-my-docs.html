@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>(function(){if(location.hostname==="www.rbcloud.co.uk"){location.replace("https://rbcloud.co.uk"+location.pathname+location.search+location.hash);}})();</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ask My Docs — RAG Starter Kit — AzureCraft Projects</title>
+  <meta name="description" content="Every customer asks &quot;can AI search our documents?&quot; This is your answer — grounded, cited RAG over your PDFs in an afternoon using Foundry File Search." />
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+  <link rel="canonical" href="https://rbcloud.co.uk/projects/01-ask-my-docs.html" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Ask My Docs — RAG Starter Kit" />
+  <meta property="og:description" content="Every customer asks &quot;can AI search our documents?&quot; This is your answer — grounded, cited RAG over your PDFs in an afternoon using Foundry File Search." />
+  <meta property="og:image" content="https://rbcloud.co.uk/assets/projects/01-ask-my-docs-architecture.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://rbcloud.co.uk/assets/projects/01-ask-my-docs-architecture.png" />
+  <link rel="stylesheet" href="../css/azurecraft.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github-dark.min.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="reading-progress" aria-hidden="true"></div>
+
+<header class="site-header">
+  <div class="container site-nav">
+    <a class="brand" href="../index.html">
+      <span class="brand-mark">AC</span>
+      <span>
+        <span class="brand-text-title">AzureCraft</span>
+        <span class="brand-text-sub">Infra · Data &amp; AI · Modern Apps</span>
+      </span>
+    </a>
+    <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+    <nav class="site-nav__links" aria-label="Primary">
+      <a href="../index.html">Home</a>
+      <a href="../index.html#posts">Articles</a>
+      <a href="../projects/index.html" aria-current="page">Projects</a>
+      <a href="../index.html#roadmap">Roadmap</a>
+      <a href="../about.html">About</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="article-wrap">
+
+  <div class="article-header">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a> /
+      <a href="index.html">Projects</a> /
+      Project 1
+    </nav>
+    <span class="tag tag--ai">Data & AI</span>
+    <h1>Ask My Docs — RAG Starter Kit</h1>
+    <div class="article-meta">
+      <span>Demo asset</span>
+      <span class="dot">•</span>
+      <span aria-label="Difficulty">Difficulty ★★☆☆☆</span>
+      <span class="dot">•</span>
+      <span>1–2 days</span>
+    </div>
+  </div>
+
+  <article class="prose">
+    <div class="callout callout--note">
+      <span class="callout__icon">🔧</span>
+      <p><strong>Build it yourself.</strong> This project is part of the <a href="index.html">AI Projects for Cloud Solution Architects</a> portfolio. Full source, code, and the latest updates live in the <a href="https://github.com/russmsft/csa-ai-projects/blob/master/docs/how-to/01-ask-my-docs.md" target="_blank" rel="noopener">csa-ai-projects</a> repo on GitHub.</p>
+    </div>
+
+<p>Give your documents a voice. This guide wires up File Search on Microsoft Foundry so you can upload any document and get cited, accurate answers back in seconds — no custom chunking, no vector DB to manage.</p>
+<blockquote>
+<p><strong>Platform note:</strong> This demo runs on your <strong>Microsoft Foundry / Azure AI Services resource</strong> using the Foundry Models endpoint (<code>https://&lt;resource&gt;.cognitiveservices.azure.com/</code>) through the OpenAI-compatible <strong>Responses API</strong>. That's one of two valid Foundry RAG paths — see <a href="#when-to-graduate-to-foundry-agent-service">When to graduate to Foundry Agent Service</a> for the other.</p>
+</blockquote>
+<hr />
+<h2 id="what-youre-building">What You're Building</h2>
+<p>A Python script that uploads a document to your Microsoft Foundry resource, creates a managed vector store over it, then uses the Responses API with <code>file_search</code> to answer questions in plain English. Every answer includes document citations so you can verify every claim.</p>
+<p>This is the fastest path to production RAG (Retrieval-Augmented Generation) — no embeddings code, no external vector database, no agent framework required.</p>
+<hr />
+<h2 id="business-value">Business Value</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Who</strong></td>
+<td>Any team that needs answers from internal documents — legal, HR, finance, engineering</td>
+</tr>
+<tr>
+<td><strong>Why</strong></td>
+<td>Reduces time-to-answer from hours of manual search to seconds; every answer is cited so it can be verified</td>
+</tr>
+<tr>
+<td><strong>Outcome</strong></td>
+<td>A reusable RAG pattern you can demo to any customer in under 10 minutes, then leave behind as a co-build starter</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li>Azure subscription with an Azure AI Services resource deployed (kind: <code>AIServices</code>, SKU: <code>S0</code>). Create one in the <a href="https://portal.azure.com" target="_blank" rel="noopener">Azure Portal</a> under <strong>Azure AI Services</strong>, or via CLI:
+  <code>bash
+  az cognitiveservices account create \
+    --name &lt;your-resource-name&gt; \
+    --resource-group &lt;your-rg&gt; \
+    --kind AIServices \
+    --sku S0 \
+    --location eastus</code></li>
+<li><strong>A <code>gpt-4.1-mini</code> model deployment on that resource.</strong> The script calls the model by its deployment name, so this must exist or every request fails with a model-not-found error. First list the model versions available in your region, then create the deployment:
+  ```bash
+  # 1. See available gpt-4.1-mini versions for your region
+  az cognitiveservices account list-models \
+    --name <your-resource-name> \
+    --resource-group <your-rg> \
+    --query "[?name=='gpt-4.1-mini'].{model:name, version:version, format:format}" -o table</li>
+</ul>
+<p># 2. Create the deployment (the deployment name must match MODEL in the script: gpt-4.1-mini)
+  az cognitiveservices account deployment create \
+    --name <your-resource-name> \
+    --resource-group <your-rg> \
+    --deployment-name gpt-4.1-mini \
+    --model-name gpt-4.1-mini \
+    --model-version <version-from-step-1> \
+    --model-format OpenAI \
+    --sku-name GlobalStandard \
+    --sku-capacity 10
+  ```</p>
+<blockquote>
+<p>The deployment name must match the <code>MODEL</code> constant in <code>src/ask_my_docs.py</code> (<code>gpt-4.1-mini</code>). If you deploy under a different name, update the script to match.
+- Python 3.11+
+- <code>openai &gt;= 1.30.0</code>, <code>azure-identity</code>, and <code>python-dotenv</code> installed
+- Azure CLI logged in (<code>az login</code>) with <strong>Cognitive Services OpenAI Contributor</strong> on the resource (the lower "Cognitive Services User" role does not grant permission to upload files)</p>
+</blockquote>
+<p>Assign the RBAC (Role-Based Access Control) role via CLI:
+  <code>bash
+  az role assignment create \
+    --assignee $(az ad signed-in-user show --query id -o tsv) \
+    --role "Cognitive Services OpenAI Contributor" \
+    --scope /subscriptions/&lt;sub-id&gt;/resourceGroups/&lt;rg&gt;/providers/Microsoft.CognitiveServices/accounts/&lt;resource-name&gt;</code>
+- A document you want to query (PDF, .txt, .md — a product spec, runbook, or policy works great)</p>
+<pre><code class="language-bash">pip install &quot;openai&gt;=1.30.0&quot; azure-identity python-dotenv
+</code></pre>
+<hr />
+<h2 id="architecture">Architecture</h2>
+<p><img alt="Ask My Docs architecture: Python script → Foundry (Azure OpenAI) → managed vector store → GPT-4.1-mini → answer with citations" src="../assets/projects/01-ask-my-docs-architecture.png" /></p>
+<p><strong>Data flow:</strong> Document uploaded → chunked and embedded automatically → stored in a managed vector store → retrieved at query time → passed as context to GPT-4.1-mini → response includes source citations.</p>
+<hr />
+<h2 id="pre-demo-checklist">Pre-Demo Checklist</h2>
+<p>Run through this before every demo to avoid surprises:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>#</th>
+<th>Check</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Azure subscription active</td>
+<td>Confirm in <a href="https://portal.azure.com" target="_blank" rel="noopener">portal.azure.com</a></td>
+</tr>
+<tr>
+<td>2</td>
+<td>AIServices resource deployed</td>
+<td><code>az cognitiveservices account show --name &lt;name&gt; --resource-group &lt;rg&gt;</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>GPT-4.1-mini deployed</td>
+<td>Deployment name must be <code>gpt-4.1-mini</code>. List with <code>az cognitiveservices account deployment list --name &lt;name&gt; --resource-group &lt;rg&gt; -o table</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>Role assigned</td>
+<td><strong>Cognitive Services OpenAI Contributor</strong> — allow 5+ minutes for propagation after assignment</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>az login</code> completed</td>
+<td><code>az account show</code> should return your subscription</td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>.env</code> configured</td>
+<td><code>AZURE_OPENAI_ENDPOINT</code> set to your resource endpoint</td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>sample.txt</code> in repo root</td>
+<td>Or substitute your own document</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>⚠️ <strong>Role propagation lag:</strong> After assigning the Cognitive Services OpenAI Contributor role, wait at least 5 minutes before running the script. The API will return a 403 until propagation completes.</p>
+</blockquote>
+<hr />
+<h2 id="step-by-step-build">Step-by-Step Build</h2>
+<blockquote>
+<p><strong>Already done for you:</strong> The complete, runnable script is at <code>src/ask_my_docs.py</code> in this repo. You don't need to write any code — just follow Steps 1–2 to configure your environment, then jump to <a href="#test-it">Test It</a> to run it.</p>
+<p><strong>Want to build it yourself?</strong> That's a great way to learn. Create a new file (e.g. <code>src/my_ask_my_docs.py</code>), then copy each code block from Steps 3–6 below into it in order — top to bottom. Every block is a self-contained piece; together they form the complete script. You can also open <code>src/ask_my_docs.py</code> alongside this guide to see exactly how each step maps to the finished code.</p>
+<p>The steps below explain <strong>what each part of the script does</strong> so you understand it well enough to adapt it for your own projects.</p>
+</blockquote>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Guide step</th>
+<th>Where it lives in <code>src/ask_my_docs.py</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Step 1 — Set endpoint</td>
+<td><code>.env</code> file + <code>load_dotenv()</code> at the top</td>
+</tr>
+<tr>
+<td>Step 2 — Install deps</td>
+<td>one-time terminal command</td>
+</tr>
+<tr>
+<td>Step 3 — Create client</td>
+<td>lines 28–37, the <code>AzureOpenAI(...)</code> block</td>
+</tr>
+<tr>
+<td>Step 4 — Upload + vector store</td>
+<td><code>upload_pdf()</code> and <code>create_vector_store()</code> functions</td>
+</tr>
+<tr>
+<td>Step 5 — Ask questions</td>
+<td><code>ask()</code> function</td>
+</tr>
+<tr>
+<td>Step 6 — Wire together</td>
+<td><code>main()</code> at the bottom</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h3 id="step-1-set-your-endpoint">Step 1 — Set your endpoint</h3>
+<pre><code class="language-bash"># Your Azure AI Services endpoint — find it in the Azure Portal:
+# Cognitive Services resource → Keys and Endpoint
+export AZURE_OPENAI_ENDPOINT=&quot;https://&lt;your-resource-name&gt;.cognitiveservices.azure.com/&quot;
+</code></pre>
+<p>Store it in a <code>.env</code> file — never hardcode it. Copy <code>.env.example</code> to get started:</p>
+<pre><code class="language-bash">cp .env.example .env
+# Then edit .env and set AZURE_OPENAI_ENDPOINT
+</code></pre>
+<blockquote>
+<p><strong>API version note:</strong> The script currently uses <code>2025-04-01-preview</code>. If a stable GA version is available for your deployment, prefer it — check <a href="https://learn.microsoft.com/azure/ai-services/openai/api-version-deprecation" target="_blank" rel="noopener">Azure OpenAI API releases</a> and update <code>api_version</code> in <code>src/ask_my_docs.py</code> accordingly.</p>
+</blockquote>
+<h3 id="step-2-install-dependencies">Step 2 — Install dependencies</h3>
+<pre><code class="language-bash">pip install &quot;openai&gt;=1.30.0&quot; azure-identity python-dotenv
+</code></pre>
+<h3 id="step-3-create-the-client">Step 3 — Create the client</h3>
+<pre><code class="language-python">import os
+from dotenv import load_dotenv
+from azure.identity import DefaultAzureCredential, get_bearer_token_provider
+from openai import AzureOpenAI
+
+load_dotenv()
+
+ENDPOINT = os.environ[&quot;AZURE_OPENAI_ENDPOINT&quot;]
+
+# get_bearer_token_provider wraps DefaultAzureCredential for use with openai SDK
+token_provider = get_bearer_token_provider(
+    DefaultAzureCredential(),
+    &quot;https://cognitiveservices.azure.com/.default&quot;
+)
+
+openai = AzureOpenAI(
+    azure_endpoint=ENDPOINT,
+    azure_ad_token_provider=token_provider,
+    api_version=&quot;2025-04-01-preview&quot;,
+)
+</code></pre>
+<p><code>DefaultAzureCredential</code> picks up your <code>az login</code> token automatically. No API keys needed.</p>
+<h3 id="step-4-upload-your-document-and-create-a-vector-store">Step 4 — Upload your document and create a vector store</h3>
+<pre><code class="language-python">import pathlib
+import time
+
+def upload_pdf(pdf_path: str):
+    &quot;&quot;&quot;Upload a document to your Foundry resource and return the file object.&quot;&quot;&quot;
+    path = pathlib.Path(pdf_path)
+    print(f&quot;Uploading {path.name} ({path.stat().st_size // 1024} KB)...&quot;)
+    with open(path, &quot;rb&quot;) as f:
+        uploaded = openai.files.create(file=f, purpose=&quot;assistants&quot;)
+    print(f&quot;  File ID: {uploaded.id}  status={uploaded.status}&quot;)
+    return uploaded
+
+def create_vector_store(file_id: str, store_name: str):
+    &quot;&quot;&quot;Create a vector store, attach the file, and poll until indexed.&quot;&quot;&quot;
+    print(f&quot;Creating vector store '{store_name}'...&quot;)
+    vs = openai.vector_stores.create(name=store_name, file_ids=[file_id])
+    print(f&quot;  Vector store ID: {vs.id}  status={vs.status}&quot;)
+
+    for _ in range(30):
+        if vs.status == &quot;completed&quot;:
+            break
+        time.sleep(3)
+        vs = openai.vector_stores.retrieve(vs.id)
+        print(f&quot;  Waiting for indexing... status={vs.status}&quot;)
+    else:
+        raise TimeoutError(&quot;Vector store indexing did not complete within 90 seconds.&quot;)
+
+    print(f&quot;  Indexing complete. Chunks indexed: {vs.file_counts.completed}&quot;)
+    return vs
+</code></pre>
+<blockquote>
+<p><strong>Gotcha:</strong> For large PDFs (&gt;50 MB) indexing can take a couple of minutes. The polling loop above retries for up to 90 seconds; increase <code>range(30)</code> and <code>time.sleep(3)</code> for larger files.</p>
+</blockquote>
+<h3 id="step-5-ask-a-question-using-the-responses-api">Step 5 — Ask a question using the Responses API</h3>
+<p>In the Responses API, you pass the <code>file_search</code> tool directly to <code>openai.responses.create()</code>. No separate agent registration needed for basic Q&amp;A.</p>
+<pre><code class="language-python">def ask(question: str, vector_store_id: str, model: str = &quot;gpt-4.1-mini&quot;):
+    &quot;&quot;&quot;Ask a question grounded in the vector store.&quot;&quot;&quot;
+    response = openai.responses.create(
+        model=model,
+        input=question,
+        instructions=(
+            &quot;Answer only using the provided documents. &quot;
+            &quot;Always cite the source file and section. &quot;
+            &quot;If the answer is not in the documents, say so — do not guess.&quot;
+        ),
+        tools=[{
+            &quot;type&quot;: &quot;file_search&quot;,
+            &quot;vector_store_ids&quot;: [vector_store_id],
+        }],
+        include=[&quot;file_search_call.results&quot;],
+    )
+
+    # Extract answer text and citations from output items
+    answer = &quot;&quot;
+    annotations = []
+    for item in response.output:
+        if hasattr(item, &quot;type&quot;) and item.type == &quot;message&quot;:
+            for block in item.content:
+                if hasattr(block, &quot;text&quot;):
+                    answer = block.text
+                if hasattr(block, &quot;annotations&quot;):
+                    annotations.extend(block.annotations)
+
+    # Resolve file IDs to human-readable filenames
+    file_cache = {}
+    def get_filename(file_id):
+        if file_id not in file_cache:
+            try:
+                file_cache[file_id] = openai.files.retrieve(file_id).filename
+            except Exception:
+                file_cache[file_id] = file_id
+        return file_cache[file_id]
+
+    print(f&quot;💬 {answer}&quot;)
+    for ann in annotations:
+        # Responses API file_search annotations are AnnotationFileCitation objects
+        # with flat fields (type/file_id/filename), not a nested `ann.file_citation`.
+        if getattr(ann, &quot;type&quot;, None) == &quot;file_citation&quot;:
+            filename = getattr(ann, &quot;filename&quot;, None) or get_filename(ann.file_id)
+            print(f&quot;   ↳ Source: {filename}&quot;)
+    return answer, annotations
+</code></pre>
+<blockquote>
+<p><strong>Model note:</strong> GPT-4.1-mini is the right pick here — fast and cheap for Q&amp;A. Switch to GPT-4.1 if you need deeper reasoning over complex technical docs.</p>
+</blockquote>
+<h3 id="step-6-wire-it-all-together">Step 6 — Wire it all together</h3>
+<pre><code class="language-python">def main():
+    PDF_PATH = &quot;your-document.pdf&quot;    # ← change to your PDF
+    STORE_NAME = &quot;ask-my-docs-store&quot;
+
+    uploaded = upload_pdf(PDF_PATH)
+    vs = create_vector_store(uploaded.id, STORE_NAME)
+
+    questions = [
+        &quot;What is the main subject of this document?&quot;,
+        &quot;List any key requirements or commitments mentioned.&quot;,
+        &quot;Are there any deadlines or dates referenced?&quot;,
+    ]
+
+    print(&quot;\n&quot; + &quot;=&quot;*60)
+    for q in questions:
+        print(f&quot;\n❓ {q}&quot;)
+        answer, annotations = ask(q, vs.id)
+
+    print(f&quot;\nTo reuse: VECTOR_STORE_ID={vs.id}&quot;)
+
+if __name__ == &quot;__main__&quot;:
+    main()
+</code></pre>
+<p>The complete, runnable version of this script is at <code>src/ask_my_docs.py</code> in this repo.</p>
+<hr />
+<h2 id="test-it">Test It</h2>
+<p>Run the script against <code>sample.txt</code> (included in the repo) to verify everything works before using your own document:</p>
+<pre><code class="language-bash"># Ensure .env is set with your AZURE_OPENAI_ENDPOINT
+python src/ask_my_docs.py
+</code></pre>
+<p>Expected output:</p>
+<pre><code>Uploading sample.txt (0 KB)...
+  File ID: assistant-abc123  status=processed
+Creating vector store 'ask-my-docs-store'...
+  Vector store ID: vs-xyz789  status=in_progress
+  Waiting for indexing... status=completed
+  Indexing complete. Chunks indexed: 1
+
+============================================================
+
+❓ What is the main subject of this document?
+💬 The main subject of the document is ramp-up guidance for new Cloud Solution
+Architect (CSA) hires at Microsoft, including key requirements, milestones, and
+important dates within the first 90 days.
+
+❓ List any key requirements or commitments mentioned.
+💬 1. Complete Azure Fundamentals certification within 30 days.
+   2. Shadow 3 customer engagements in the first 60 days.
+   3. Deliver your first technical presentation by day 90.
+
+❓ Are there any deadlines or dates referenced?
+💬 Yes — Day 30: AZ-900 deadline, Day 60: debrief due, Day 90: ramp-up review.
+
+============================================================
+Done. To reuse this vector store, set VECTOR_STORE_ID=vs-xyz789
+</code></pre>
+<p><strong>To query your own document</strong>, edit <code>src/ask_my_docs.py</code> and change the <code>_REPO_ROOT / "sample.txt"</code> line to point at your file.</p>
+<p><strong>Try a "trap question" — this is a critical demo moment:</strong></p>
+<pre><code class="language-python">ask(&quot;What is the quarterly revenue target for CSAs in FY26?&quot;, vs.id)
+</code></pre>
+<blockquote>
+<p>⚠️ <strong>Important:</strong> With a soft instruction like <code>"If the answer is not in the documents, say so"</code>, the model may still hallucinate a confident-sounding answer (e.g. "$10 million per quarter") even when that information isn't in your document at all. This is a known LLM behavior — the model fills gaps with plausible-sounding training data.</p>
+<p><strong>Use a stronger instruction to enforce abstention:</strong>
+<code>python
+instructions=(
+    "You MUST NOT answer from general knowledge. "
+    "Only answer using information retrieved from the provided documents. "
+    "If the answer cannot be found in the retrieved document chunks, respond with exactly: "
+    "'I cannot find that information in the provided documents.' "
+    "Do not guess, infer, or supplement from training data."
+)</code>
+The complete script at <code>src/ask_my_docs.py</code> uses this stronger instruction.</p>
+<p><strong>CSA talk-track:</strong> <em>"Watch what happens when I ask something that's not in the document. Notice there are no source citations in the answer — that's your signal. Always show customers both the answer AND the citations. No citations means treat the answer with suspicion. This is why grounding and citation display matter in production."</em></p>
+</blockquote>
+<p><strong>Add a second document:</strong></p>
+<pre><code class="language-python">with open(&quot;second-doc.pdf&quot;, &quot;rb&quot;) as f:
+    uploaded2 = openai.files.create(file=f, purpose=&quot;assistants&quot;)
+
+# Add to existing vector store
+openai.vector_stores.files.create(
+    vector_store_id=vs.id,
+    file_id=uploaded2.id
+)
+</code></pre>
+<hr />
+<blockquote>
+<p>⚠️ <strong>Deprecation notice:</strong> The older <strong>Assistants API</strong> (threads, runs, <code>beta.assistants.*</code>) retires on <strong>26 August 2026</strong>. This guide already uses the replacement — the <strong>Responses API</strong> — so no migration is needed. If you encounter tutorials using <code>client.beta.assistants</code> or <code>create_thread()</code>, they will stop working after that date.</p>
+</blockquote>
+<hr />
+<h2 id="common-mistakes">Common Mistakes</h2>
+<ul>
+<li><strong>Scanned PDFs return empty text.</strong> The file upload API does basic text extraction. If your PDF is a scanned image, pre-process it with Azure AI Document Intelligence first (see Guide 05).</li>
+<li><strong>Model answers questions not in the docs.</strong> A soft instruction like <code>"If the answer is not in the documents, say so"</code> is often not enough — the model can still hallucinate confident answers from its training data. Use a strong prohibition: <code>"You MUST NOT answer from general knowledge. If the answer cannot be found in the retrieved document chunks, respond with exactly: 'I cannot find that information in the provided documents.'"</code> The script at <code>src/ask_my_docs.py</code> uses this pattern.</li>
+<li><strong>Reusing a vector store across sessions.</strong> Note the <code>VECTOR_STORE_ID</code> printed at the end of each run — pass it directly to <code>ask()</code> instead of re-uploading your document every time.</li>
+</ul>
+<hr />
+<h2 id="enterprise-considerations">Enterprise Considerations</h2>
+<p>Before taking this pattern to a production customer, address these five areas:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Area</th>
+<th>What to cover</th>
+<th>Azure feature</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Data privacy</strong></td>
+<td>Confirm data does not leave the tenant and is not used for model training</td>
+<td><a href="https://learn.microsoft.com/legal/cognitive-services/openai/data-privacy" target="_blank" rel="noopener">Azure OpenAI data privacy &amp; DPA</a></td>
+</tr>
+<tr>
+<td><strong>Data residency</strong></td>
+<td>Documents stay in your chosen Azure region; use DataZone deployments for EU data boundary</td>
+<td><a href="https://learn.microsoft.com/azure/ai-services/openai/concepts/data-residency" target="_blank" rel="noopener">Azure OpenAI in-region processing</a></td>
+</tr>
+<tr>
+<td><strong>Content safety</strong></td>
+<td>Enable Prompt Shields to block indirect prompt injection via uploaded documents</td>
+<td><a href="https://learn.microsoft.com/azure/ai-services/content-safety/concepts/jailbreak-detection" target="_blank" rel="noopener">Azure AI Content Safety — Prompt Shields</a></td>
+</tr>
+<tr>
+<td><strong>Network security</strong></td>
+<td>Disable public access; route all traffic through Private Endpoints</td>
+<td><a href="https://learn.microsoft.com/azure/ai-services/cognitive-services-virtual-networks" target="_blank" rel="noopener">Azure OpenAI Private Endpoints</a></td>
+</tr>
+<tr>
+<td><strong>Encryption</strong></td>
+<td>Data encrypted at rest by default; use Customer-Managed Keys (CMK) for regulated industries</td>
+<td><a href="https://learn.microsoft.com/azure/ai-services/openai/encrypt-data-at-rest" target="_blank" rel="noopener">Azure OpenAI CMK</a></td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="when-to-use-this-vs-alternatives">When to Use This vs. Alternatives</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Pattern</th>
+<th>Best for</th>
+<th>Not ideal for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>This guide</strong> (Foundry File Search via Responses API)</td>
+<td>Quick RAG over &lt;100 documents, fast prototyping, single-tenant demos</td>
+<td>Large document libraries, complex hybrid search, multi-index scenarios</td>
+</tr>
+<tr>
+<td><strong>Foundry Agent Service</strong></td>
+<td>Multi-tool agents, code interpreter, persistent agent definitions</td>
+<td>Simple Q&amp;A where agent overhead isn't needed</td>
+</tr>
+<tr>
+<td><strong>Azure AI Search + Foundry Models</strong></td>
+<td>Enterprise-scale search, hybrid keyword+semantic, metadata filtering at scale</td>
+<td>Fast demo setup — higher configuration overhead</td>
+</tr>
+<tr>
+<td><strong>"Add your data" in Azure OpenAI Studio</strong></td>
+<td>No-code proof of concept</td>
+<td>Production deployments, programmatic control</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>CSA talk-track:</strong> <em>"We're using the simplest possible pattern here — no infrastructure beyond an Azure AI Services resource. This gives you a demo in 10 minutes. When you need filters, access control per document, or millions of documents, Azure AI Search is the right layer to add underneath."</em></p>
+<h3 id="when-to-graduate-to-foundry-agent-service">When to graduate to Foundry Agent Service</h3>
+<p>The Responses API + File Search used in this guide is the right call for <strong>stateless Q&amp;A</strong> — fewest moving parts, no agent lifecycle to manage. Reach for <strong>Foundry Agent Service</strong> (the <code>azure-ai-projects</code> SDK, project endpoint <code>https://&lt;resource&gt;.services.ai.azure.com/api/projects/&lt;project&gt;</code>) when you need:</p>
+<ul>
+<li>a <strong>persistent agent</strong> you register once and reuse,</li>
+<li><strong>conversation threads</strong> that retain memory across turns,</li>
+<li><strong>multiple tools</strong> on one agent (Code Interpreter, function calling, web search), or</li>
+<li><strong>multi-agent orchestration</strong>.</li>
+</ul>
+<p>Both paths run on the same Foundry resource — Guides 06, 10, and 12 use Agent Service where that extra structure earns its keep.</p>
+<hr />
+<h2 id="extend-it">Extend It</h2>
+<ol>
+<li><strong>Multi-tenant isolation:</strong> Create a separate vector store per user/team. Pass the correct <code>vector_store_id</code> based on the authenticated user's group membership from Entra ID.</li>
+<li><strong>Streaming responses:</strong> Use <code>openai.responses.stream()</code> instead of <code>create()</code> and yield tokens to a frontend for real-time display.</li>
+<li><strong>Slack / Teams bot:</strong> Wrap the <code>ask()</code> function in an Azure Function with an HTTP trigger, then register it as a Teams bot via Bot Framework. Your whole org can query docs from Teams.</li>
+</ol>
+<hr />
+<h2 id="cost-transparency">Cost Transparency</h2>
+<p>Vector storage is not free. Understand the charges before a customer ask:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Cost item</th>
+<th>Pricing</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Vector storage</td>
+<td>~$0.10/GB/day</td>
+<td>First 1 GB included free per resource</td>
+</tr>
+<tr>
+<td>File Search queries</td>
+<td>Included in model token cost</td>
+<td>No separate per-query charge</td>
+</tr>
+<tr>
+<td>File upload</td>
+<td>No charge</td>
+<td>Storage cost begins after upload</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Clean up unused vector stores</strong> to avoid ongoing charges. A ready-to-run cleanup script is at <code>src/cleanup.py</code> in this repo:</p>
+<pre><code class="language-bash"># List everything and prompt before deleting (interactive)
+python src/cleanup.py
+
+# Delete everything without prompting (e.g. in a CI teardown)
+python src/cleanup.py --delete
+</code></pre>
+<p>Run it from the repo root after any demo session. It lists all vector stores and uploaded files, shows their sizes, and prompts before deleting.</p>
+<blockquote>
+<p><strong>Tip for demos:</strong> Run <code>python src/cleanup.py</code> at the end of every demo session. The script uses the same <code>.env</code> and <code>az login</code> token as the main script — no extra setup needed.</p>
+</blockquote>
+<hr />
+<h2 id="resources">Resources</h2>
+<ul>
+<li><a href="https://learn.microsoft.com/azure/ai-services/openai/how-to/file-search" target="_blank" rel="noopener">Azure OpenAI File Search</a></li>
+<li><a href="https://learn.microsoft.com/azure/ai-services/openai/how-to/responses" target="_blank" rel="noopener">Azure OpenAI Responses API</a></li>
+<li><a href="https://learn.microsoft.com/azure/ai-services/openai/api-version-deprecation" target="_blank" rel="noopener">Azure OpenAI API version lifecycle</a></li>
+<li><a href="https://learn.microsoft.com/legal/cognitive-services/openai/data-privacy" target="_blank" rel="noopener">Azure OpenAI data privacy</a></li>
+<li><a href="https://learn.microsoft.com/azure/ai-services/openai/how-to/role-based-access-control" target="_blank" rel="noopener">Cognitive Services OpenAI Contributor role</a></li>
+<li><a href="https://learn.microsoft.com/python/api/azure-identity/azure.identity.defaultazurecredential" target="_blank" rel="noopener">DefaultAzureCredential auth chain</a></li>
+<li><a href="https://learn.microsoft.com/azure/ai-services/content-safety/concepts/jailbreak-detection" target="_blank" rel="noopener">Azure AI Content Safety — Prompt Shields</a></li>
+</ul>
+  </article>
+
+  <nav class="post-nav" aria-label="More projects">
+    <a href="index.html">← All projects</a>
+    <a href="02-meeting-minutes-agent.html">Meeting Minutes Agent →</a>
+  </nav>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <div>
+      <a class="brand" href="../index.html">
+        <span class="brand-mark">AC</span>
+        <span class="brand-text-title">AzureCraft</span>
+      </a>
+      <p style="color: var(--text-muted); margin-top: 0.75rem; max-width: 36ch;">Practical Azure architecture, without the noise.</p>
+    </div>
+    <div>
+      <h4>Topics</h4>
+      <ul>
+        <li><a href="../categories/infrastructure.html">Infrastructure</a></li>
+        <li><a href="../categories/data-ai.html">Data &amp; AI</a></li>
+        <li><a href="../categories/modern-apps.html">Modern Apps</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Site</h4>
+      <ul>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="index.html">Projects</a></li>
+        <li><a href="../about.html">About</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="site-footer__bottom">
+    <p>© <span data-year>2026</span> AzureCraft. Built as a static site on Azure App Service.</p>
+  </div>
+</footer>
+
+<script src="../js/site.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

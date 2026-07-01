@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>(function(){if(location.hostname==="www.rbcloud.co.uk"){location.replace("https://rbcloud.co.uk"+location.pathname+location.search+location.hash);}})();</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Competitive Intelligence Dashboard — AzureCraft Projects</title>
+  <meta name="description" content="Web-grounded research agents that monitor competitors and surface insights on a live dashboard." />
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+  <link rel="canonical" href="https://rbcloud.co.uk/projects/09-competitive-intelligence-dashboard.html" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Competitive Intelligence Dashboard" />
+  <meta property="og:description" content="Web-grounded research agents that monitor competitors and surface insights on a live dashboard." />
+  <meta property="og:image" content="https://rbcloud.co.uk/assets/projects/09-competitive-intelligence-dashboard-architecture.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://rbcloud.co.uk/assets/projects/09-competitive-intelligence-dashboard-architecture.png" />
+  <link rel="stylesheet" href="../css/azurecraft.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github-dark.min.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="reading-progress" aria-hidden="true"></div>
+
+<header class="site-header">
+  <div class="container site-nav">
+    <a class="brand" href="../index.html">
+      <span class="brand-mark">AC</span>
+      <span>
+        <span class="brand-text-title">AzureCraft</span>
+        <span class="brand-text-sub">Infra · Data &amp; AI · Modern Apps</span>
+      </span>
+    </a>
+    <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+    <nav class="site-nav__links" aria-label="Primary">
+      <a href="../index.html">Home</a>
+      <a href="../index.html#posts">Articles</a>
+      <a href="../projects/index.html" aria-current="page">Projects</a>
+      <a href="../index.html#roadmap">Roadmap</a>
+      <a href="../about.html">About</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="article-wrap">
+
+  <div class="article-header">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a> /
+      <a href="index.html">Projects</a> /
+      Project 9
+    </nav>
+    <span class="tag tag--apps">Modern Apps</span>
+    <h1>Competitive Intelligence Dashboard</h1>
+    <div class="article-meta">
+      <span>Co-build</span>
+      <span class="dot">•</span>
+      <span aria-label="Difficulty">Difficulty ★★★★☆</span>
+      <span class="dot">•</span>
+      <span>3–4 weeks</span>
+    </div>
+  </div>
+
+  <article class="prose">
+    <div class="callout callout--note">
+      <span class="callout__icon">🔧</span>
+      <p><strong>Build it yourself.</strong> This project is part of the <a href="index.html">AI Projects for Cloud Solution Architects</a> portfolio. Full source, code, and the latest updates live in the <a href="https://github.com/russmsft/csa-ai-projects/blob/master/docs/how-to/09-competitive-intelligence-dashboard.md" target="_blank" rel="noopener">csa-ai-projects</a> repo on GitHub.</p>
+    </div>
+
+<p>Schedule an agent to search for competitor news, generate trend charts, and store results in Cosmos DB — then surface everything in a dashboard that refreshes automatically.</p>
+<hr />
+<h2 id="what-youre-building">What You're Building</h2>
+<p>An Azure Functions timer trigger that runs every Monday morning. It calls the Responses API with the hosted <strong>web search</strong> tool (Bing grounding) to pull competitor news and product updates, then hands the results to <strong>Code Interpreter</strong> to generate trend charts. Results land in Cosmos DB. An Azure Static Web App reads from Cosmos DB via a lightweight API and renders the dashboard.</p>
+<hr />
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li>Microsoft Foundry / Azure AI Services resource with <strong>GPT-4.1</strong> deployed</li>
+<li>Azure Cosmos DB account (Serverless tier works well for low-frequency writes)</li>
+<li>Azure Static Web Apps resource</li>
+<li>Azure CLI logged in (<code>az login</code>) with <strong>Cognitive Services OpenAI User</strong> on the AI Services resource and <strong>Cosmos DB Built-in Data Contributor</strong> on the Cosmos account — Entra ID auth, no keys</li>
+<li>Python 3.11+, <code>azure-functions</code>, <code>openai</code>, <code>azure-cosmos</code></li>
+</ul>
+<pre><code class="language-bash">pip install &quot;openai&gt;=1.30.0&quot; azure-identity azure-functions \
+  azure-cosmos python-dotenv
+</code></pre>
+<hr />
+<h2 id="architecture">Architecture</h2>
+<p><img alt="Competitive Intelligence architecture: Functions timer → Foundry Agent GPT-4.1 with Web Search and Code Interpreter → Cosmos DB → Functions HTTP API → Azure Static Web App dashboard" src="../assets/projects/09-competitive-intelligence-dashboard-architecture.png" /></p>
+<hr />
+<h2 id="step-by-step-build">Step-by-Step Build</h2>
+<h3 id="step-1-create-cosmos-db">Step 1 — Create Cosmos DB</h3>
+<pre><code class="language-bash">COSMOS_ACCOUNT=&quot;competitive-intel-db&quot;
+DB_NAME=&quot;competitor-intel&quot;
+CONTAINER_NAME=&quot;weekly-intel&quot;
+
+az cosmosdb create \
+  --name $COSMOS_ACCOUNT \
+  --resource-group $RG \
+  --locations regionName=eastus2 \
+  --capabilities EnableServerless
+
+az cosmosdb sql database create \
+  --account-name $COSMOS_ACCOUNT \
+  --resource-group $RG \
+  --name $DB_NAME
+
+az cosmosdb sql container create \
+  --account-name $COSMOS_ACCOUNT \
+  --resource-group $RG \
+  --database-name $DB_NAME \
+  --name $CONTAINER_NAME \
+  --partition-key-path &quot;/competitor&quot;
+</code></pre>
+<h3 id="step-2-enable-web-search-grounding-in-foundry">Step 2 — Enable web search grounding in Foundry</h3>
+<p>The Responses API exposes a hosted <strong><code>web_search</code></strong> tool. Make sure web/Bing grounding is enabled for your Foundry resource:</p>
+<ol>
+<li>In the <a href="https://ai.azure.com" target="_blank" rel="noopener">AI Foundry portal</a>, navigate to your project</li>
+<li>Go to <strong>Settings</strong> → <strong>Connections</strong> and confirm a <strong>Bing Search / web grounding</strong> connection exists (add one if not)</li>
+<li>No connection name is needed in code — the hosted <code>web_search</code> tool is requested directly on each Responses API call</li>
+</ol>
+<h3 id="step-3-set-up-the-client-and-instructions">Step 3 — Set up the client and instructions</h3>
+<p>There's no separate agent to register. The Responses API takes the instructions and the tools — hosted <strong><code>web_search</code></strong> (recent news) and <strong><code>code_interpreter</code></strong> (the sentiment chart) — on each call. Both tools run their loops server-side.</p>
+<pre><code class="language-python">import os
+import json
+import base64
+import re
+from datetime import datetime, timezone
+from dotenv import load_dotenv
+from azure.identity import DefaultAzureCredential, get_bearer_token_provider
+from openai import AzureOpenAI
+from azure.cosmos import CosmosClient
+
+load_dotenv()
+
+COSMOS_ENDPOINT = os.environ[&quot;COSMOS_ENDPOINT&quot;]
+DB_NAME = &quot;competitor-intel&quot;
+CONTAINER_NAME = &quot;weekly-intel&quot;
+MODEL = os.environ.get(&quot;INTEL_MODEL&quot;, &quot;gpt-4.1&quot;)
+
+credential = DefaultAzureCredential()
+client = AzureOpenAI(
+    azure_endpoint=os.environ[&quot;AZURE_OPENAI_ENDPOINT&quot;],
+    azure_ad_token_provider=get_bearer_token_provider(
+        credential, &quot;https://cognitiveservices.azure.com/.default&quot;),
+    api_version=&quot;2025-04-01-preview&quot;,
+)
+cosmos = CosmosClient(url=COSMOS_ENDPOINT, credential=credential)
+container = cosmos.get_database_client(DB_NAME).get_container_client(CONTAINER_NAME)
+
+TOOLS = [
+    {&quot;type&quot;: &quot;web_search&quot;},
+    {&quot;type&quot;: &quot;code_interpreter&quot;, &quot;container&quot;: {&quot;type&quot;: &quot;auto&quot;}},
+]
+
+INSTRUCTIONS = &quot;&quot;&quot;You are a competitive intelligence analyst. Your job each week:
+
+1. Search the web for recent news (last 7 days) about each competitor provided
+2. Categorize findings: product launches, pricing changes, partnerships, executive moves, negative press
+3. Write a brief analysis (2-3 sentences) for each competitor
+4. Use the python (code_interpreter) tool to generate a sentiment trend bar chart (matplotlib):
+   - X-axis: competitor names
+   - Y-axis: news sentiment score (-5 to +5)
+   - Title: &quot;Competitor News Sentiment — Week of [date]&quot;
+   - Save the chart as a PNG file
+5. End your reply with a single JSON object with this structure:
+{
+  &quot;week_of&quot;: &quot;YYYY-MM-DD&quot;,
+  &quot;competitors&quot;: [
+    {
+      &quot;name&quot;: &quot;CompetitorName&quot;,
+      &quot;sentiment_score&quot;: &lt;-5 to 5&gt;,
+      &quot;key_developments&quot;: [&quot;...&quot;, &quot;...&quot;],
+      &quot;analysis&quot;: &quot;...&quot;,
+      &quot;sources&quot;: [&quot;url1&quot;, &quot;url2&quot;]
+    }
+  ],
+  &quot;overall_summary&quot;: &quot;...&quot;
+}
+
+Be factual. Cite sources. Don't speculate.&quot;&quot;&quot;
+</code></pre>
+<h3 id="step-4-run-the-weekly-intelligence-sweep">Step 4 — Run the weekly intelligence sweep</h3>
+<pre><code class="language-python">def run_weekly_intel(competitors: list[str]) -&gt; dict:
+    &quot;&quot;&quot;Run competitive intelligence sweep for the given competitor list.&quot;&quot;&quot;
+    week_str = datetime.now(timezone.utc).strftime(&quot;%Y-%m-%d&quot;)
+    competitor_list = &quot;, &quot;.join(competitors)
+
+    print(f&quot;Running intel sweep for: {competitor_list}&quot;)
+    response = client.responses.create(
+        model=MODEL,
+        instructions=INSTRUCTIONS,
+        input=(
+            f&quot;Run a competitive intelligence sweep for week of {week_str}.\n&quot;
+            f&quot;Competitors to analyze: {competitor_list}\n\n&quot;
+            &quot;Search for news from the last 7 days for each. &quot;
+            &quot;Generate the sentiment chart and return structured JSON.&quot;
+        ),
+        tools=TOOLS,
+    )
+
+    intel_text = response.output_text
+
+    # The code_interpreter tool runs in a container that holds any files it created
+    container_id = None
+    for item in response.output:
+        if getattr(item, &quot;type&quot;, None) == &quot;code_interpreter_call&quot;:
+            container_id = getattr(item, &quot;container_id&quot;, None)
+
+    # Parse the trailing JSON object from the response
+    intel_data = {&quot;raw&quot;: intel_text, &quot;week_of&quot;: week_str}
+    json_match = re.search(r&quot;\{[\s\S]*\}&quot;, intel_text)
+    if json_match:
+        try:
+            intel_data = json.loads(json_match.group())
+        except json.JSONDecodeError:
+            pass
+
+    # Download the chart PNG the tool generated, if any
+    chart_b64 = None
+    if container_id:
+        for f in client.containers.files.list(container_id=container_id).data:
+            name = (getattr(f, &quot;path&quot;, None) or f.id)
+            if name.endswith(&quot;.png&quot;):
+                content = client.containers.files.content.retrieve(
+                    f.id, container_id=container_id)
+                chart_b64 = base64.b64encode(content.read()).decode()
+                break
+
+    return {**intel_data, &quot;chart_b64&quot;: chart_b64, &quot;response_id&quot;: response.id}
+</code></pre>
+<h3 id="step-5-store-results-in-cosmos-db">Step 5 — Store results in Cosmos DB</h3>
+<pre><code class="language-python">def store_intel_results(intel_data: dict, competitors: list[str]):
+    &quot;&quot;&quot;Write one document per competitor per week to Cosmos DB.&quot;&quot;&quot;
+    week_of = intel_data.get(&quot;week_of&quot;, datetime.now(timezone.utc).strftime(&quot;%Y-%m-%d&quot;))
+
+    # Store aggregate document
+    aggregate_doc = {
+        &quot;id&quot;: f&quot;weekly-{week_of}&quot;,
+        &quot;competitor&quot;: &quot;_aggregate&quot;,
+        &quot;week_of&quot;: week_of,
+        &quot;overall_summary&quot;: intel_data.get(&quot;overall_summary&quot;, &quot;&quot;),
+        &quot;chart_b64&quot;: intel_data.get(&quot;chart_b64&quot;),
+        &quot;created_at&quot;: datetime.now(timezone.utc).isoformat(),
+        &quot;competitor_count&quot;: len(competitors)
+    }
+    container.upsert_item(aggregate_doc)
+
+    # Store per-competitor documents
+    for comp_data in intel_data.get(&quot;competitors&quot;, []):
+        name = comp_data.get(&quot;name&quot;, &quot;unknown&quot;)
+        doc = {
+            &quot;id&quot;: f&quot;{name.lower().replace(' ', '-')}-{week_of}&quot;,
+            &quot;competitor&quot;: name,
+            &quot;week_of&quot;: week_of,
+            **comp_data,
+            &quot;created_at&quot;: datetime.now(timezone.utc).isoformat()
+        }
+        container.upsert_item(doc)
+        print(f&quot;Stored intel for: {name}&quot;)
+</code></pre>
+<h3 id="step-6-azure-function-timer-trigger">Step 6 — Azure Function timer trigger</h3>
+<pre><code class="language-python"># function_app.py
+import azure.functions as func
+import logging
+import json
+
+app = func.FunctionApp()
+logger = logging.getLogger(__name__)
+
+COMPETITORS = [
+    &quot;Competitor A&quot;,
+    &quot;Competitor B&quot;,
+    &quot;Competitor C&quot;
+]
+
+
+@app.timer_trigger(
+    arg_name=&quot;timer&quot;,
+    schedule=&quot;0 0 7 * * MON&quot;   # Every Monday at 07:00 UTC
+)
+def weekly_intel_sweep(timer: func.TimerRequest):
+    if timer.past_due:
+        logger.warning(&quot;Timer is past due — running catch-up sweep&quot;)
+
+    logger.info(&quot;Starting weekly competitive intelligence sweep&quot;)
+
+    intel_data = run_weekly_intel(COMPETITORS)
+    store_intel_results(intel_data, COMPETITORS)
+
+    logger.info(f&quot;Sweep complete. Analyzed {len(COMPETITORS)} competitors.&quot;)
+
+
+@app.route(route=&quot;intelligence&quot;, methods=[&quot;GET&quot;])
+def get_intelligence(req: func.HttpRequest) -&gt; func.HttpResponse:
+    &quot;&quot;&quot;HTTP endpoint for the dashboard to fetch stored results.&quot;&quot;&quot;
+    weeks = int(req.params.get(&quot;weeks&quot;, &quot;8&quot;))
+    competitor = req.params.get(&quot;competitor&quot;)
+
+    query = &quot;SELECT * FROM c ORDER BY c.week_of DESC OFFSET 0 LIMIT @limit&quot;
+    params = [{&quot;name&quot;: &quot;@limit&quot;, &quot;value&quot;: weeks * (len(COMPETITORS) + 1)}]
+
+    if competitor:
+        query = (&quot;SELECT * FROM c WHERE c.competitor = @comp &quot;
+                 &quot;ORDER BY c.week_of DESC OFFSET 0 LIMIT @limit&quot;)
+        params.append({&quot;name&quot;: &quot;@comp&quot;, &quot;value&quot;: competitor})
+
+    results = list(container.query_items(
+        query=query,
+        parameters=params,
+        enable_cross_partition_query=True
+    ))
+
+    return func.HttpResponse(
+        json.dumps(results),
+        status_code=200,
+        mimetype=&quot;application/json&quot;,
+        headers={&quot;Access-Control-Allow-Origin&quot;: &quot;*&quot;}
+    )
+</code></pre>
+<hr />
+<h2 id="test-it">Test It</h2>
+<p>Run the sweep manually without waiting for Monday:</p>
+<pre><code class="language-bash"># Trigger the function locally
+func start
+
+# In another terminal:
+curl -X POST http://localhost:7071/admin/functions/weekly_intel_sweep \
+  -H &quot;Content-Type: application/json&quot; \
+  -d '{}'
+
+# Check the results API
+curl &quot;http://localhost:7071/api/intelligence?weeks=4&quot;
+</code></pre>
+<p>Verify in Cosmos DB:</p>
+<pre><code class="language-bash">az cosmosdb sql query \
+  --account-name $COSMOS_ACCOUNT \
+  --resource-group $RG \
+  --database-name competitor-intel \
+  --container-name weekly-intel \
+  --query-text &quot;SELECT c.competitor, c.week_of, c.sentiment_score FROM c&quot; \
+  --output table
+</code></pre>
+<hr />
+<h2 id="common-mistakes">Common Mistakes</h2>
+<ul>
+<li><strong>Reaching for the old Assistants <code>agents</code> API.</strong> <code>azure-ai-projects</code> 2.x removed the threads/runs Assistants surface — <code>AIProjectClient</code> has no <code>.agents</code>, and <code>WebSearchTool</code>/<code>PromptAgentDefinition</code>/<code>MessageRole</code> no longer drive a run. Use <code>client.responses.create(..., tools=[{"type":"web_search"}, {"type":"code_interpreter", ...}])</code>; both tools run server-side, so a single call returns the analysis and any generated chart.</li>
+<li><strong>Looking for the chart on a message block.</strong> With the Responses API the chart isn't an <code>image_file</code> content block — it's a file inside the <code>code_interpreter</code> container. Find the <code>code_interpreter_call</code> item's <code>container_id</code>, then list/download container files (<code>client.containers.files</code>).</li>
+<li><strong>Bing search returning stale results.</strong> Web Search grounding uses recency ranking but doesn't guarantee freshness. Add <code>"in the last 7 days"</code> to your search queries explicitly.</li>
+<li><strong>Cosmos DB partition key strategy.</strong> Using <code>competitor</code> as partition key is fine for reads by competitor. If you query by <code>week_of</code> frequently, use a composite index or add a synthetic partition key.</li>
+<li><strong>Chart not generated.</strong> Code Interpreter needs matplotlib installed in its sandbox — it comes pre-installed. If charts aren't appearing, check that your agent instructions explicitly say "save as PNG file attachment."</li>
+</ul>
+<hr />
+<h2 id="extend-it">Extend It</h2>
+<ol>
+<li><strong>Email digest:</strong> Add a step after Cosmos DB write that calls SendGrid API to email the weekly dashboard summary to stakeholders — no login required.</li>
+<li><strong>Historical trend lines:</strong> Store 12 weeks of sentiment scores per competitor, then have Code Interpreter generate line charts showing sentiment trends over time.</li>
+<li><strong>Slack alerts on negative spikes:</strong> Add a threshold check — if any competitor's sentiment_score drops below -3, immediately post to a Slack channel with the key developments.</li>
+</ol>
+<hr />
+<h2 id="resources">Resources</h2>
+<ul>
+<li><a href="https://learn.microsoft.com/azure/ai-foundry/agents/how-to/tools/bing-grounding" target="_blank" rel="noopener">Web search grounding (Bing)</a></li>
+<li><a href="https://learn.microsoft.com/python/api/overview/azure/cosmos-readme" target="_blank" rel="noopener">Azure Cosmos DB Python SDK</a></li>
+<li><a href="https://learn.microsoft.com/azure/azure-functions/functions-bindings-timer" target="_blank" rel="noopener">Azure Functions timer trigger</a></li>
+<li><a href="https://learn.microsoft.com/azure/static-web-apps/overview" target="_blank" rel="noopener">Azure Static Web Apps</a></li>
+</ul>
+  </article>
+
+  <nav class="post-nav" aria-label="More projects">
+    <a href="08-voice-field-assistant.html">← Voice-Enabled Field Assistant</a>
+    <a href="10-agentic-approval-workflow.html">Agentic Workflow for Approvals →</a>
+  </nav>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <div>
+      <a class="brand" href="../index.html">
+        <span class="brand-mark">AC</span>
+        <span class="brand-text-title">AzureCraft</span>
+      </a>
+      <p style="color: var(--text-muted); margin-top: 0.75rem; max-width: 36ch;">Practical Azure architecture, without the noise.</p>
+    </div>
+    <div>
+      <h4>Topics</h4>
+      <ul>
+        <li><a href="../categories/infrastructure.html">Infrastructure</a></li>
+        <li><a href="../categories/data-ai.html">Data &amp; AI</a></li>
+        <li><a href="../categories/modern-apps.html">Modern Apps</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Site</h4>
+      <ul>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="index.html">Projects</a></li>
+        <li><a href="../about.html">About</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="site-footer__bottom">
+    <p>© <span data-year>2026</span> AzureCraft. Built as a static site on Azure App Service.</p>
+  </div>
+</footer>
+
+<script src="../js/site.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

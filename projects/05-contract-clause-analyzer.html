@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>(function(){if(location.hostname==="www.rbcloud.co.uk"){location.replace("https://rbcloud.co.uk"+location.pathname+location.search+location.hash);}})();</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Contract Clause Analyzer — AzureCraft Projects</title>
+  <meta name="description" content="Long-context reasoning over entire contracts — extract clauses, flag risks, and compare against a playbook using GPT-5.4&#x27;s 1M-token window." />
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+  <link rel="canonical" href="https://rbcloud.co.uk/projects/05-contract-clause-analyzer.html" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Contract Clause Analyzer" />
+  <meta property="og:description" content="Long-context reasoning over entire contracts — extract clauses, flag risks, and compare against a playbook using GPT-5.4&#x27;s 1M-token window." />
+  <meta property="og:image" content="https://rbcloud.co.uk/assets/projects/05-contract-clause-analyzer-architecture.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://rbcloud.co.uk/assets/projects/05-contract-clause-analyzer-architecture.png" />
+  <link rel="stylesheet" href="../css/azurecraft.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github-dark.min.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="reading-progress" aria-hidden="true"></div>
+
+<header class="site-header">
+  <div class="container site-nav">
+    <a class="brand" href="../index.html">
+      <span class="brand-mark">AC</span>
+      <span>
+        <span class="brand-text-title">AzureCraft</span>
+        <span class="brand-text-sub">Infra · Data &amp; AI · Modern Apps</span>
+      </span>
+    </a>
+    <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+    <nav class="site-nav__links" aria-label="Primary">
+      <a href="../index.html">Home</a>
+      <a href="../index.html#posts">Articles</a>
+      <a href="../projects/index.html" aria-current="page">Projects</a>
+      <a href="../index.html#roadmap">Roadmap</a>
+      <a href="../about.html">About</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="article-wrap">
+
+  <div class="article-header">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a> /
+      <a href="index.html">Projects</a> /
+      Project 5
+    </nav>
+    <span class="tag tag--apps">Modern Apps</span>
+    <h1>Contract Clause Analyzer</h1>
+    <div class="article-meta">
+      <span>Co-build</span>
+      <span class="dot">•</span>
+      <span aria-label="Difficulty">Difficulty ★★★☆☆</span>
+      <span class="dot">•</span>
+      <span>~2 weeks</span>
+    </div>
+  </div>
+
+  <article class="prose">
+    <div class="callout callout--note">
+      <span class="callout__icon">🔧</span>
+      <p><strong>Build it yourself.</strong> This project is part of the <a href="index.html">AI Projects for Cloud Solution Architects</a> portfolio. Full source, code, and the latest updates live in the <a href="https://github.com/russmsft/csa-ai-projects/blob/master/docs/how-to/05-contract-clause-analyzer.md" target="_blank" rel="noopener">csa-ai-projects</a> repo on GitHub.</p>
+    </div>
+
+<p>Extract every clause from a contract PDF, run GPT-5.4's 1M-token context window over the whole thing, and get back a risk-scored table with specific clause annotations.</p>
+<hr />
+<h2 id="what-youre-building">What You're Building</h2>
+<p>A Python pipeline that uses Azure AI Document Intelligence to extract clean text from a contract PDF, then sends the entire document to GPT-5.4 through the Responses API (which fits contracts up to ~700 pages in a single context window). The model uses the <code>code_interpreter</code> tool to generate a risk scoring table. Output: a markdown risk summary plus a downloadable CSV of clause-level risk scores.</p>
+<hr />
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li>A <strong>Microsoft Foundry / Azure AI Services resource</strong> with a <code>gpt-5.4</code> deployment:
+  <code>bash
+  az cognitiveservices account deployment create --name &lt;res&gt; --resource-group &lt;rg&gt; \
+    --deployment-name gpt-5.4 --model-name gpt-5.4 --model-version 2026-03-05 \
+    --model-format OpenAI --sku-name GlobalStandard --sku-capacity 10</code></li>
+<li>Azure AI Document Intelligence resource (Step 1 creates one).</li>
+<li>Azure CLI logged in with <strong>Cognitive Services OpenAI Contributor</strong> on the AI Services resource and <strong>Cognitive Services User</strong> on the Document Intelligence resource. This demo uses <strong>Entra ID auth, not keys</strong>.</li>
+<li><code>AZURE_OPENAI_ENDPOINT</code> and <code>DOC_INTEL_ENDPOINT</code> set in <code>.env</code>.</li>
+<li>Python 3.11+</li>
+<li>A contract PDF (NDA, SaaS agreement, or employment contract)</li>
+</ul>
+<pre><code class="language-bash">pip install &quot;openai&gt;=1.30.0&quot; azure-ai-documentintelligence azure-identity python-dotenv
+</code></pre>
+<hr />
+<h2 id="architecture">Architecture</h2>
+<p><img alt="Contract Clause Analyzer architecture: contract PDF → Document Intelligence → structured text → GPT-5.4 with code interpreter → risk analysis outputs" src="../assets/projects/05-contract-clause-analyzer-architecture.png" /></p>
+<hr />
+<h2 id="step-by-step-build">Step-by-Step Build</h2>
+<h3 id="step-1-create-a-document-intelligence-resource">Step 1 — Create a Document Intelligence resource</h3>
+<pre><code class="language-bash">az cognitiveservices account create \
+  --name contract-doc-intel \
+  --resource-group $RG \
+  --kind FormRecognizer \
+  --sku S0 \
+  --location eastus2 \
+  --custom-domain contract-doc-intel \
+  --yes
+
+# Endpoint (Entra ID auth — no keys; many tenants disable key/local auth by policy)
+DOC_INTEL_ENDPOINT=$(az cognitiveservices account show \
+  --name contract-doc-intel --resource-group $RG \
+  --query properties.endpoint -o tsv)
+
+# Grant yourself data-plane access via Entra ID
+az role assignment create \
+  --assignee $(az ad signed-in-user show --query id -o tsv) \
+  --role &quot;Cognitive Services User&quot; \
+  --scope $(az cognitiveservices account show --name contract-doc-intel --resource-group $RG --query id -o tsv)
+</code></pre>
+<h3 id="step-2-extract-text-from-contract-pdf">Step 2 — Extract text from contract PDF</h3>
+<pre><code class="language-python">import os
+import pathlib
+from dotenv import load_dotenv
+from azure.ai.documentintelligence import DocumentIntelligenceClient
+from azure.identity import DefaultAzureCredential
+
+load_dotenv()
+
+DOC_INTEL_ENDPOINT = os.environ[&quot;DOC_INTEL_ENDPOINT&quot;]
+
+# Entra ID auth (az login locally / managed identity) — no keys
+doc_client = DocumentIntelligenceClient(
+    endpoint=DOC_INTEL_ENDPOINT,
+    credential=DefaultAzureCredential()
+)
+
+def extract_contract_text(pdf_path: str) -&gt; str:
+    &quot;&quot;&quot;Extract text from PDF using Document Intelligence Layout model.&quot;&quot;&quot;
+    with open(pdf_path, &quot;rb&quot;) as f:
+        poller = doc_client.begin_analyze_document(
+            model_id=&quot;prebuilt-layout&quot;,
+            body=f,
+            content_type=&quot;application/pdf&quot;,
+            output_content_format=&quot;markdown&quot;   # Get markdown with table structure
+        )
+    result = poller.result()
+
+    # Concatenate all page content
+    full_text = result.content
+    print(f&quot;Extracted {len(full_text)} characters from {len(result.pages)} pages&quot;)
+    return full_text
+</code></pre>
+<blockquote>
+<p><strong>Why Document Intelligence instead of raw PDF parsing?</strong> PyPDF2 and pdfplumber struggle with multi-column layouts, headers/footers, and tables (common in legal documents). Document Intelligence's Layout model correctly handles these and outputs clean markdown — which the model processes much better.</p>
+</blockquote>
+<h3 id="step-3-set-up-the-model-client-and-risk-instructions">Step 3 — Set up the model client and risk instructions</h3>
+<p>There's no separate agent to register — the Responses API takes the instructions and the <code>code_interpreter</code> tool on each call.</p>
+<pre><code class="language-python">from azure.identity import DefaultAzureCredential, get_bearer_token_provider
+from openai import AzureOpenAI
+
+client = AzureOpenAI(
+    azure_endpoint=os.environ[&quot;AZURE_OPENAI_ENDPOINT&quot;],
+    azure_ad_token_provider=get_bearer_token_provider(
+        DefaultAzureCredential(), &quot;https://cognitiveservices.azure.com/.default&quot;),
+    api_version=&quot;2025-04-01-preview&quot;,
+)
+
+MODEL = &quot;gpt-5.4&quot;   # 1M context — fits even long contracts
+CODE_INTERPRETER = [{&quot;type&quot;: &quot;code_interpreter&quot;, &quot;container&quot;: {&quot;type&quot;: &quot;auto&quot;}}]
+
+INSTRUCTIONS = &quot;&quot;&quot;You are an expert contract attorney and risk analyst.
+When given a contract, you will:
+
+1. Identify and extract all clauses (give each a short name and clause number)
+2. Score each clause for risk on a scale of 1-5:
+   - 1 = Standard, no concern
+   - 2 = Slightly unusual, monitor
+   - 3 = Moderate risk, recommend review
+   - 4 = High risk, recommend negotiation
+   - 5 = Severe risk, recommend rejection or legal counsel
+3. Flag specific risky language with exact quotes
+4. Use the python (code_interpreter) tool to generate a risk scoring table and
+   save it as a CSV file named risk_table.csv
+
+Risk categories to check:
+- Liability caps and indemnification (especially uncapped liability)
+- IP ownership (look for &quot;work for hire&quot; and IP assignment clauses)
+- Termination rights (especially unilateral termination without cause)
+- Data privacy and security obligations
+- Dispute resolution (binding arbitration, jurisdiction)
+- Non-compete and non-solicitation scope
+- Auto-renewal with short cancellation windows
+
+Output format in your final message:
+1. Executive summary (3-5 sentences)
+2. Risk table (as a markdown table)
+3. High-risk clause details (risk score 4-5 with exact quotes)
+4. Recommended actions
+&quot;&quot;&quot;
+</code></pre>
+<h3 id="step-4-run-the-analysis">Step 4 — Run the analysis</h3>
+<pre><code class="language-python">def analyze_contract(contract_text: str, contract_name: str) -&gt; tuple[str, str | None]:
+    &quot;&quot;&quot;Analyze a contract; returns (analysis_markdown, code_interpreter_container_id).&quot;&quot;&quot;
+    print(&quot;Running analysis (this takes 30-90 seconds for large contracts)...&quot;)
+    # GPT-5.4 has 1M context — even a 300-page contract is ~150K tokens.
+    # The Responses API runs the code_interpreter tool loop for us; there are
+    # no threads/runs and no separate agent registration.
+    response = client.responses.create(
+        model=MODEL,
+        instructions=INSTRUCTIONS,
+        input=(
+            f&quot;Please analyze this contract: **{contract_name}**\n\n&quot;
+            &quot;Generate a complete risk assessment with a clause-by-clause risk table.\n\n&quot;
+            f&quot;--- CONTRACT TEXT ---\n\n{contract_text}&quot;
+        ),
+        tools=CODE_INTERPRETER,
+    )
+
+    # The tool runs in a container that holds any files it created (risk_table.csv)
+    container_id = None
+    for item in response.output:
+        if getattr(item, &quot;type&quot;, None) == &quot;code_interpreter_call&quot;:
+            container_id = getattr(item, &quot;container_id&quot;, None)
+
+    return response.output_text, container_id
+</code></pre>
+<h3 id="step-5-download-code-interpreter-outputs">Step 5 — Download Code Interpreter outputs</h3>
+<pre><code class="language-python">def download_container_files(container_id: str | None, output_dir: str) -&gt; list[str]:
+    &quot;&quot;&quot;Download any files the code_interpreter tool created in its container.&quot;&quot;&quot;
+    if not container_id:
+        return []
+    pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
+    paths = []
+
+    for f in client.containers.files.list(container_id=container_id).data:
+        if getattr(f, &quot;source&quot;, None) != &quot;assistant&quot;:   # skip the input file(s)
+            continue
+        name = (getattr(f, &quot;path&quot;, None) or f.id).split(&quot;/&quot;)[-1]
+        content = client.containers.files.content.retrieve(f.id, container_id=container_id)
+        out_path = f&quot;{output_dir}/{name}&quot;
+        with open(out_path, &quot;wb&quot;) as fh:
+            fh.write(content.read())
+        paths.append(out_path)
+        print(f&quot;Downloaded: {out_path}&quot;)
+
+    return paths
+</code></pre>
+<h3 id="step-6-wire-it-all-together">Step 6 — Wire it all together</h3>
+<pre><code class="language-python">import pathlib
+from datetime import datetime
+
+def main(pdf_path: str):
+    contract_name = pathlib.Path(pdf_path).stem
+
+    print(&quot;Step 1: Extracting contract text...&quot;)
+    contract_text = extract_contract_text(pdf_path)
+
+    print(&quot;Step 2: Analyzing contract...&quot;)
+    analysis, container_id = analyze_contract(contract_text, contract_name)
+
+    print(&quot;Step 3: Saving results...&quot;)
+    ts = datetime.now().strftime(&quot;%Y%m%d_%H%M%S&quot;)
+    output_dir = f&quot;outputs/{contract_name}_{ts}&quot;
+    pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
+
+    # Save main analysis (UTF-8 — legal text often has curly quotes/accents)
+    analysis_path = f&quot;{output_dir}/risk_analysis.md&quot;
+    with open(analysis_path, &quot;w&quot;, encoding=&quot;utf-8&quot;) as f:
+        f.write(f&quot;# Contract Risk Analysis: {contract_name}\n\n&quot;)
+        f.write(analysis)
+    print(f&quot;Saved analysis: {analysis_path}&quot;)
+
+    # Download the CSV (and any other files) the tool generated
+    download_container_files(container_id, output_dir)
+
+    print(f&quot;\nAnalysis complete. Results in: {output_dir}/&quot;)
+
+if __name__ == &quot;__main__&quot;:
+    import sys
+    main(sys.argv[1] if len(sys.argv) &gt; 1 else &quot;contract.pdf&quot;)
+</code></pre>
+<pre><code class="language-bash">python contract_analyzer.py my-vendor-agreement.pdf
+</code></pre>
+<hr />
+<h2 id="test-it">Test It</h2>
+<p>Use any contract PDF you have (an NDA, SaaS agreement, or employment contract works well):</p>
+<pre><code class="language-bash">python contract_analyzer.py sample-contract.pdf
+</code></pre>
+<p>Expected output structure:</p>
+<pre><code class="language-markdown"># Contract Risk Analysis: sample-contract
+
+## Executive Summary
+This SaaS agreement presents moderate overall risk. Key concerns include an 
+uncapped indemnification clause in Section 8.2 and a 90-day auto-renewal window 
+with only 15-day cancellation notice required...
+
+## Risk Table
+| Clause | Section | Risk Score | Category | Notes |
+|--------|---------|-----------|----------|-------|
+| Indemnification | 8.2 | 4/5 | Liability | Uncapped mutual indemnification |
+| Auto-renewal | 12.1 | 3/5 | Termination | 15-day cancellation window |
+| IP Assignment | 6.1 | 2/5 | IP | Standard work-for-hire, expected |
+</code></pre>
+<hr />
+<h2 id="common-mistakes">Common Mistakes</h2>
+<ul>
+<li><strong>Reaching for the old Assistants <code>agents</code> API.</strong> <code>azure-ai-projects</code> 2.x removed the threads/runs Assistants surface — <code>AIProjectClient</code> has no <code>.agents</code>, and <code>CodeInterpreterTool</code>/<code>PromptAgentDefinition</code>/<code>MessageRole</code> aren't importable. Use the <code>AzureOpenAI</code> Responses API with <code>tools=[{"type": "code_interpreter", ...}]</code>, as shown above.</li>
+<li><strong>Document Intelligence returns empty text.</strong> This happens with password-protected PDFs. Remove password protection before processing.</li>
+<li><strong>GPT-5.4 token limit for very large contracts.</strong> 1M tokens ≈ 750K words. Most contracts fit easily, but if you hit limits, split by section headers returned by Document Intelligence.</li>
+<li><strong>Code Interpreter ran but you can't find the CSV.</strong> The file lives in the tool's container, not the message. List it with <code>client.containers.files.list(container_id=...)</code> (filter <code>source == "assistant"</code>) and download via <code>client.containers.files.content.retrieve(...)</code>, as in Step 5.</li>
+</ul>
+<hr />
+<h2 id="extend-it">Extend It</h2>
+<ol>
+<li><strong>Clause comparison:</strong> Upload two versions of a contract and have the agent diff them, highlighting what the other party changed and whether those changes increase risk.</li>
+<li><strong>Precedent library:</strong> Store analyzed contracts in Cosmos DB. When a new contract comes in, have the agent compare it to similar contracts from your precedent library to identify unusual clauses.</li>
+<li><strong>Automated redlines:</strong> Have the agent generate suggested alternative clause language for all risk-scored 4+ clauses. Export as a Word document with tracked changes using <code>python-docx</code>.</li>
+</ol>
+<hr />
+<h2 id="resources">Resources</h2>
+<ul>
+<li><a href="https://learn.microsoft.com/azure/ai-services/document-intelligence/concept-layout" target="_blank" rel="noopener">Azure AI Document Intelligence Layout model</a></li>
+<li><a href="https://learn.microsoft.com/azure/ai-foundry/agents/how-to/tools/code-interpreter" target="_blank" rel="noopener">Code Interpreter in Foundry agents</a></li>
+<li><a href="https://learn.microsoft.com/azure/ai-foundry/openai/concepts/models" target="_blank" rel="noopener">GPT-5.4 model capabilities</a></li>
+<li><a href="https://learn.microsoft.com/python/api/overview/azure/ai-documentintelligence-readme" target="_blank" rel="noopener">azure-ai-documentintelligence SDK</a></li>
+</ul>
+  </article>
+
+  <nav class="post-nav" aria-label="More projects">
+    <a href="04-policy-chatbot.html">← Internal Policy Chatbot</a>
+    <a href="06-multi-agent-incident-responder.html">Multi-Agent Incident Responder →</a>
+  </nav>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <div>
+      <a class="brand" href="../index.html">
+        <span class="brand-mark">AC</span>
+        <span class="brand-text-title">AzureCraft</span>
+      </a>
+      <p style="color: var(--text-muted); margin-top: 0.75rem; max-width: 36ch;">Practical Azure architecture, without the noise.</p>
+    </div>
+    <div>
+      <h4>Topics</h4>
+      <ul>
+        <li><a href="../categories/infrastructure.html">Infrastructure</a></li>
+        <li><a href="../categories/data-ai.html">Data &amp; AI</a></li>
+        <li><a href="../categories/modern-apps.html">Modern Apps</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Site</h4>
+      <ul>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="index.html">Projects</a></li>
+        <li><a href="../about.html">About</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="site-footer__bottom">
+    <p>© <span data-year>2026</span> AzureCraft. Built as a static site on Azure App Service.</p>
+  </div>
+</footer>
+
+<script src="../js/site.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

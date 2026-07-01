@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>(function(){if(location.hostname==="www.rbcloud.co.uk"){location.replace("https://rbcloud.co.uk"+location.pathname+location.search+location.hash);}})();</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Computer-Use Process Automator — AzureCraft Projects</title>
+  <meta name="description" content="Bleeding-edge, high-wow-factor: a hosted agent that drives a UI to automate a real process end to end." />
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+  <link rel="canonical" href="https://rbcloud.co.uk/projects/11-computer-use-automator.html" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Computer-Use Process Automator" />
+  <meta property="og:description" content="Bleeding-edge, high-wow-factor: a hosted agent that drives a UI to automate a real process end to end." />
+  <meta property="og:image" content="https://rbcloud.co.uk/assets/projects/11-computer-use-automator-architecture.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://rbcloud.co.uk/assets/projects/11-computer-use-automator-architecture.png" />
+  <link rel="stylesheet" href="../css/azurecraft.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github-dark.min.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="reading-progress" aria-hidden="true"></div>
+
+<header class="site-header">
+  <div class="container site-nav">
+    <a class="brand" href="../index.html">
+      <span class="brand-mark">AC</span>
+      <span>
+        <span class="brand-text-title">AzureCraft</span>
+        <span class="brand-text-sub">Infra · Data &amp; AI · Modern Apps</span>
+      </span>
+    </a>
+    <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+    <nav class="site-nav__links" aria-label="Primary">
+      <a href="../index.html">Home</a>
+      <a href="../index.html#posts">Articles</a>
+      <a href="../projects/index.html" aria-current="page">Projects</a>
+      <a href="../index.html#roadmap">Roadmap</a>
+      <a href="../about.html">About</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="article-wrap">
+
+  <div class="article-header">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a> /
+      <a href="index.html">Projects</a> /
+      Project 11
+    </nav>
+    <span class="tag tag--ai">Data & AI</span>
+    <h1>Computer-Use Process Automator</h1>
+    <div class="article-meta">
+      <span>Demo asset</span>
+      <span class="dot">•</span>
+      <span aria-label="Difficulty">Difficulty ★★★★☆</span>
+      <span class="dot">•</span>
+      <span>4–6 weeks</span>
+    </div>
+  </div>
+
+  <article class="prose">
+    <div class="callout callout--note">
+      <span class="callout__icon">🔧</span>
+      <p><strong>Build it yourself.</strong> This project is part of the <a href="index.html">AI Projects for Cloud Solution Architects</a> portfolio. Full source, code, and the latest updates live in the <a href="https://github.com/russmsft/csa-ai-projects/blob/master/docs/how-to/11-computer-use-automator.md" target="_blank" rel="noopener">csa-ai-projects</a> repo on GitHub.</p>
+    </div>
+
+<p>GPT-5.4's computer-use capability lets you point a model at a screenshot and say "fill in this form." This guide builds the agent loop: screenshot → model decides action → Playwright executes → repeat — with a safety confirmation step before every click.</p>
+<hr />
+<h2 id="what-youre-building">What You're Building</h2>
+<p>A Python agent loop using Playwright for browser automation. The agent takes a screenshot, sends it to GPT-5.4 via the Responses API (computer-use tool), receives an action (click, type, scroll, key), asks you to confirm before executing, then repeats. Credentials are stored in Azure Key Vault — never in code. This is genuinely powerful and genuinely dangerous without the confirmation step.</p>
+<hr />
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li>Microsoft Foundry / Azure AI Services resource with <strong>GPT-5.4</strong> deployed (computer-use requires GPT-5.4 or higher)</li>
+<li>Azure Key Vault for credential storage</li>
+<li>Azure CLI logged in (<code>az login</code>) with <strong>Cognitive Services OpenAI User</strong> on the AI Services resource and <strong>Key Vault Secrets User</strong> on the vault</li>
+<li>Python 3.11+</li>
+<li><code>playwright</code>, <code>openai</code>, <code>azure-keyvault-secrets</code>, <code>azure-identity</code>, <code>Pillow</code></li>
+</ul>
+<pre><code class="language-bash">pip install &quot;openai&gt;=1.30.0&quot; azure-identity azure-keyvault-secrets \
+  playwright Pillow python-dotenv
+
+# Install Playwright browsers
+playwright install chromium
+</code></pre>
+<blockquote>
+<p><strong>Safety warning:</strong> Computer-use agents can take irreversible actions — form submissions, file deletions, purchases. Never run without the confirmation step in production. Add a dry-run mode for testing.</p>
+</blockquote>
+<hr />
+<h2 id="architecture">Architecture</h2>
+<p><img alt="Computer-Use Automator architecture: Python script (credentials from Key Vault) → Playwright screenshot → Responses API GPT-5.4 computer_use → human approval → Playwright executes action in a loop" src="../assets/projects/11-computer-use-automator-architecture.png" /></p>
+<hr />
+<h2 id="step-by-step-build">Step-by-Step Build</h2>
+<h3 id="step-1-store-credentials-in-key-vault">Step 1 — Store credentials in Key Vault</h3>
+<pre><code class="language-bash">KV_NAME=&quot;computer-use-kv&quot;
+
+az keyvault create \
+  --name $KV_NAME \
+  --resource-group $RG \
+  --location eastus2 \
+  --enable-rbac-authorization true
+
+# Grant yourself Secret Officer role
+az role assignment create \
+  --assignee $(az ad signed-in-user show --query id -o tsv) \
+  --role &quot;Key Vault Secrets Officer&quot; \
+  --scope $(az keyvault show --name $KV_NAME --query id -o tsv)
+
+# Store credentials (never hardcode these)
+az keyvault secret set --vault-name $KV_NAME --name &quot;target-username&quot; --value &quot;your-username&quot;
+az keyvault secret set --vault-name $KV_NAME --name &quot;target-password&quot; --value &quot;your-password&quot;
+</code></pre>
+<h3 id="step-2-key-vault-helper">Step 2 — Key Vault helper</h3>
+<pre><code class="language-python"># keyvault.py
+import os
+from functools import lru_cache
+from azure.keyvault.secrets import SecretClient
+from azure.identity import DefaultAzureCredential
+
+@lru_cache(maxsize=None)
+def get_secret(secret_name: str) -&gt; str:
+    &quot;&quot;&quot;Fetch a secret from Key Vault. Cached after first fetch.&quot;&quot;&quot;
+    kv_url = f&quot;https://{os.environ['KEY_VAULT_NAME']}.vault.azure.net&quot;
+    client = SecretClient(vault_url=kv_url, credential=DefaultAzureCredential())
+    return client.get_secret(secret_name).value
+</code></pre>
+<h3 id="step-3-playwright-screenshot-helper">Step 3 — Playwright screenshot helper</h3>
+<pre><code class="language-python"># browser.py
+import asyncio
+import base64
+import io
+from PIL import Image
+from playwright.async_api import async_playwright, Page, Browser
+
+_browser: Browser | None = None
+_page: Page | None = None
+
+
+async def init_browser(headless: bool = False) -&gt; Page:
+    &quot;&quot;&quot;Launch Chromium and return a page. headless=False lets you watch.&quot;&quot;&quot;
+    global _browser, _page
+    pw = await async_playwright().start()
+    _browser = await pw.chromium.launch(
+        headless=headless,
+        args=[&quot;--window-size=1280,800&quot;]
+    )
+    context = await _browser.new_context(
+        viewport={&quot;width&quot;: 1280, &quot;height&quot;: 800}
+    )
+    _page = await context.new_page()
+    return _page
+
+
+async def take_screenshot(page: Page) -&gt; tuple[bytes, str]:
+    &quot;&quot;&quot;Take screenshot, return (PNG bytes, base64 string).&quot;&quot;&quot;
+    png_bytes = await page.screenshot(type=&quot;png&quot;)
+    b64 = base64.b64encode(png_bytes).decode()
+    return png_bytes, b64
+
+
+async def execute_action(page: Page, action) -&gt; str:
+    &quot;&quot;&quot;Execute a computer-use action (Responses API schema) on the Playwright page.
+
+    `action` is the object from a `computer_call` output item — its `.type`
+    is one of click/double_click/type/keypress/scroll/move/wait/screenshot.
+    &quot;&quot;&quot;
+    action_type = getattr(action, &quot;type&quot;, None)
+
+    if action_type == &quot;click&quot;:
+        button = getattr(action, &quot;button&quot;, &quot;left&quot;)
+        await page.mouse.click(action.x, action.y, button=button)
+        return f&quot;Clicked {button} at ({action.x}, {action.y})&quot;
+
+    elif action_type == &quot;double_click&quot;:
+        await page.mouse.dblclick(action.x, action.y)
+        return f&quot;Double-clicked at ({action.x}, {action.y})&quot;
+
+    elif action_type == &quot;type&quot;:
+        await page.keyboard.type(action.text, delay=50)
+        return f&quot;Typed: {action.text[:50]}...&quot;
+
+    elif action_type == &quot;keypress&quot;:
+        # action.keys is a list of key names, e.g. [&quot;CTRL&quot;, &quot;A&quot;]
+        keys = &quot;+&quot;.join(action.keys)
+        await page.keyboard.press(keys)
+        return f&quot;Pressed key: {keys}&quot;
+
+    elif action_type == &quot;scroll&quot;:
+        await page.mouse.move(action.x, action.y)
+        await page.mouse.wheel(
+            getattr(action, &quot;scroll_x&quot;, 0), getattr(action, &quot;scroll_y&quot;, 0))
+        return f&quot;Scrolled ({action.scroll_x}, {action.scroll_y}) at ({action.x}, {action.y})&quot;
+
+    elif action_type == &quot;move&quot;:
+        await page.mouse.move(action.x, action.y)
+        return f&quot;Moved to ({action.x}, {action.y})&quot;
+
+    elif action_type in (&quot;wait&quot;, &quot;screenshot&quot;):
+        return f&quot;{action_type} (no page mutation)&quot;
+
+    else:
+        return f&quot;Unknown action type: {action_type}&quot;
+</code></pre>
+<h3 id="step-4-the-agent-loop">Step 4 — The agent loop</h3>
+<pre><code class="language-python"># agent_loop.py
+import os
+import json
+import asyncio
+from dotenv import load_dotenv
+from azure.identity import DefaultAzureCredential, get_bearer_token_provider
+from openai import AzureOpenAI
+from browser import init_browser, take_screenshot, execute_action
+
+load_dotenv()
+
+client = AzureOpenAI(
+    azure_endpoint=os.environ[&quot;AZURE_OPENAI_ENDPOINT&quot;],
+    azure_ad_token_provider=get_bearer_token_provider(
+        DefaultAzureCredential(), &quot;https://cognitiveservices.azure.com/.default&quot;),
+    api_version=&quot;2025-04-01-preview&quot;,
+)
+MODEL = os.environ.get(&quot;COMPUTER_USE_MODEL&quot;, &quot;gpt-5.4&quot;)
+
+COMPUTER_TOOL = [{
+    &quot;type&quot;: &quot;computer_use_preview&quot;,
+    &quot;display_width&quot;: 1280,
+    &quot;display_height&quot;: 800,
+    &quot;environment&quot;: &quot;browser&quot;,
+}]
+
+
+async def run_computer_use_agent(
+    task: str,
+    start_url: str,
+    max_steps: int = 20,
+    require_confirmation: bool = True
+) -&gt; dict:
+    &quot;&quot;&quot;
+    Main agent loop: screenshot → GPT-5.4 → computer_call → confirm → execute → repeat.
+    Uses the Responses API computer-use loop: each turn replies to the prior
+    response with a `computer_call_output` containing a fresh screenshot.
+    &quot;&quot;&quot;
+    page = await init_browser(headless=False)  # headless=False so you can watch
+    await page.goto(start_url)
+    await page.wait_for_load_state(&quot;networkidle&quot;)
+
+    print(f&quot;\nTask: {task}&quot;)
+    print(f&quot;Starting at: {start_url}&quot;)
+    print(&quot;-&quot; * 60)
+
+    # First request: the task plus an initial screenshot.
+    _, screenshot_b64 = await take_screenshot(page)
+    response = client.responses.create(
+        model=MODEL,
+        tools=COMPUTER_TOOL,
+        input=[{
+            &quot;role&quot;: &quot;user&quot;,
+            &quot;content&quot;: [
+                {&quot;type&quot;: &quot;input_text&quot;, &quot;text&quot;: task},
+                {&quot;type&quot;: &quot;input_image&quot;,
+                 &quot;image_url&quot;: f&quot;data:image/png;base64,{screenshot_b64}&quot;},
+            ],
+        }],
+        truncation=&quot;auto&quot;,
+    )
+
+    step = 0
+    actions_taken = []
+    final_text = &quot;&quot;
+
+    while step &lt; max_steps:
+        # The model returns text (reasoning) and at most one computer_call per turn.
+        final_text = response.output_text or final_text
+        computer_calls = [it for it in response.output
+                          if getattr(it, &quot;type&quot;, None) == &quot;computer_call&quot;]
+        if not computer_calls:
+            print(f&quot;\nAgent complete: {final_text}&quot;)
+            break
+
+        step += 1
+        call = computer_calls[0]
+        action = call.action
+        action_dict = action.model_dump() if hasattr(action, &quot;model_dump&quot;) else action
+        print(f&quot;\nStep {step}/{max_steps}&quot;)
+        print(f&quot;Proposed action: {json.dumps(action_dict, indent=2)}&quot;)
+
+        # Confirmation step — never skip this in production
+        if require_confirmation:
+            choice = input(&quot;\nExecute this action? [y/n/abort] &quot;).strip().lower()
+            if choice == &quot;abort&quot;:
+                print(&quot;Aborted by user.&quot;)
+                break
+            elif choice != &quot;y&quot;:
+                print(&quot;Skipping action.&quot;)
+                response = client.responses.create(
+                    model=MODEL,
+                    previous_response_id=response.id,
+                    tools=COMPUTER_TOOL,
+                    input=[{&quot;role&quot;: &quot;user&quot;,
+                            &quot;content&quot;: &quot;That action was rejected. Try a different approach.&quot;}],
+                    truncation=&quot;auto&quot;,
+                )
+                continue
+
+        # Execute the action, then capture the resulting screen
+        result = await execute_action(page, action)
+        print(f&quot;Executed: {result}&quot;)
+        actions_taken.append({&quot;step&quot;: step, &quot;action&quot;: action_dict, &quot;result&quot;: result})
+
+        await asyncio.sleep(1)
+        try:
+            await page.wait_for_load_state(&quot;networkidle&quot;, timeout=3000)
+        except Exception:
+            pass  # Page might not have navigated
+
+        _, screenshot_b64 = await take_screenshot(page)
+
+        # Reply to the computer_call with a screenshot of the new state.
+        # Acknowledge any pending safety checks the model raised.
+        response = client.responses.create(
+            model=MODEL,
+            previous_response_id=response.id,
+            tools=COMPUTER_TOOL,
+            input=[{
+                &quot;type&quot;: &quot;computer_call_output&quot;,
+                &quot;call_id&quot;: call.call_id,
+                &quot;acknowledged_safety_checks&quot;: [
+                    {&quot;id&quot;: sc.id, &quot;code&quot;: sc.code, &quot;message&quot;: sc.message}
+                    for sc in (call.pending_safety_checks or [])
+                ],
+                &quot;output&quot;: {
+                    &quot;type&quot;: &quot;computer_screenshot&quot;,
+                    &quot;image_url&quot;: f&quot;data:image/png;base64,{screenshot_b64}&quot;,
+                },
+            }],
+            truncation=&quot;auto&quot;,
+        )
+
+    return {
+        &quot;steps_taken&quot;: step,
+        &quot;actions&quot;: actions_taken,
+        &quot;final_text&quot;: final_text,
+    }
+</code></pre>
+<h3 id="step-5-example-automated-form-fill">Step 5 — Example: automated form fill</h3>
+<pre><code class="language-python"># main.py
+import asyncio
+from keyvault import get_secret
+from agent_loop import run_computer_use_agent
+
+async def main():
+    # Example: fill a standard web form
+    # Credentials come from Key Vault — not hardcoded
+    username = get_secret(&quot;target-username&quot;)
+
+    task = (
+        f&quot;Log into the portal using username '{username}'. &quot;
+        &quot;The password is in the password field. &quot;
+        &quot;After login, navigate to Settings → Profile and update &quot;
+        &quot;the phone number to '555-0123'. Click Save. &quot;
+        &quot;Confirm the change was saved successfully.&quot;
+    )
+
+    result = await run_computer_use_agent(
+        task=task,
+        start_url=&quot;https://your-internal-portal.example.com&quot;,
+        max_steps=15,
+        require_confirmation=True  # Never set to False without careful review
+    )
+
+    print(f&quot;\nCompleted in {result['steps_taken']} steps&quot;)
+    print(f&quot;Actions taken: {len(result['actions'])}&quot;)
+
+if __name__ == &quot;__main__&quot;:
+    asyncio.run(main())
+</code></pre>
+<pre><code class="language-bash">python main.py
+</code></pre>
+<hr />
+<h2 id="test-it">Test It</h2>
+<p>Start with a safe public site to validate the loop works before touching anything real:</p>
+<pre><code class="language-python"># Safe test: navigate Wikipedia
+import asyncio
+
+result = asyncio.run(run_computer_use_agent(
+    task=&quot;Go to Wikipedia and search for 'Azure AI Foundry'. Tell me the first paragraph of the article.&quot;,
+    start_url=&quot;https://www.wikipedia.org&quot;,
+    max_steps=5,
+    require_confirmation=True
+))
+</code></pre>
+<p><strong>Verify the confirmation step works:</strong> The agent should pause and ask <code>[y/n/abort]</code> before every action. If it doesn't, check that <code>require_confirmation=True</code> is set.</p>
+<hr />
+<h2 id="common-mistakes">Common Mistakes</h2>
+<ul>
+<li><strong>Driving computer-use like Chat Completions.</strong> The Responses API computer-use loop isn't a growing <code>messages</code> array with <code>role: tool</code> results. Each turn replies to the prior response via <code>previous_response_id</code> with a single <strong><code>computer_call_output</code></strong> item whose <code>output</code> is a <code>{"type": "computer_screenshot", "image_url": ...}</code>. Parse actions from <code>computer_call</code> output items (not <code>computer_use</code>/<code>text</code>), and read the action fields directly (<code>action.type</code>, <code>action.x/y</code>, <code>action.text</code>, <code>action.keys</code>) — there's no <code>coordinate</code> tuple.</li>
+<li><strong>Ignoring pending safety checks.</strong> A <code>computer_call</code> may carry <code>pending_safety_checks</code>; echo them back in <code>acknowledged_safety_checks</code> on the <code>computer_call_output</code> (after your human confirmation) or the model will refuse to continue.</li>
+<li><strong>Running headless in production.</strong> Always run <code>headless=False</code> during development so you can see what the agent is doing. Switch to headless only after extensive testing.</li>
+<li><strong>Credentials in the task string.</strong> Never put actual passwords in the task description — it ends up in model context and logs. Use Key Vault to fetch them and inject only at execution time.</li>
+<li><strong>Agent loops infinitely.</strong> Always set a <code>max_steps</code> limit. 20 is a reasonable default. Add a hard timeout as a second safety net.</li>
+<li><strong>Screenshot quality.</strong> If the model misidentifies elements, increase the viewport (1920x1080) and ensure DPI scaling is disabled in headless mode.</li>
+</ul>
+<hr />
+<h2 id="extend-it">Extend It</h2>
+<ol>
+<li><strong>Audit trail:</strong> Log every screenshot and action to Azure Blob Storage. This gives you a full audit trail for compliance and debugging.</li>
+<li><strong>Parallel browser sessions:</strong> Run multiple agent instances in parallel for batch processing (e.g., update 100 records across a legacy system overnight).</li>
+<li><strong>Error recovery:</strong> Detect when the agent is stuck (same screenshot for 3 consecutive steps) and inject a recovery message: "You appear to be stuck. Try navigating to the home page and starting over."</li>
+</ol>
+<hr />
+<h2 id="resources">Resources</h2>
+<ul>
+<li><a href="https://learn.microsoft.com/azure/ai-foundry/openai/concepts/models" target="_blank" rel="noopener">GPT-5.4 computer-use (Responses API)</a></li>
+<li><a href="https://playwright.dev/python/docs/intro" target="_blank" rel="noopener">Playwright Python docs</a></li>
+<li><a href="https://learn.microsoft.com/azure/key-vault/secrets/quick-create-python" target="_blank" rel="noopener">Azure Key Vault secrets</a></li>
+<li><a href="https://learn.microsoft.com/azure/ai-foundry/openai/how-to/responses" target="_blank" rel="noopener">Responses API reference</a></li>
+</ul>
+  </article>
+
+  <nav class="post-nav" aria-label="More projects">
+    <a href="10-agentic-approval-workflow.html">← Agentic Workflow for Approvals</a>
+    <a href="12-multimodal-quality-inspector.html">Multi-Modal Quality Inspector →</a>
+  </nav>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <div>
+      <a class="brand" href="../index.html">
+        <span class="brand-mark">AC</span>
+        <span class="brand-text-title">AzureCraft</span>
+      </a>
+      <p style="color: var(--text-muted); margin-top: 0.75rem; max-width: 36ch;">Practical Azure architecture, without the noise.</p>
+    </div>
+    <div>
+      <h4>Topics</h4>
+      <ul>
+        <li><a href="../categories/infrastructure.html">Infrastructure</a></li>
+        <li><a href="../categories/data-ai.html">Data &amp; AI</a></li>
+        <li><a href="../categories/modern-apps.html">Modern Apps</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Site</h4>
+      <ul>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="index.html">Projects</a></li>
+        <li><a href="../about.html">About</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="site-footer__bottom">
+    <p>© <span data-year>2026</span> AzureCraft. Built as a static site on Azure App Service.</p>
+  </div>
+</footer>
+
+<script src="../js/site.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

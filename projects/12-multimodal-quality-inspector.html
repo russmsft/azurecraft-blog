@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>(function(){if(location.hostname==="www.rbcloud.co.uk"){location.replace("https://rbcloud.co.uk"+location.pathname+location.search+location.hash);}})();</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Multi-Modal Quality Inspector — AzureCraft Projects</title>
+  <meta name="description" content="A deep industry play: inspect images against a spec with multimodal reasoning and image-vector search." />
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+  <link rel="canonical" href="https://rbcloud.co.uk/projects/12-multimodal-quality-inspector.html" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Multi-Modal Quality Inspector" />
+  <meta property="og:description" content="A deep industry play: inspect images against a spec with multimodal reasoning and image-vector search." />
+  <meta property="og:image" content="https://rbcloud.co.uk/assets/projects/12-multimodal-quality-inspector-architecture.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://rbcloud.co.uk/assets/projects/12-multimodal-quality-inspector-architecture.png" />
+  <link rel="stylesheet" href="../css/azurecraft.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github-dark.min.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="reading-progress" aria-hidden="true"></div>
+
+<header class="site-header">
+  <div class="container site-nav">
+    <a class="brand" href="../index.html">
+      <span class="brand-mark">AC</span>
+      <span>
+        <span class="brand-text-title">AzureCraft</span>
+        <span class="brand-text-sub">Infra · Data &amp; AI · Modern Apps</span>
+      </span>
+    </a>
+    <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+    <nav class="site-nav__links" aria-label="Primary">
+      <a href="../index.html">Home</a>
+      <a href="../index.html#posts">Articles</a>
+      <a href="../projects/index.html" aria-current="page">Projects</a>
+      <a href="../index.html#roadmap">Roadmap</a>
+      <a href="../about.html">About</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="article-wrap">
+
+  <div class="article-header">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a> /
+      <a href="index.html">Projects</a> /
+      Project 12
+    </nav>
+    <span class="tag tag--apps">Modern Apps</span>
+    <h1>Multi-Modal Quality Inspector</h1>
+    <div class="article-meta">
+      <span>Co-build</span>
+      <span class="dot">•</span>
+      <span aria-label="Difficulty">Difficulty ★★★★★</span>
+      <span class="dot">•</span>
+      <span>6–8 weeks</span>
+    </div>
+  </div>
+
+  <article class="prose">
+    <div class="callout callout--note">
+      <span class="callout__icon">🔧</span>
+      <p><strong>Build it yourself.</strong> This project is part of the <a href="index.html">AI Projects for Cloud Solution Architects</a> portfolio. Full source, code, and the latest updates live in the <a href="https://github.com/russmsft/csa-ai-projects/blob/master/docs/how-to/12-multimodal-quality-inspector.md" target="_blank" rel="noopener">csa-ai-projects</a> repo on GitHub.</p>
+    </div>
+
+<p>Images from a factory camera floor arrive through IoT Hub. GPT-5.4's vision model checks each one against a defect catalog, writes inspection results to Cosmos DB, and fires an alert when defect confidence crosses a threshold.</p>
+<hr />
+<h2 id="what-youre-building">What You're Building</h2>
+<p>A production inspection pipeline using Microsoft Agent Framework (code-based agents in Foundry). Camera images flow through Azure IoT Hub → Event Hubs → an agent that analyzes each image with GPT-5.4 vision, runs a vector search against a defect catalog in Azure AI Search using image embeddings, writes structured inspection results to Cosmos DB, and triggers an Azure Monitor alert on high-confidence defects. Azure Monitor tracks agent latency and defect rates.</p>
+<hr />
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li>Microsoft Foundry / Azure AI Services resource with GPT-5.4 and <code>text-embedding-3-large</code> deployed</li>
+<li>Azure IoT Hub (F1 free tier or S1)</li>
+<li>Azure Event Hubs (connects to IoT Hub routing)</li>
+<li>Azure AI Search (Basic tier, vector search enabled)</li>
+<li>Azure Cosmos DB (inspection-results container)</li>
+<li>Azure Monitor workspace</li>
+<li>Azure CLI logged in (<code>az login</code>) with <strong>Cognitive Services OpenAI User</strong> on the AI Services resource and <strong>Cosmos DB Built-in Data Contributor</strong> on the Cosmos account</li>
+<li>Python 3.11+</li>
+<li><code>openai</code>, <code>azure-eventhub</code>, <code>azure-search-documents</code>, <code>azure-cosmos</code>, <code>azure-identity</code>, <code>Pillow</code></li>
+</ul>
+<pre><code class="language-bash">pip install &quot;openai&gt;=1.30.0&quot; azure-identity azure-eventhub \
+  azure-search-documents azure-cosmos Pillow python-dotenv
+</code></pre>
+<hr />
+<h2 id="architecture">Architecture</h2>
+<p><img alt="Multi-Modal Quality Inspector architecture: factory camera → Azure IoT Hub → Event Hubs → Agent Framework with GPT-5.4 vision → Azure AI Search defect catalog → Cosmos DB → Azure Monitor alert" src="../assets/projects/12-multimodal-quality-inspector-architecture.png" /></p>
+<hr />
+<h2 id="step-by-step-build">Step-by-Step Build</h2>
+<h3 id="step-1-iot-hub-and-event-hubs-setup">Step 1 — IoT Hub and Event Hubs setup</h3>
+<pre><code class="language-bash">IOT_HUB=&quot;quality-inspection-hub&quot;
+EH_NAMESPACE=&quot;quality-inspection-eh&quot;
+EH_NAME=&quot;images-stream&quot;
+
+# Create IoT Hub
+az iot hub create \
+  --name $IOT_HUB \
+  --resource-group $RG \
+  --sku S1 \
+  --location eastus2
+
+# Create Event Hubs namespace and hub
+az eventhubs namespace create \
+  --name $EH_NAMESPACE \
+  --resource-group $RG \
+  --sku Standard
+
+az eventhubs eventhub create \
+  --name $EH_NAME \
+  --namespace-name $EH_NAMESPACE \
+  --resource-group $RG \
+  --message-retention 1 \
+  --partition-count 4
+
+# Route IoT Hub messages to Event Hub
+EH_CONN_STR=$(az eventhubs namespace authorization-rule keys list \
+  --namespace-name $EH_NAMESPACE \
+  --resource-group $RG \
+  --name RootManageSharedAccessKey \
+  --query primaryConnectionString -o tsv)
+
+az iot hub routing-endpoint create \
+  --hub-name $IOT_HUB \
+  --resource-group $RG \
+  --endpoint-name eventhub-images \
+  --endpoint-type eventhub \
+  --endpoint-resource-group $RG \
+  --endpoint-subscription-id $(az account show --query id -o tsv) \
+  --connection-string $EH_CONN_STR
+
+az iot hub route create \
+  --hub-name $IOT_HUB \
+  --resource-group $RG \
+  --route-name image-route \
+  --source-type DeviceMessages \
+  --endpoint-name eventhub-images \
+  --condition &quot;true&quot; \
+  --enabled true
+</code></pre>
+<h3 id="step-2-build-the-defect-catalog-in-ai-search">Step 2 — Build the defect catalog in AI Search</h3>
+<pre><code class="language-python"># index_defect_catalog.py
+&quot;&quot;&quot;
+Index your defect catalog into Azure AI Search with vector embeddings.
+Each document represents a known defect type with a description and image.
+&quot;&quot;&quot;
+import os
+import json
+import base64
+from azure.search.documents import SearchClient
+from azure.search.documents.indexes import SearchIndexClient
+from azure.search.documents.indexes.models import (
+    SearchIndex, SimpleField, SearchableField,
+    SearchField, SearchFieldDataType, VectorSearch,
+    HnswAlgorithmConfiguration, VectorSearchProfile,
+    SemanticConfiguration, SemanticPrioritizedFields, SemanticField,
+    SemanticSearch
+)
+from azure.core.credentials import AzureKeyCredential
+from azure.identity import DefaultAzureCredential, get_bearer_token_provider
+from openai import AzureOpenAI
+
+SEARCH_ENDPOINT = os.environ[&quot;SEARCH_ENDPOINT&quot;]
+SEARCH_KEY = os.environ[&quot;SEARCH_KEY&quot;]
+INDEX_NAME = &quot;defect-catalog&quot;
+EMBEDDING_DEPLOYMENT = &quot;text-embedding-3-large&quot;
+
+openai = AzureOpenAI(
+    azure_endpoint=os.environ[&quot;AZURE_OPENAI_ENDPOINT&quot;],
+    azure_ad_token_provider=get_bearer_token_provider(
+        DefaultAzureCredential(), &quot;https://cognitiveservices.azure.com/.default&quot;),
+    api_version=&quot;2025-04-01-preview&quot;,
+)
+
+index_client = SearchIndexClient(
+    endpoint=SEARCH_ENDPOINT,
+    credential=AzureKeyCredential(SEARCH_KEY)
+)
+
+
+def create_defect_index():
+    &quot;&quot;&quot;Create the search index with vector search capability.&quot;&quot;&quot;
+    index = SearchIndex(
+        name=INDEX_NAME,
+        fields=[
+            SimpleField(name=&quot;id&quot;, type=SearchFieldDataType.String, key=True),
+            SearchableField(name=&quot;defect_type&quot;, type=SearchFieldDataType.String),
+            SearchableField(name=&quot;description&quot;, type=SearchFieldDataType.String),
+            SimpleField(name=&quot;severity&quot;, type=SearchFieldDataType.String, filterable=True),
+            SimpleField(name=&quot;component&quot;, type=SearchFieldDataType.String, filterable=True),
+            SearchField(
+                name=&quot;description_vector&quot;,
+                type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
+                searchable=True,
+                vector_search_dimensions=3072,
+                vector_search_profile_name=&quot;hnsw-profile&quot;
+            )
+        ],
+        vector_search=VectorSearch(
+            algorithms=[HnswAlgorithmConfiguration(name=&quot;hnsw-algo&quot;)],
+            profiles=[VectorSearchProfile(
+                name=&quot;hnsw-profile&quot;,
+                algorithm_configuration_name=&quot;hnsw-algo&quot;
+            )]
+        ),
+        semantic_search=SemanticSearch(
+            configurations=[SemanticConfiguration(
+                name=&quot;semantic-config&quot;,
+                prioritized_fields=SemanticPrioritizedFields(
+                    content_fields=[SemanticField(field_name=&quot;description&quot;)]
+                )
+            )]
+        )
+    )
+    index_client.create_or_update_index(index)
+    print(f&quot;Index '{INDEX_NAME}' created/updated&quot;)
+
+
+def embed_text(text: str) -&gt; list[float]:
+    &quot;&quot;&quot;Embed text using text-embedding-3-large.&quot;&quot;&quot;
+    response = openai.embeddings.create(
+        model=EMBEDDING_DEPLOYMENT,
+        input=text
+    )
+    return response.data[0].embedding
+
+
+def index_defects(defect_catalog: list[dict]):
+    &quot;&quot;&quot;Index defect definitions with embeddings.&quot;&quot;&quot;
+    search_client = SearchClient(
+        endpoint=SEARCH_ENDPOINT,
+        index_name=INDEX_NAME,
+        credential=AzureKeyCredential(SEARCH_KEY)
+    )
+    docs = []
+    for defect in defect_catalog:
+        embedding = embed_text(
+            f&quot;{defect['defect_type']}: {defect['description']}&quot;
+        )
+        docs.append({
+            &quot;id&quot;: defect[&quot;id&quot;],
+            &quot;defect_type&quot;: defect[&quot;defect_type&quot;],
+            &quot;description&quot;: defect[&quot;description&quot;],
+            &quot;severity&quot;: defect[&quot;severity&quot;],
+            &quot;component&quot;: defect[&quot;component&quot;],
+            &quot;description_vector&quot;: embedding
+        })
+    search_client.upload_documents(docs)
+    print(f&quot;Indexed {len(docs)} defect definitions&quot;)
+
+
+# Sample defect catalog
+SAMPLE_DEFECTS = [
+    {
+        &quot;id&quot;: &quot;scratch-001&quot;,
+        &quot;defect_type&quot;: &quot;Surface Scratch&quot;,
+        &quot;description&quot;: &quot;Linear scratch on painted surface. Depth &lt;0.1mm. &quot;
+                       &quot;Typically from handling during assembly.&quot;,
+        &quot;severity&quot;: &quot;minor&quot;,
+        &quot;component&quot;: &quot;outer-casing&quot;
+    },
+    {
+        &quot;id&quot;: &quot;crack-001&quot;,
+        &quot;defect_type&quot;: &quot;Structural Crack&quot;,
+        &quot;description&quot;: &quot;Fracture extending through component wall. Potentially &quot;
+                       &quot;compromises structural integrity. High priority.&quot;,
+        &quot;severity&quot;: &quot;critical&quot;,
+        &quot;component&quot;: &quot;load-bearing&quot;
+    },
+    {
+        &quot;id&quot;: &quot;weld-001&quot;,
+        &quot;defect_type&quot;: &quot;Incomplete Weld&quot;,
+        &quot;description&quot;: &quot;Weld bead missing coverage over junction. Porosity visible. &quot;
+                       &quot;Strength below specification.&quot;,
+        &quot;severity&quot;: &quot;major&quot;,
+        &quot;component&quot;: &quot;weld-joint&quot;
+    }
+]
+
+if __name__ == &quot;__main__&quot;:
+    create_defect_index()
+    index_defects(SAMPLE_DEFECTS)
+</code></pre>
+<h3 id="step-3-quality-inspection-agent">Step 3 — Quality inspection agent</h3>
+<pre><code class="language-python"># inspector_agent.py
+import os
+import json
+import base64
+import logging
+from datetime import datetime, timezone
+from azure.search.documents import SearchClient
+from azure.search.documents.models import VectorizedQuery
+from azure.core.credentials import AzureKeyCredential
+from azure.cosmos import CosmosClient
+from azure.identity import DefaultAzureCredential, get_bearer_token_provider
+from openai import AzureOpenAI
+
+logger = logging.getLogger(&quot;quality-inspector&quot;)
+
+SEARCH_ENDPOINT = os.environ[&quot;SEARCH_ENDPOINT&quot;]
+SEARCH_KEY = os.environ[&quot;SEARCH_KEY&quot;]
+COSMOS_ENDPOINT = os.environ[&quot;COSMOS_ENDPOINT&quot;]
+DEFECT_THRESHOLD = float(os.environ.get(&quot;DEFECT_THRESHOLD&quot;, &quot;0.75&quot;))
+
+credential = DefaultAzureCredential()
+openai = AzureOpenAI(
+    azure_endpoint=os.environ[&quot;AZURE_OPENAI_ENDPOINT&quot;],
+    azure_ad_token_provider=get_bearer_token_provider(
+        credential, &quot;https://cognitiveservices.azure.com/.default&quot;),
+    api_version=&quot;2025-04-01-preview&quot;,
+)
+cosmos = CosmosClient(url=COSMOS_ENDPOINT, credential=credential)
+results_container = cosmos.get_database_client(&quot;quality-inspection&quot;) \
+                          .get_container_client(&quot;inspection-results&quot;)
+search_client = SearchClient(
+    endpoint=SEARCH_ENDPOINT,
+    index_name=&quot;defect-catalog&quot;,
+    credential=AzureKeyCredential(SEARCH_KEY)
+)
+
+INSPECTION_SCHEMA = {
+    &quot;type&quot;: &quot;json_schema&quot;,
+    &quot;json_schema&quot;: {
+        &quot;name&quot;: &quot;inspection_result&quot;,
+        &quot;strict&quot;: True,
+        &quot;schema&quot;: {
+            &quot;type&quot;: &quot;object&quot;,
+            &quot;properties&quot;: {
+                &quot;has_defect&quot;: {&quot;type&quot;: &quot;boolean&quot;},
+                &quot;defect_type&quot;: {&quot;type&quot;: &quot;string&quot;},
+                &quot;defect_location&quot;: {&quot;type&quot;: &quot;string&quot;,
+                                    &quot;description&quot;: &quot;Describe location in the image&quot;},
+                &quot;severity&quot;: {&quot;type&quot;: &quot;string&quot;,
+                             &quot;enum&quot;: [&quot;none&quot;, &quot;minor&quot;, &quot;major&quot;, &quot;critical&quot;]},
+                &quot;confidence&quot;: {&quot;type&quot;: &quot;number&quot;,
+                               &quot;description&quot;: &quot;0.0 to 1.0&quot;},
+                &quot;description&quot;: {&quot;type&quot;: &quot;string&quot;},
+                &quot;recommended_action&quot;: {&quot;type&quot;: &quot;string&quot;}
+            },
+            &quot;required&quot;: [&quot;has_defect&quot;, &quot;defect_type&quot;, &quot;defect_location&quot;,
+                         &quot;severity&quot;, &quot;confidence&quot;, &quot;description&quot;, &quot;recommended_action&quot;],
+            &quot;additionalProperties&quot;: False
+        }
+    }
+}
+
+
+def analyze_image(image_b64: str, component_type: str = &quot;unknown&quot;) -&gt; dict:
+    &quot;&quot;&quot;Use GPT-5.4 vision to analyze an inspection image.&quot;&quot;&quot;
+    response = openai.chat.completions.create(
+        model=&quot;gpt-5.4&quot;,
+        messages=[
+            {
+                &quot;role&quot;: &quot;system&quot;,
+                &quot;content&quot;: (
+                    &quot;You are an expert quality control inspector with 20 years of experience &quot;
+                    &quot;in manufacturing defect detection. Analyze the provided image carefully. &quot;
+                    &quot;Be precise about defect location, type, and severity. &quot;
+                    &quot;A confidence of 1.0 means you are certain there is a defect; &quot;
+                    &quot;0.0 means you are certain there is no defect.&quot;
+                )
+            },
+            {
+                &quot;role&quot;: &quot;user&quot;,
+                &quot;content&quot;: [
+                    {
+                        &quot;type&quot;: &quot;text&quot;,
+                        &quot;text&quot;: (
+                            f&quot;Inspect this {component_type} for quality defects. &quot;
+                            &quot;Check for: scratches, cracks, dents, misalignment, &quot;
+                            &quot;incomplete welds, contamination, or coating issues.&quot;
+                        )
+                    },
+                    {
+                        &quot;type&quot;: &quot;image_url&quot;,
+                        &quot;image_url&quot;: {
+                            &quot;url&quot;: f&quot;data:image/jpeg;base64,{image_b64}&quot;,
+                            &quot;detail&quot;: &quot;high&quot;
+                        }
+                    }
+                ]
+            }
+        ],
+        response_format=INSPECTION_SCHEMA,
+        max_tokens=500,
+        temperature=0.0
+    )
+    return json.loads(response.choices[0].message.content)
+
+
+def search_similar_defects(description: str, top: int = 3) -&gt; list[dict]:
+    &quot;&quot;&quot;Vector search for similar defects in the catalog.&quot;&quot;&quot;
+    embedding_response = openai.embeddings.create(
+        model=&quot;text-embedding-3-large&quot;,
+        input=description
+    )
+    query_vector = embedding_response.data[0].embedding
+
+    results = search_client.search(
+        search_text=description,
+        vector_queries=[
+            VectorizedQuery(
+                vector=query_vector,
+                k_nearest_neighbors=top,
+                fields=&quot;description_vector&quot;
+            )
+        ],
+        top=top
+    )
+    return [
+        {
+            &quot;defect_type&quot;: r[&quot;defect_type&quot;],
+            &quot;description&quot;: r[&quot;description&quot;],
+            &quot;severity&quot;: r[&quot;severity&quot;],
+            &quot;score&quot;: r[&quot;@search.score&quot;]
+        }
+        for r in results
+    ]
+
+
+def save_inspection_result(
+    inspection_id: str,
+    device_id: str,
+    component_type: str,
+    vision_result: dict,
+    catalog_matches: list[dict],
+    image_url: str = &quot;&quot;
+) -&gt; dict:
+    &quot;&quot;&quot;Write inspection result to Cosmos DB.&quot;&quot;&quot;
+    doc = {
+        &quot;id&quot;: inspection_id,
+        &quot;device_id&quot;: device_id,
+        &quot;component_type&quot;: component_type,
+        &quot;inspected_at&quot;: datetime.now(timezone.utc).isoformat(),
+        &quot;has_defect&quot;: vision_result[&quot;has_defect&quot;],
+        &quot;defect_type&quot;: vision_result[&quot;defect_type&quot;],
+        &quot;defect_location&quot;: vision_result[&quot;defect_location&quot;],
+        &quot;severity&quot;: vision_result[&quot;severity&quot;],
+        &quot;confidence&quot;: vision_result[&quot;confidence&quot;],
+        &quot;description&quot;: vision_result[&quot;description&quot;],
+        &quot;recommended_action&quot;: vision_result[&quot;recommended_action&quot;],
+        &quot;catalog_matches&quot;: catalog_matches,
+        &quot;image_url&quot;: image_url
+    }
+    results_container.upsert_item(doc)
+    return doc
+
+
+def send_azure_monitor_alert(inspection_result: dict):
+    &quot;&quot;&quot;
+    Emit a custom metric to Azure Monitor.
+    In production, use azure-monitor-ingestion SDK + Data Collection Endpoint.
+    &quot;&quot;&quot;
+    # Simple approach: log as structured error for Log Analytics to pick up
+    logger.error(
+        &quot;DEFECT_DETECTED&quot;,
+        extra={
+            &quot;inspection_id&quot;: inspection_result[&quot;id&quot;],
+            &quot;device_id&quot;: inspection_result[&quot;device_id&quot;],
+            &quot;defect_type&quot;: inspection_result[&quot;defect_type&quot;],
+            &quot;severity&quot;: inspection_result[&quot;severity&quot;],
+            &quot;confidence&quot;: inspection_result[&quot;confidence&quot;]
+        }
+    )
+    # In production: use azure-monitor-ingestion to send to a DCE/DCR
+
+
+def inspect(
+    image_b64: str,
+    inspection_id: str,
+    device_id: str,
+    component_type: str = &quot;unknown&quot;
+) -&gt; dict:
+    &quot;&quot;&quot;Full inspection pipeline for one image.&quot;&quot;&quot;
+    logger.info(f&quot;Inspecting {inspection_id} from device {device_id}&quot;)
+
+    # Step 1: Vision analysis
+    vision_result = analyze_image(image_b64, component_type)
+
+    # Step 2: Vector search for similar defects
+    catalog_matches = []
+    if vision_result[&quot;has_defect&quot;]:
+        catalog_matches = search_similar_defects(vision_result[&quot;description&quot;])
+
+    # Step 3: Save to Cosmos DB
+    result = save_inspection_result(
+        inspection_id=inspection_id,
+        device_id=device_id,
+        component_type=component_type,
+        vision_result=vision_result,
+        catalog_matches=catalog_matches
+    )
+
+    # Step 4: Alert if high confidence defect
+    if (vision_result[&quot;has_defect&quot;] and
+            vision_result[&quot;confidence&quot;] &gt;= DEFECT_THRESHOLD):
+        logger.warning(
+            f&quot;High-confidence defect: {vision_result['defect_type']} &quot;
+            f&quot;(confidence={vision_result['confidence']:.2f})&quot;
+        )
+        send_azure_monitor_alert(result)
+
+    return result
+</code></pre>
+<h3 id="step-4-event-hub-consumer">Step 4 — Event Hub consumer</h3>
+<pre><code class="language-python"># consumer.py
+import os
+import json
+import base64
+import asyncio
+import logging
+import uuid
+from azure.eventhub.aio import EventHubConsumerClient
+from inspector_agent import inspect
+
+EH_CONN_STR = os.environ[&quot;EVENT_HUB_CONNECTION_STRING&quot;]
+EH_NAME = os.environ.get(&quot;EVENT_HUB_NAME&quot;, &quot;images-stream&quot;)
+CONSUMER_GROUP = &quot;$Default&quot;
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(&quot;consumer&quot;)
+
+
+async def process_event(partition_context, event):
+    &quot;&quot;&quot;Process one Event Hub message containing an inspection image.&quot;&quot;&quot;
+    try:
+        payload = json.loads(event.body_as_str())
+        device_id = payload.get(&quot;device_id&quot;, &quot;unknown&quot;)
+        component_type = payload.get(&quot;component_type&quot;, &quot;unknown&quot;)
+        image_b64 = payload.get(&quot;image_b64&quot;)  # base64-encoded JPEG
+
+        if not image_b64:
+            logger.warning(f&quot;No image in message from {device_id}, skipping&quot;)
+            return
+
+        inspection_id = str(uuid.uuid4())
+        result = inspect(
+            image_b64=image_b64,
+            inspection_id=inspection_id,
+            device_id=device_id,
+            component_type=component_type
+        )
+
+        logger.info(
+            f&quot;Inspection {inspection_id}: defect={result['has_defect']} &quot;
+            f&quot;confidence={result['confidence']:.2f} severity={result['severity']}&quot;
+        )
+
+        await partition_context.update_checkpoint(event)
+
+    except Exception as e:
+        logger.error(f&quot;Error processing event: {e}&quot;, exc_info=True)
+
+
+async def main():
+    client = EventHubConsumerClient.from_connection_string(
+        EH_CONN_STR,
+        consumer_group=CONSUMER_GROUP,
+        eventhub_name=EH_NAME
+    )
+    async with client:
+        await client.receive(
+            on_event=process_event,
+            starting_position=&quot;-1&quot;   # Start from latest
+        )
+
+
+if __name__ == &quot;__main__&quot;:
+    asyncio.run(main())
+</code></pre>
+<hr />
+<h2 id="test-it">Test It</h2>
+<p>Simulate an IoT device sending an image:</p>
+<pre><code class="language-python"># simulate_device.py
+import os, json, base64, uuid
+from azure.eventhub import EventHubProducerClient, EventData
+from PIL import Image, ImageDraw
+import io
+
+def create_test_image_with_scratch() -&gt; str:
+    &quot;&quot;&quot;Create a synthetic test image with a visible scratch.&quot;&quot;&quot;
+    img = Image.new(&quot;RGB&quot;, (640, 480), color=(200, 200, 200))
+    draw = ImageDraw.Draw(img)
+    # Draw a &quot;scratch&quot;
+    draw.line([(100, 150), (300, 200)], fill=(50, 50, 50), width=3)
+    buffer = io.BytesIO()
+    img.save(buffer, format=&quot;JPEG&quot;)
+    return base64.b64encode(buffer.getvalue()).decode()
+
+producer = EventHubProducerClient.from_connection_string(
+    os.environ[&quot;EVENT_HUB_CONNECTION_STRING&quot;],
+    eventhub_name=&quot;images-stream&quot;
+)
+with producer:
+    batch = producer.create_batch()
+    batch.add(EventData(json.dumps({
+        &quot;device_id&quot;: &quot;camera-line-3&quot;,
+        &quot;component_type&quot;: &quot;outer-casing&quot;,
+        &quot;image_b64&quot;: create_test_image_with_scratch()
+    })))
+    producer.send_batch(batch)
+    print(&quot;Test image sent to Event Hub&quot;)
+</code></pre>
+<pre><code class="language-bash"># Start the consumer in one terminal
+python consumer.py
+
+# Send test image in another
+python simulate_device.py
+</code></pre>
+<p>Check Cosmos DB for the inspection result:</p>
+<pre><code class="language-bash">az cosmosdb sql query \
+  --account-name $COSMOS_ACCOUNT --resource-group $RG \
+  --database-name quality-inspection --container-name inspection-results \
+  --query-text &quot;SELECT c.has_defect, c.defect_type, c.confidence, c.severity FROM c ORDER BY c.inspected_at DESC OFFSET 0 LIMIT 5&quot;
+</code></pre>
+<hr />
+<h2 id="common-mistakes">Common Mistakes</h2>
+<ul>
+<li><strong>Image too large for GPT-5.4 vision.</strong> Resize to 1024x768 before base64-encoding. Full 4K images add latency without proportional accuracy gains for defect detection.</li>
+<li><strong>Event Hub checkpoint not updated on failure.</strong> Always call <code>update_checkpoint</code> only after successful processing. On failure, let the event replay on the next consumer restart.</li>
+<li><strong>Cosmos DB throughput throttling.</strong> On Serverless, you're limited to bursts. If camera frame rate is high (&gt;10 FPS), use Provisioned Throughput (400+ RU/s) and batch writes.</li>
+</ul>
+<hr />
+<h2 id="extend-it">Extend It</h2>
+<ol>
+<li><strong>Training feedback loop:</strong> Add a <code>human_verified</code> field to inspection results. Have quality engineers review flagged images and mark them correct/incorrect. Use these labels to fine-tune prompts monthly.</li>
+<li><strong>Real-time dashboard:</strong> Stream inspection results from Cosmos DB Change Feed to a SignalR-backed dashboard showing live defect rate per production line.</li>
+<li><strong>Predictive maintenance:</strong> Aggregate defect patterns by machine ID and timestamp. If defect rate on a specific machine spikes over a 4-hour window, trigger a maintenance work order automatically.</li>
+</ol>
+<hr />
+<h2 id="resources">Resources</h2>
+<ul>
+<li><a href="https://learn.microsoft.com/azure/ai-foundry/openai/concepts/models" target="_blank" rel="noopener">GPT-5.4 vision capabilities</a></li>
+<li><a href="https://learn.microsoft.com/python/api/overview/azure/eventhub-readme" target="_blank" rel="noopener">Azure Event Hubs Python SDK</a></li>
+<li><a href="https://learn.microsoft.com/azure/search/vector-search-overview" target="_blank" rel="noopener">Azure AI Search vector search</a></li>
+<li><a href="https://learn.microsoft.com/azure/iot-hub/iot-hub-devguide-messages-d2c" target="_blank" rel="noopener">Azure IoT Hub routing</a></li>
+<li><a href="https://learn.microsoft.com/azure/azure-monitor/essentials/metrics-custom-overview" target="_blank" rel="noopener">Azure Monitor custom metrics</a></li>
+</ul>
+  </article>
+
+  <nav class="post-nav" aria-label="More projects">
+    <a href="11-computer-use-automator.html">← Computer-Use Process Automator</a>
+    <a href="13-cross-region-failover.html">Foundry Cross-Region Failover →</a>
+  </nav>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <div>
+      <a class="brand" href="../index.html">
+        <span class="brand-mark">AC</span>
+        <span class="brand-text-title">AzureCraft</span>
+      </a>
+      <p style="color: var(--text-muted); margin-top: 0.75rem; max-width: 36ch;">Practical Azure architecture, without the noise.</p>
+    </div>
+    <div>
+      <h4>Topics</h4>
+      <ul>
+        <li><a href="../categories/infrastructure.html">Infrastructure</a></li>
+        <li><a href="../categories/data-ai.html">Data &amp; AI</a></li>
+        <li><a href="../categories/modern-apps.html">Modern Apps</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Site</h4>
+      <ul>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="index.html">Projects</a></li>
+        <li><a href="../about.html">About</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="site-footer__bottom">
+    <p>© <span data-year>2026</span> AzureCraft. Built as a static site on Azure App Service.</p>
+  </div>
+</footer>
+
+<script src="../js/site.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

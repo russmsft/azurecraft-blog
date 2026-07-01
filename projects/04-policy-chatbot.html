@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>(function(){if(location.hostname==="www.rbcloud.co.uk"){location.replace("https://rbcloud.co.uk"+location.pathname+location.search+location.hash);}})();</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Internal Policy Chatbot — AzureCraft Projects</title>
+  <meta name="description" content="Managed RAG with Foundry IQ — skip the pipeline, bring your docs. The first co-build template you can adapt to almost any customer." />
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+  <link rel="canonical" href="https://rbcloud.co.uk/projects/04-policy-chatbot.html" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Internal Policy Chatbot" />
+  <meta property="og:description" content="Managed RAG with Foundry IQ — skip the pipeline, bring your docs. The first co-build template you can adapt to almost any customer." />
+  <meta property="og:image" content="https://rbcloud.co.uk/assets/projects/04-policy-chatbot-architecture.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://rbcloud.co.uk/assets/projects/04-policy-chatbot-architecture.png" />
+  <link rel="stylesheet" href="../css/azurecraft.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github-dark.min.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="reading-progress" aria-hidden="true"></div>
+
+<header class="site-header">
+  <div class="container site-nav">
+    <a class="brand" href="../index.html">
+      <span class="brand-mark">AC</span>
+      <span>
+        <span class="brand-text-title">AzureCraft</span>
+        <span class="brand-text-sub">Infra · Data &amp; AI · Modern Apps</span>
+      </span>
+    </a>
+    <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+    <nav class="site-nav__links" aria-label="Primary">
+      <a href="../index.html">Home</a>
+      <a href="../index.html#posts">Articles</a>
+      <a href="../projects/index.html" aria-current="page">Projects</a>
+      <a href="../index.html#roadmap">Roadmap</a>
+      <a href="../about.html">About</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="article-wrap">
+
+  <div class="article-header">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a> /
+      <a href="index.html">Projects</a> /
+      Project 4
+    </nav>
+    <span class="tag tag--apps">Modern Apps</span>
+    <h1>Internal Policy Chatbot</h1>
+    <div class="article-meta">
+      <span>Co-build</span>
+      <span class="dot">•</span>
+      <span aria-label="Difficulty">Difficulty ★★☆☆☆</span>
+      <span class="dot">•</span>
+      <span>~1 week</span>
+    </div>
+  </div>
+
+  <article class="prose">
+    <div class="callout callout--note">
+      <span class="callout__icon">🔧</span>
+      <p><strong>Build it yourself.</strong> This project is part of the <a href="index.html">AI Projects for Cloud Solution Architects</a> portfolio. Full source, code, and the latest updates live in the <a href="https://github.com/russmsft/csa-ai-projects/blob/master/docs/how-to/04-policy-chatbot.md" target="_blank" rel="noopener">csa-ai-projects</a> repo on GitHub.</p>
+    </div>
+
+<p>Build an HR or IT policy chatbot that stays on-topic, answers grounded in your actual documents, and refuses to make things up — no custom chunking pipeline required.</p>
+<hr />
+<h2 id="what-youre-building">What You're Building</h2>
+<p>A web chatbot deployed on Azure App Service with Entra ID authentication. The backend is a FastAPI app that calls a Foundry model through the Responses API with the <code>file_search</code> tool, grounded in your policy documents (Foundry IQ or a vector store). You upload policy PDFs once; the model retrieves relevant chunks automatically and cites them. A minimal HTML/JS frontend handles the chat UI.</p>
+<hr />
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li>A <strong>Microsoft Foundry / Azure AI Services resource</strong> with a <code>gpt-4.1-mini</code> deployment:
+  <code>bash
+  az cognitiveservices account deployment create --name &lt;res&gt; --resource-group &lt;rg&gt; \
+    --deployment-name gpt-4.1-mini --model-name gpt-4.1-mini --model-version 2025-04-14 \
+    --model-format OpenAI --sku-name GlobalStandard --sku-capacity 10</code></li>
+<li>Foundry IQ (managed knowledge) <strong>or</strong> a vector store to ground answers — Step 1 creates one and gives you a vector store ID (<code>vs-…</code>).</li>
+<li>Azure App Service (B1 or higher, Python 3.11 runtime) for hosting the chat UI.</li>
+<li>Azure CLI logged in with <strong>Cognitive Services OpenAI User</strong> (or Contributor) on the resource. This demo uses <strong>Entra ID auth, not API keys</strong>.</li>
+<li><code>AZURE_OPENAI_ENDPOINT</code> (the <code>https://&lt;resource&gt;.cognitiveservices.azure.com/</code> host) and <code>POLICY_VECTOR_STORE_ID</code> set in <code>.env</code>.</li>
+<li>Python 3.11+</li>
+<li>1–5 policy documents (PDF, <code>.txt</code>, or <code>.md</code>) to test with</li>
+</ul>
+<pre><code class="language-bash">pip install &quot;openai&gt;=1.30.0&quot; azure-identity fastapi uvicorn python-dotenv
+</code></pre>
+<hr />
+<h2 id="architecture">Architecture</h2>
+<p><img alt="Policy Chatbot architecture: browser → Azure App Service with Entra ID auth → Responses API GPT-4.1-mini file_search → Foundry IQ vector store → cited answer" src="../assets/projects/04-policy-chatbot-architecture.png" /></p>
+<hr />
+<h2 id="step-by-step-build">Step-by-Step Build</h2>
+<h3 id="step-1-upload-documents-and-create-the-knowledge-index">Step 1 — Upload documents and create the knowledge index</h3>
+<p><strong>Option A — Foundry portal (Foundry IQ):</strong></p>
+<ol>
+<li>Open <a href="https://ai.azure.com" target="_blank" rel="noopener">https://ai.azure.com</a> → your project</li>
+<li>Navigate to <strong>Knowledge</strong> → <strong>Foundry IQ</strong></li>
+<li>Click <strong>Add data source</strong> → <strong>Upload files</strong></li>
+<li>Upload your PDFs (HR policy, IT security policy, employee handbook, etc.)</li>
+<li>Wait for indexing to complete (status turns green)</li>
+<li>Copy the <strong>vector store ID</strong> (<code>vs-…</code>) it exposes — that's what the <code>file_search</code> tool needs</li>
+</ol>
+<p><strong>Option B — code (no portal):</strong> upload files and create a vector store directly, exactly as in <a href="01-ask-my-docs.html">Project 01</a>:</p>
+<pre><code class="language-python">from azure.identity import DefaultAzureCredential, get_bearer_token_provider
+from openai import AzureOpenAI
+
+client = AzureOpenAI(
+    azure_endpoint=os.environ[&quot;AZURE_OPENAI_ENDPOINT&quot;],
+    azure_ad_token_provider=get_bearer_token_provider(
+        DefaultAzureCredential(), &quot;https://cognitiveservices.azure.com/.default&quot;),
+    api_version=&quot;2025-04-01-preview&quot;,
+)
+file_ids = []
+for path in [&quot;HR-Policy.pdf&quot;, &quot;IT-Security-Policy.pdf&quot;]:
+    with open(path, &quot;rb&quot;) as f:
+        file_ids.append(client.files.create(file=f, purpose=&quot;assistants&quot;).id)
+vs = client.vector_stores.create(name=&quot;policy-chatbot-store&quot;, file_ids=file_ids)
+print(&quot;POLICY_VECTOR_STORE_ID:&quot;, vs.id)   # vs-…
+</code></pre>
+<blockquote>
+<p><strong>Gotcha:</strong> Foundry IQ processes PDFs natively, but for PDFs with complex tables or multi-column layouts, accuracy degrades. Use Azure AI Document Intelligence preprocessing for those.</p>
+</blockquote>
+<h3 id="step-2-create-the-fastapi-backend">Step 2 — Create the FastAPI backend</h3>
+<pre><code class="language-python"># app.py
+import os
+from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from dotenv import load_dotenv
+from azure.identity import DefaultAzureCredential, get_bearer_token_provider
+from openai import AzureOpenAI
+
+load_dotenv()
+
+app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[&quot;*&quot;],
+    allow_methods=[&quot;POST&quot;],
+    allow_headers=[&quot;*&quot;]
+)
+
+ENDPOINT = os.environ[&quot;AZURE_OPENAI_ENDPOINT&quot;]          # https://&lt;resource&gt;.cognitiveservices.azure.com/
+VECTOR_STORE_ID = os.environ[&quot;POLICY_VECTOR_STORE_ID&quot;]  # vs-… from Step 1
+MODEL = os.environ.get(&quot;CHAT_MODEL&quot;, &quot;gpt-4.1-mini&quot;)
+
+# Entra ID auth (managed identity in App Service, az login locally) — no API keys
+token_provider = get_bearer_token_provider(
+    DefaultAzureCredential(), &quot;https://cognitiveservices.azure.com/.default&quot;
+)
+client = AzureOpenAI(
+    azure_endpoint=ENDPOINT,
+    azure_ad_token_provider=token_provider,
+    api_version=&quot;2025-04-01-preview&quot;,
+)
+
+INSTRUCTIONS = (
+    &quot;You are an HR/IT policy assistant for our company. &quot;
+    &quot;Answer questions using only the policy documents returned by file search. &quot;
+    &quot;Always cite the specific policy document. &quot;
+    &quot;If the answer isn't in the documents, say exactly: &quot;
+    &quot;\&quot;I don't have that information in our current policies - please contact HR directly.\&quot; &quot;
+    &quot;Never guess at policy details. Never provide legal advice.&quot;
+)
+
+
+class ChatRequest(BaseModel):
+    message: str
+    previous_response_id: str | None = None   # None = new conversation
+
+
+class ChatResponse(BaseModel):
+    reply: str
+    response_id: str
+    citations: list[dict]
+
+
+def _extract(response):
+    &quot;&quot;&quot;Pull answer text and file_search citations out of a Responses API result.&quot;&quot;&quot;
+    answer, citations, seen = &quot;&quot;, [], set()
+    for item in response.output:
+        if getattr(item, &quot;type&quot;, None) == &quot;message&quot;:
+            for block in item.content:
+                if getattr(block, &quot;type&quot;, None) == &quot;output_text&quot;:
+                    answer += block.text
+                    # Responses API file_search annotations are flat
+                    # AnnotationFileCitation objects (type/file_id/filename) —
+                    # not the older Assistants-style nested `ann.file_citation`.
+                    for ann in getattr(block, &quot;annotations&quot;, None) or []:
+                        if getattr(ann, &quot;type&quot;, None) == &quot;file_citation&quot;:
+                            name = getattr(ann, &quot;filename&quot;, None) or getattr(ann, &quot;file_id&quot;, &quot;&quot;)
+                            if name and name not in seen:
+                                seen.add(name)
+                                citations.append(
+                                    {&quot;filename&quot;: name, &quot;file_id&quot;: getattr(ann, &quot;file_id&quot;, &quot;&quot;)}
+                                )
+    return answer, citations
+
+
+@app.post(&quot;/chat&quot;, response_model=ChatResponse)
+async def chat(req: ChatRequest):
+    try:
+        # The Responses API keeps conversation state server-side via
+        # previous_response_id — no threads/runs bookkeeping needed.
+        response = client.responses.create(
+            model=MODEL,
+            input=req.message,
+            previous_response_id=req.previous_response_id,
+            instructions=INSTRUCTIONS,
+            tools=[{&quot;type&quot;: &quot;file_search&quot;, &quot;vector_store_ids&quot;: [VECTOR_STORE_ID]}],
+            include=[&quot;file_search_call.results&quot;],
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    reply, citations = _extract(response)
+    return ChatResponse(reply=reply, response_id=response.id, citations=citations)
+
+
+@app.get(&quot;/health&quot;)
+def health():
+    return {&quot;status&quot;: &quot;ok&quot;}
+
+
+# Serve the static chat UI
+app.mount(&quot;/&quot;, StaticFiles(directory=&quot;static&quot;, html=True), name=&quot;static&quot;)
+</code></pre>
+<h3 id="step-3-build-the-chat-ui">Step 3 — Build the chat UI</h3>
+<pre><code class="language-html">&lt;!-- static/index.html --&gt;
+&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;UTF-8&quot;&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;&gt;
+  &lt;title&gt;Policy Assistant&lt;/title&gt;
+  &lt;style&gt;
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: &quot;Segoe UI&quot;, sans-serif; background: #f5f5f5; }
+    #app { max-width: 800px; margin: 40px auto; background: white; 
+           border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); 
+           display: flex; flex-direction: column; height: 80vh; }
+    header { background: #0078d4; color: white; padding: 16px 20px; 
+             border-radius: 8px 8px 0 0; }
+    header h1 { font-size: 1.2rem; }
+    header p { font-size: 0.85rem; opacity: 0.8; margin-top: 4px; }
+    #messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; 
+                flex-direction: column; gap: 12px; }
+    .msg { max-width: 75%; padding: 10px 14px; border-radius: 8px; 
+           line-height: 1.5; font-size: 0.9rem; }
+    .msg.user { background: #0078d4; color: white; align-self: flex-end; 
+                border-bottom-right-radius: 2px; }
+    .msg.bot { background: #f0f0f0; color: #333; align-self: flex-start; 
+               border-bottom-left-radius: 2px; }
+    .citation { font-size: 0.75rem; color: #666; margin-top: 6px; 
+                font-style: italic; }
+    #input-row { display: flex; padding: 16px; border-top: 1px solid #e0e0e0; gap: 8px; }
+    #user-input { flex: 1; padding: 10px 14px; border: 1px solid #ccc; 
+                  border-radius: 6px; font-size: 0.9rem; outline: none; }
+    #user-input:focus { border-color: #0078d4; }
+    #send-btn { background: #0078d4; color: white; border: none; 
+                padding: 10px 20px; border-radius: 6px; cursor: pointer; 
+                font-size: 0.9rem; }
+    #send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div id=&quot;app&quot;&gt;
+  &lt;header&gt;
+    &lt;h1&gt;Policy Assistant&lt;/h1&gt;
+    &lt;p&gt;Ask questions about HR and IT policies&lt;/p&gt;
+  &lt;/header&gt;
+  &lt;div id=&quot;messages&quot;&gt;
+    &lt;div class=&quot;msg bot&quot;&gt;
+      Hello! I can answer questions about our HR and IT policies. 
+      What would you like to know?
+    &lt;/div&gt;
+  &lt;/div&gt;
+  &lt;div id=&quot;input-row&quot;&gt;
+    &lt;input id=&quot;user-input&quot; type=&quot;text&quot; placeholder=&quot;Ask a policy question...&quot; 
+           autocomplete=&quot;off&quot; /&gt;
+    &lt;button id=&quot;send-btn&quot;&gt;Send&lt;/button&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;script&gt;
+  let previousResponseId = localStorage.getItem('policyResponseId');
+
+  async function sendMessage() {
+    const input = document.getElementById('user-input');
+    const btn = document.getElementById('send-btn');
+    const text = input.value.trim();
+    if (!text) return;
+
+    appendMessage(text, 'user');
+    input.value = '';
+    btn.disabled = true;
+
+    try {
+      const res = await fetch('/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text, previous_response_id: previousResponseId })
+      });
+      const data = await res.json();
+      previousResponseId = data.response_id;
+      localStorage.setItem('policyResponseId', previousResponseId);
+
+      const msgDiv = appendMessage(data.reply, 'bot');
+      if (data.citations &amp;&amp; data.citations.length &gt; 0) {
+        const citeDiv = document.createElement('div');
+        citeDiv.className = 'citation';
+        citeDiv.textContent = `Sources: ${data.citations.length} policy document(s)`;
+        msgDiv.appendChild(citeDiv);
+      }
+    } catch (err) {
+      appendMessage('Sorry, something went wrong. Please try again.', 'bot');
+    } finally {
+      btn.disabled = false;
+      input.focus();
+    }
+  }
+
+  function appendMessage(text, role) {
+    const div = document.createElement('div');
+    div.className = `msg ${role}`;
+    div.textContent = text;
+    const messages = document.getElementById('messages');
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+    return div;
+  }
+
+  document.getElementById('send-btn').addEventListener('click', sendMessage);
+  document.getElementById('user-input').addEventListener('keydown', e =&gt; {
+    if (e.key === 'Enter') sendMessage();
+  });
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+<h3 id="step-4-deploy-to-azure-app-service">Step 4 — Deploy to Azure App Service</h3>
+<pre><code class="language-bash"># Create App Service plan and web app
+az appservice plan create \
+  --name policy-chatbot-plan \
+  --resource-group $RG \
+  --sku B1 \
+  --is-linux
+
+az webapp create \
+  --name policy-chatbot-app \
+  --resource-group $RG \
+  --plan policy-chatbot-plan \
+  --runtime &quot;PYTHON:3.11&quot;
+
+# Configure environment variables
+az webapp config appsettings set \
+  --name policy-chatbot-app \
+  --resource-group $RG \
+  --settings \
+    AZURE_OPENAI_ENDPOINT=&quot;https://&lt;resource&gt;.cognitiveservices.azure.com/&quot; \
+    POLICY_VECTOR_STORE_ID=&quot;&lt;vs-id-from-step-1&gt;&quot; \
+    SCM_DO_BUILD_DURING_DEPLOYMENT=true
+
+# Enable managed identity so the app can authenticate to Foundry
+az webapp identity assign \
+  --name policy-chatbot-app \
+  --resource-group $RG
+
+# Grant the managed identity data-plane access to the Foundry / AI Services resource
+# (use the principal ID from the output above)
+az role assignment create \
+  --assignee &lt;principal-id&gt; \
+  --role &quot;Cognitive Services OpenAI User&quot; \
+  --scope $(az cognitiveservices account show --name &lt;res&gt; --resource-group $RG --query id -o tsv)
+</code></pre>
+<h3 id="step-5-enable-entra-id-auth-easy-auth">Step 5 — Enable Entra ID auth (Easy Auth)</h3>
+<pre><code class="language-bash">az webapp auth microsoft update \
+  --name policy-chatbot-app \
+  --resource-group $RG \
+  --client-id &lt;entra-app-client-id&gt; \
+  --client-secret &lt;entra-app-client-secret&gt; \
+  --tenant-id &lt;tenant-id&gt; \
+  --issuer https://login.microsoftonline.com/&lt;tenant-id&gt;/v2.0
+
+az webapp auth update \
+  --name policy-chatbot-app \
+  --resource-group $RG \
+  --enabled true \
+  --action RedirectToLoginPage
+</code></pre>
+<p>Now only users in your tenant can access the chatbot.</p>
+<hr />
+<h2 id="test-it">Test It</h2>
+<pre><code class="language-bash"># Run locally first
+uvicorn app:app --reload --port 8000
+</code></pre>
+<p>Test queries:
+- "How many vacation days do I get in my first year?"
+- "What is our password rotation policy?"
+- "Can I expense a home office monitor?"</p>
+<p>Watch for:
+- Answers grounded in documents (check <code>citations</code> in the response)
+- Refusals when the question is outside policy scope
+- No hallucinated policy details</p>
+<hr />
+<h2 id="common-mistakes">Common Mistakes</h2>
+<ul>
+<li><strong>Reaching for the old Assistants <code>agents</code> API.</strong> <code>azure-ai-projects</code> 2.x removed the threads/runs Assistants surface — <code>AIProjectClient</code> has no <code>.agents</code>, and <code>MessageRole</code>/<code>PromptAgentDefinition</code>/<code>FileSearchTool</code> aren't importable. Use the <code>AzureOpenAI</code> Responses API with the <code>file_search</code> tool, as shown above.</li>
+<li><strong>Response ID not persisted across browser sessions.</strong> Store the <code>response_id</code> in <code>localStorage</code> (the UI above does) or a server-side session. Without it, every page refresh starts a new conversation.</li>
+<li><strong>Passing the wrong knowledge identifier.</strong> The <code>file_search</code> tool wants a <strong>vector store ID</strong> (<code>vs-…</code>), not a file ID (<code>assistant-…</code>) or a portal display name. Step 1 prints the value you need.</li>
+</ul>
+<hr />
+<h2 id="extend-it">Extend It</h2>
+<ol>
+<li><strong>Scope by department:</strong> Create separate agents per department (HR, IT, Finance) each with their own Foundry IQ knowledge source. Route requests based on the authenticated user's group from Entra ID claims.</li>
+<li><strong>Audit logging:</strong> Log every question + answer pair to Azure Cosmos DB with the user's UPN (from the Easy Auth headers). Build a Power BI report on top for compliance review.</li>
+<li><strong>Feedback buttons:</strong> Add thumbs up/down to each bot message. Store feedback in Cosmos DB and review low-rated answers weekly to improve the document corpus.</li>
+</ol>
+<hr />
+<h2 id="resources">Resources</h2>
+<ul>
+<li><a href="https://learn.microsoft.com/azure/ai-foundry/agents/concepts/knowledge-grounding" target="_blank" rel="noopener">Foundry IQ (knowledge grounding)</a></li>
+<li><a href="https://learn.microsoft.com/azure/app-service/quickstart-python" target="_blank" rel="noopener">Azure App Service Python deployment</a></li>
+<li><a href="https://learn.microsoft.com/azure/app-service/configure-authentication-provider-aad" target="_blank" rel="noopener">App Service Easy Auth (Entra ID)</a></li>
+<li><a href="https://learn.microsoft.com/azure/app-service/overview-managed-identity" target="_blank" rel="noopener">Managed identity for App Service</a></li>
+</ul>
+  </article>
+
+  <nav class="post-nav" aria-label="More projects">
+    <a href="03-email-triage-agent.html">← Customer Email Triage Agent</a>
+    <a href="05-contract-clause-analyzer.html">Contract Clause Analyzer →</a>
+  </nav>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <div>
+      <a class="brand" href="../index.html">
+        <span class="brand-mark">AC</span>
+        <span class="brand-text-title">AzureCraft</span>
+      </a>
+      <p style="color: var(--text-muted); margin-top: 0.75rem; max-width: 36ch;">Practical Azure architecture, without the noise.</p>
+    </div>
+    <div>
+      <h4>Topics</h4>
+      <ul>
+        <li><a href="../categories/infrastructure.html">Infrastructure</a></li>
+        <li><a href="../categories/data-ai.html">Data &amp; AI</a></li>
+        <li><a href="../categories/modern-apps.html">Modern Apps</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Site</h4>
+      <ul>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="index.html">Projects</a></li>
+        <li><a href="../about.html">About</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="site-footer__bottom">
+    <p>© <span data-year>2026</span> AzureCraft. Built as a static site on Azure App Service.</p>
+  </div>
+</footer>
+
+<script src="../js/site.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

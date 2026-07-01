@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>(function(){if(location.hostname==="www.rbcloud.co.uk"){location.replace("https://rbcloud.co.uk"+location.pathname+location.search+location.hash);}})();</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Multi-Agent Incident Responder — AzureCraft Projects</title>
+  <meta name="description" content="The project where multi-agent orchestration clicks: specialised agents triage, investigate, and remediate an incident together." />
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+  <link rel="canonical" href="https://rbcloud.co.uk/projects/06-multi-agent-incident-responder.html" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Multi-Agent Incident Responder" />
+  <meta property="og:description" content="The project where multi-agent orchestration clicks: specialised agents triage, investigate, and remediate an incident together." />
+  <meta property="og:image" content="https://rbcloud.co.uk/assets/projects/06-multi-agent-incident-responder-architecture.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="https://rbcloud.co.uk/assets/projects/06-multi-agent-incident-responder-architecture.png" />
+  <link rel="stylesheet" href="../css/azurecraft.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github-dark.min.css" />
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="reading-progress" aria-hidden="true"></div>
+
+<header class="site-header">
+  <div class="container site-nav">
+    <a class="brand" href="../index.html">
+      <span class="brand-mark">AC</span>
+      <span>
+        <span class="brand-text-title">AzureCraft</span>
+        <span class="brand-text-sub">Infra · Data &amp; AI · Modern Apps</span>
+      </span>
+    </a>
+    <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+    <nav class="site-nav__links" aria-label="Primary">
+      <a href="../index.html">Home</a>
+      <a href="../index.html#posts">Articles</a>
+      <a href="../projects/index.html" aria-current="page">Projects</a>
+      <a href="../index.html#roadmap">Roadmap</a>
+      <a href="../about.html">About</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="article-wrap">
+
+  <div class="article-header">
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="../index.html">Home</a> /
+      <a href="index.html">Projects</a> /
+      Project 6
+    </nav>
+    <span class="tag tag--ai">Data & AI</span>
+    <h1>Multi-Agent Incident Responder</h1>
+    <div class="article-meta">
+      <span>Demo asset</span>
+      <span class="dot">•</span>
+      <span aria-label="Difficulty">Difficulty ★★★☆☆</span>
+      <span class="dot">•</span>
+      <span>~2 weeks</span>
+    </div>
+  </div>
+
+  <article class="prose">
+    <div class="callout callout--note">
+      <span class="callout__icon">🔧</span>
+      <p><strong>Build it yourself.</strong> This project is part of the <a href="index.html">AI Projects for Cloud Solution Architects</a> portfolio. Full source, code, and the latest updates live in the <a href="https://github.com/russmsft/csa-ai-projects/blob/master/docs/how-to/06-multi-agent-incident-responder.md" target="_blank" rel="noopener">csa-ai-projects</a> repo on GitHub.</p>
+    </div>
+
+<p>When an incident hits, you need three things fast: what broke, how to fix it, and what to tell stakeholders. This guide wires up three specialized agents that run concurrently and hand off to each other.</p>
+<hr />
+<h2 id="what-youre-building">What You're Building</h2>
+<p>Three Foundry prompt agents working in concert: a <strong>Diagnostician</strong> that queries Application Insights via function calling, a <strong>Researcher</strong> that searches a runbook index in Azure AI Search, and a <strong>Communicator</strong> that drafts a stakeholder update. A Python orchestrator runs the Diagnostician and Researcher in parallel (fan-out), then feeds their outputs to the Communicator (fan-in). Total time to first stakeholder update: under 60 seconds.</p>
+<hr />
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li>A <strong>Microsoft Foundry / Azure AI Services resource</strong> with a <code>gpt-4.1</code> deployment:
+  <code>bash
+  az cognitiveservices account deployment create --name &lt;res&gt; --resource-group &lt;rg&gt; \
+    --deployment-name gpt-4.1 --model-name gpt-4.1 --model-version 2025-04-14 \
+    --model-format OpenAI --sku-name GlobalStandard --sku-capacity 10</code></li>
+<li>Azure Application Insights (or a Log Analytics workspace) you can query — you'll need its <strong>workspace (customer) ID</strong>.</li>
+<li>Azure AI Search service with an index of runbook documents (Step 0 below seeds one).</li>
+<li>Azure CLI logged in with <strong>Cognitive Services OpenAI Contributor</strong> on the AI Services resource, <strong>Search Index Data Reader</strong> on the search service, and <strong>Log Analytics Reader</strong> on the workspace. This demo uses <strong>Entra ID auth, not keys</strong> (enable AAD on Search with <code>az search service update --auth-options aadOrApiKey</code>).</li>
+<li><code>AZURE_OPENAI_ENDPOINT</code>, <code>APP_INSIGHTS_WORKSPACE_ID</code>, and <code>SEARCH_ENDPOINT</code> set in <code>.env</code>.</li>
+<li>Python 3.11+</li>
+</ul>
+<pre><code class="language-bash">pip install &quot;openai&gt;=1.30.0&quot; azure-identity azure-monitor-query \
+  azure-search-documents python-dotenv
+</code></pre>
+<hr />
+<h2 id="architecture">Architecture</h2>
+<p><img alt="Multi-Agent Incident Responder architecture: incident trigger → Python orchestrator fans out to Diagnostician (App Insights) and Researcher (AI Search), fans in to Communicator → Slack/Teams/Email" src="../assets/projects/06-multi-agent-incident-responder-architecture.png" /></p>
+<hr />
+<h2 id="step-by-step-build">Step-by-Step Build</h2>
+<h3 id="step-0-seed-a-runbook-index-skip-if-you-already-have-one">Step 0 — Seed a runbook index (skip if you already have one)</h3>
+<pre><code class="language-python">import os
+from azure.identity import DefaultAzureCredential
+from azure.search.documents.indexes import SearchIndexClient
+from azure.search.documents.indexes.models import (
+    SearchIndex, SimpleField, SearchableField, SearchFieldDataType)
+from azure.search.documents import SearchClient
+
+endpoint = os.environ[&quot;SEARCH_ENDPOINT&quot;]
+index_name = os.environ.get(&quot;SEARCH_INDEX&quot;, &quot;runbooks&quot;)
+cred = DefaultAzureCredential()
+
+SearchIndexClient(endpoint, cred).create_or_update_index(
+    SearchIndex(name=index_name, fields=[
+        SimpleField(name=&quot;id&quot;, type=SearchFieldDataType.String, key=True),
+        SearchableField(name=&quot;title&quot;, type=SearchFieldDataType.String),
+        SearchableField(name=&quot;content&quot;, type=SearchFieldDataType.String),
+    ]))
+
+SearchClient(endpoint, index_name, cred).upload_documents(documents=[
+    {&quot;id&quot;: &quot;rb-001&quot;,
+     &quot;title&quot;: &quot;Payment API elevated error rate (5xx) runbook&quot;,
+     &quot;content&quot;: &quot;Symptoms: payment-api returns HTTP 5xx and error rate exceeds 2%. &quot;
+                &quot;Remediation: check gateway dependency health; if the connection pool is &quot;
+                &quot;exhausted, restart the payment-api deployment; fail over to the secondary &quot;
+                &quot;gateway if errors persist &gt;10 min; roll back the latest deployment if it &quot;
+                &quot;correlates. ETA 15-30 min. Escalation: Payments on-call (PagerDuty PAY-ONCALL).&quot;},
+    {&quot;id&quot;: &quot;rb-002&quot;, &quot;title&quot;: &quot;Database connection pool exhaustion runbook&quot;,
+     &quot;content&quot;: &quot;Symptoms: timeouts and 'connection pool exhausted' exceptions. Remediation: &quot;
+                &quot;increase max pool size, kill long-running queries, scale out read replicas.&quot;},
+])
+print(&quot;Seeded runbook index:&quot;, index_name)
+</code></pre>
+<h3 id="step-1-set-up-the-clients">Step 1 — Set up the clients</h3>
+<p>All three agents run through one <code>AzureOpenAI</code> client (chat completions + function tools). App Insights and AI Search both authenticate with the same <code>DefaultAzureCredential</code> — no keys.</p>
+<pre><code class="language-python">import os
+import json
+import time
+from datetime import timedelta
+from concurrent.futures import ThreadPoolExecutor
+from dotenv import load_dotenv
+from azure.identity import DefaultAzureCredential, get_bearer_token_provider
+from openai import AzureOpenAI
+from azure.monitor.query import LogsQueryClient, LogsQueryStatus
+from azure.search.documents import SearchClient
+
+load_dotenv()
+
+ENDPOINT = os.environ[&quot;AZURE_OPENAI_ENDPOINT&quot;]
+APP_INSIGHTS_WORKSPACE_ID = os.environ[&quot;APP_INSIGHTS_WORKSPACE_ID&quot;]
+SEARCH_ENDPOINT = os.environ[&quot;SEARCH_ENDPOINT&quot;]
+SEARCH_INDEX = os.environ.get(&quot;SEARCH_INDEX&quot;, &quot;runbooks&quot;)
+MODEL = os.environ.get(&quot;INCIDENT_MODEL&quot;, &quot;gpt-4.1&quot;)
+
+credential = DefaultAzureCredential()
+openai = AzureOpenAI(
+    azure_endpoint=ENDPOINT,
+    azure_ad_token_provider=get_bearer_token_provider(
+        credential, &quot;https://cognitiveservices.azure.com/.default&quot;),
+    api_version=&quot;2025-04-01-preview&quot;,
+)
+logs_client = LogsQueryClient(credential)
+search_client = SearchClient(
+    endpoint=SEARCH_ENDPOINT, index_name=SEARCH_INDEX, credential=credential)
+</code></pre>
+<h3 id="step-2-define-the-tool-functions">Step 2 — Define the tool functions</h3>
+<pre><code class="language-python"># --- Tool: query Application Insights ---
+
+def query_app_insights(kql_query: str, time_range_hours: int = 1) -&gt; str:
+    &quot;&quot;&quot;Execute a KQL query against Application Insights.&quot;&quot;&quot;
+    from datetime import timedelta
+    try:
+        result = logs_client.query_workspace(
+            workspace_id=APP_INSIGHTS_WORKSPACE_ID,
+            query=kql_query,
+            timespan=timedelta(hours=time_range_hours)
+        )
+        if result.status == LogsQueryStatus.SUCCESS:
+            rows = []
+            for table in result.tables:
+                for row in table.rows:
+                    rows.append(dict(zip(table.columns, row)))
+            return json.dumps(rows[:50], default=str)  # cap at 50 rows; default=str for datetimes
+        else:
+            return json.dumps({&quot;error&quot;: &quot;Query failed&quot;, &quot;details&quot;: str(result.partial_error)})
+    except Exception as e:
+        return json.dumps({&quot;error&quot;: str(e)})
+
+
+APP_INSIGHTS_TOOL = {&quot;type&quot;: &quot;function&quot;, &quot;function&quot;: {
+    &quot;name&quot;: &quot;query_app_insights&quot;,
+    &quot;description&quot;: (
+        &quot;Query Application Insights using KQL to investigate errors, performance, &quot;
+        &quot;and availability. Returns up to 50 rows.&quot;
+    ),
+    &quot;parameters&quot;: {
+        &quot;type&quot;: &quot;object&quot;,
+        &quot;properties&quot;: {
+            &quot;kql_query&quot;: {
+                &quot;type&quot;: &quot;string&quot;,
+                &quot;description&quot;: &quot;Valid KQL query. Use requests, exceptions, traces, dependencies tables.&quot;
+            },
+            &quot;time_range_hours&quot;: {
+                &quot;type&quot;: &quot;integer&quot;,
+                &quot;description&quot;: &quot;Time range in hours to query. Default 1.&quot;,
+                &quot;default&quot;: 1
+            }
+        },
+        &quot;required&quot;: [&quot;kql_query&quot;]
+    }
+}}
+
+
+# --- Tool: search runbooks ---
+
+def search_runbooks(query: str, top: int = 5) -&gt; str:
+    &quot;&quot;&quot;Search the runbook index in Azure AI Search.&quot;&quot;&quot;
+    results = search_client.search(
+        search_text=query,
+        top=top,
+        include_total_count=True
+    )
+    docs = []
+    for r in results:
+        docs.append({
+            &quot;title&quot;: r.get(&quot;title&quot;, &quot;Unknown&quot;),
+            &quot;content&quot;: r.get(&quot;content&quot;, &quot;&quot;)[:1000],  # first 1000 chars
+            &quot;score&quot;: r[&quot;@search.score&quot;]
+        })
+    return json.dumps(docs)
+
+
+SEARCH_RUNBOOK_TOOL = {&quot;type&quot;: &quot;function&quot;, &quot;function&quot;: {
+    &quot;name&quot;: &quot;search_runbooks&quot;,
+    &quot;description&quot;: &quot;Search the runbook knowledge base for troubleshooting procedures.&quot;,
+    &quot;parameters&quot;: {
+        &quot;type&quot;: &quot;object&quot;,
+        &quot;properties&quot;: {
+            &quot;query&quot;: {
+                &quot;type&quot;: &quot;string&quot;,
+                &quot;description&quot;: &quot;Natural language query describing the issue.&quot;
+            },
+            &quot;top&quot;: {
+                &quot;type&quot;: &quot;integer&quot;,
+                &quot;description&quot;: &quot;Number of results to return (1-10). Default 5.&quot;,
+                &quot;default&quot;: 5
+            }
+        },
+        &quot;required&quot;: [&quot;query&quot;]
+    }
+}}
+</code></pre>
+<h3 id="step-3-define-the-three-agents">Step 3 — Define the three agents</h3>
+<p>Each "agent" is just a system prompt plus the tools it may call. There's no agent to register — the chat API takes the instructions and tools on each call.</p>
+<pre><code class="language-python">DIAGNOSTICIAN = (
+    &quot;You are an SRE incident diagnostician. When given an incident description:\n&quot;
+    &quot;1. Query Application Insights to understand the scope and impact\n&quot;
+    &quot;2. Identify the error type, affected services, and blast radius\n&quot;
+    &quot;3. Determine the timeline (when did it start?)\n&quot;
+    &quot;4. Estimate affected user count if possible\n\n&quot;
+    &quot;Useful KQL queries:\n&quot;
+    &quot;- Error rate: requests | where success == false | summarize count() by bin(timestamp, 5m)\n&quot;
+    &quot;- Exceptions: exceptions | order by timestamp desc | take 20\n&quot;
+    &quot;- Affected dependencies: dependencies | where success == false | summarize count() by target\n\n&quot;
+    &quot;If telemetry is unavailable, say so and reason from the incident text. &quot;
+    &quot;Return a structured diagnostic report.&quot;
+)
+DIAGNOSTICIAN_TOOLS = [APP_INSIGHTS_TOOL]
+
+RESEARCHER = (
+    &quot;You are an incident response researcher. Given an incident description:\n&quot;
+    &quot;1. Search the runbook index for relevant procedures\n&quot;
+    &quot;2. Extract the specific remediation steps\n&quot;
+    &quot;3. Identify any prerequisites or dependencies for the fix\n&quot;
+    &quot;4. Note any known past incidents of the same type\n\n&quot;
+    &quot;Return: recommended runbook title, step-by-step remediation, &quot;
+    &quot;estimated resolution time, and escalation path.&quot;
+)
+RESEARCHER_TOOLS = [SEARCH_RUNBOOK_TOOL]
+
+COMMUNICATOR = (
+    &quot;You are an incident communications specialist. Given diagnostic findings &quot;
+    &quot;and runbook recommendations, draft a clear stakeholder update.\n\n&quot;
+    &quot;Format:\n&quot;
+    &quot;## Incident Update — [Severity] — [Short title]\n&quot;
+    &quot;**Status:** [Investigating / Identified / Mitigating / Resolved]\n&quot;
+    &quot;**Impact:** [What is affected and how many users]\n&quot;
+    &quot;**What we know:** [2-3 sentences of root cause]\n&quot;
+    &quot;**What we're doing:** [Numbered remediation steps in progress]\n&quot;
+    &quot;**ETA:** [Estimated resolution time]\n&quot;
+    &quot;**Next update:** [When to expect next communication]\n\n&quot;
+    &quot;Write at a business level — no jargon, no stack traces, no blame.&quot;
+)
+COMMUNICATOR_TOOLS = []
+</code></pre>
+<h3 id="step-4-agent-runner-with-tool-call-handling">Step 4 — Agent runner with tool-call handling</h3>
+<pre><code class="language-python">TOOL_HANDLERS = {
+    &quot;query_app_insights&quot;: query_app_insights,
+    &quot;search_runbooks&quot;: search_runbooks,
+}
+
+def run_agent(instructions: str, tools: list, message: str) -&gt; str:
+    &quot;&quot;&quot;Run one agent's tool-calling loop to completion; return its final text.&quot;&quot;&quot;
+    messages = [
+        {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: instructions},
+        {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: message},
+    ]
+    for _ in range(8):  # safety cap on tool rounds
+        resp = openai.chat.completions.create(
+            model=MODEL,
+            messages=messages,
+            tools=tools or None,
+            tool_choice=&quot;auto&quot; if tools else None,
+        )
+        msg = resp.choices[0].message
+        if not msg.tool_calls:
+            return msg.content or &quot;&quot;
+        messages.append(msg)
+        for call in msg.tool_calls:
+            handler = TOOL_HANDLERS.get(call.function.name)
+            args = json.loads(call.function.arguments or &quot;{}&quot;)
+            result = handler(**args) if handler else json.dumps(
+                {&quot;error&quot;: f&quot;Unknown function: {call.function.name}&quot;})
+            messages.append({&quot;role&quot;: &quot;tool&quot;, &quot;tool_call_id&quot;: call.id, &quot;content&quot;: result})
+    return msg.content or &quot;&quot;
+</code></pre>
+<h3 id="step-5-orchestrate-with-concurrent-fan-out">Step 5 — Orchestrate with concurrent fan-out</h3>
+<pre><code class="language-python">from concurrent.futures import ThreadPoolExecutor
+
+def respond_to_incident(incident_description: str) -&gt; dict:
+    &quot;&quot;&quot;Fan-out to diagnostician and researcher, fan-in to communicator.&quot;&quot;&quot;
+
+    print(&quot;Running diagnostician and researcher in parallel...&quot;)
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        diag_future = executor.submit(
+            run_agent, DIAGNOSTICIAN, DIAGNOSTICIAN_TOOLS, incident_description)
+        research_future = executor.submit(
+            run_agent, RESEARCHER, RESEARCHER_TOOLS, incident_description)
+
+        diagnostic_report = diag_future.result()
+        runbook_recommendation = research_future.result()
+
+    print(&quot;Drafting stakeholder update...&quot;)
+    communicator_input = (
+        f&quot;Incident description:\n{incident_description}\n\n&quot;
+        f&quot;Diagnostic findings:\n{diagnostic_report}\n\n&quot;
+        f&quot;Runbook recommendations:\n{runbook_recommendation}&quot;
+    )
+    stakeholder_update = run_agent(COMMUNICATOR, COMMUNICATOR_TOOLS, communicator_input)
+
+    return {
+        &quot;diagnostic_report&quot;: diagnostic_report,
+        &quot;runbook_recommendation&quot;: runbook_recommendation,
+        &quot;stakeholder_update&quot;: stakeholder_update,
+    }
+</code></pre>
+<h3 id="step-6-main">Step 6 — Main</h3>
+<pre><code class="language-python">def main():
+    # Sample incident
+    incident = &quot;&quot;&quot;
+    INCIDENT P1 — 2026-06-25 14:32 UTC
+    Service: payment-api (production)
+    Alert: Error rate exceeded 15% (threshold: 2%)
+    Symptom: Customers reporting &quot;Payment failed&quot; errors on checkout
+    First seen: ~14:25 UTC
+    Region: East US 2
+    &quot;&quot;&quot;
+
+    print(&quot;Responding to incident...&quot;)
+    results = respond_to_incident(incident)
+
+    print(&quot;\n&quot; + &quot;=&quot;*60)
+    print(&quot;STAKEHOLDER UPDATE:&quot;)
+    print(&quot;=&quot;*60)
+    print(results[&quot;stakeholder_update&quot;])
+
+if __name__ == &quot;__main__&quot;:
+    main()
+</code></pre>
+<hr />
+<h2 id="test-it">Test It</h2>
+<pre><code class="language-bash">python incident_responder.py
+</code></pre>
+<p>Time the execution:</p>
+<pre><code class="language-bash">time python incident_responder.py
+</code></pre>
+<p>With parallel fan-out, diagnostician + researcher run simultaneously. Expect total time ~30-45 seconds vs ~60-80 seconds sequential.</p>
+<p>Verify:
+- Diagnostician issued at least one <code>query_app_insights</code> tool call (add a <code>print</code> inside the tool to watch it fire)
+- Researcher found and cited relevant runbooks
+- Communicator output has no technical jargon</p>
+<hr />
+<h2 id="common-mistakes">Common Mistakes</h2>
+<ul>
+<li><strong>Reaching for the old Assistants <code>agents</code> API.</strong> <code>azure-ai-projects</code> 2.x removed the threads/runs Assistants surface — <code>AIProjectClient</code> has no <code>.agents</code>, and <code>FunctionTool</code>/<code>PromptAgentDefinition</code>/<code>MessageRole</code>/<code>SubmitToolOutputsAction</code> aren't importable. Drive each agent with <code>openai.chat.completions.create(..., tools=[...])</code> and a tool-call loop, as shown above.</li>
+<li><strong>Thread pool size too small.</strong> With 3+ agents, use <code>max_workers</code> equal to the number of parallel agents.</li>
+<li><strong>Tool function returns unserializable objects.</strong> All tool returns must be strings (JSON-encoded) — <code>query_app_insights</code> uses <code>json.dumps(..., default=str)</code> because KQL rows can contain datetimes.</li>
+<li><strong>AI Search rejects your token.</strong> Data-plane AAD must be enabled on the service (<code>az search service update --auth-options aadOrApiKey</code>) and your identity needs <strong>Search Index Data Reader</strong>; otherwise you'll get 403s.</li>
+</ul>
+<hr />
+<h2 id="extend-it">Extend It</h2>
+<ol>
+<li><strong>PagerDuty integration:</strong> After the communicator draft is approved, use a FunctionTool to POST the update to a PagerDuty incident timeline via their API.</li>
+<li><strong>Incident post-mortem generation:</strong> After resolution, pass the full diagnostic + remediation timeline to a fourth agent that drafts a 5 Whys post-mortem document.</li>
+<li><strong>Severity auto-triage:</strong> Add a fourth agent before the fan-out that reads the alert payload and assigns severity (P1/P2/P3), then skip the researcher for P3s to save cost.</li>
+</ol>
+<hr />
+<h2 id="resources">Resources</h2>
+<ul>
+<li><a href="https://learn.microsoft.com/python/api/overview/azure/monitor-query-readme" target="_blank" rel="noopener">azure-monitor-query KQL Python SDK</a></li>
+<li><a href="https://learn.microsoft.com/python/api/overview/azure/search-documents-readme" target="_blank" rel="noopener">Azure AI Search Python SDK</a></li>
+<li><a href="https://learn.microsoft.com/azure/ai-foundry/agents/how-to/tools/function-calling" target="_blank" rel="noopener">Foundry agent function calling</a></li>
+<li><a href="https://learn.microsoft.com/azure/azure-monitor/logs/log-analytics-tutorial" target="_blank" rel="noopener">Application Insights KQL reference</a></li>
+</ul>
+  </article>
+
+  <nav class="post-nav" aria-label="More projects">
+    <a href="05-contract-clause-analyzer.html">← Contract Clause Analyzer</a>
+    <a href="07-data-pipeline-qa-agent.html">Data Pipeline QA Agent →</a>
+  </nav>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <div>
+      <a class="brand" href="../index.html">
+        <span class="brand-mark">AC</span>
+        <span class="brand-text-title">AzureCraft</span>
+      </a>
+      <p style="color: var(--text-muted); margin-top: 0.75rem; max-width: 36ch;">Practical Azure architecture, without the noise.</p>
+    </div>
+    <div>
+      <h4>Topics</h4>
+      <ul>
+        <li><a href="../categories/infrastructure.html">Infrastructure</a></li>
+        <li><a href="../categories/data-ai.html">Data &amp; AI</a></li>
+        <li><a href="../categories/modern-apps.html">Modern Apps</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Site</h4>
+      <ul>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="index.html">Projects</a></li>
+        <li><a href="../about.html">About</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="site-footer__bottom">
+    <p>© <span data-year>2026</span> AzureCraft. Built as a static site on Azure App Service.</p>
+  </div>
+</footer>
+
+<script src="../js/site.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
