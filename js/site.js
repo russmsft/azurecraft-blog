@@ -93,4 +93,35 @@
     window.addEventListener("resize", update);
     update();
   }
+
+  // Diagram tabs (accessible tablist toggling image panels)
+  document.querySelectorAll(".diagram-tabs").forEach(function (group) {
+    var tabs = Array.prototype.slice.call(
+      group.querySelectorAll(".diagram-tabs__btn")
+    );
+    var activate = function (tab) {
+      tabs.forEach(function (t) {
+        var selected = t === tab;
+        t.classList.toggle("is-active", selected);
+        t.setAttribute("aria-selected", String(selected));
+        t.setAttribute("tabindex", selected ? "0" : "-1");
+        var panel = document.getElementById(t.getAttribute("aria-controls"));
+        if (panel) panel.hidden = !selected;
+      });
+    };
+    tabs.forEach(function (tab, i) {
+      tab.addEventListener("click", function () {
+        activate(tab);
+      });
+      tab.addEventListener("keydown", function (e) {
+        if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+          e.preventDefault();
+          var dir = e.key === "ArrowRight" ? 1 : -1;
+          var next = tabs[(i + dir + tabs.length) % tabs.length];
+          activate(next);
+          next.focus();
+        }
+      });
+    });
+  });
 })();

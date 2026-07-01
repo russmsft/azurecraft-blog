@@ -555,6 +555,48 @@ img {
   text-align: center;
 }
 
+/* Diagram tabs (e.g. hub-spoke vs Virtual WAN) */
+.diagram-tabs__bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+.diagram-tabs__btn {
+  font: inherit;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.4rem 0.95rem;
+  cursor: pointer;
+}
+.diagram-tabs__btn:hover {
+  color: var(--heading);
+  border-color: var(--border-strong);
+}
+.diagram-tabs__btn.is-active {
+  color: var(--accent-contrast);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.diagram-tabs__panel[hidden] {
+  display: none;
+}
+.diagram-tabs__panel a {
+  display: block;
+}
+.diagram-tabs__panel img {
+  margin: 0;
+}
+.diagram-tabs__hint {
+  margin: 0.5rem 0 0;
+  font-size: var(--step--1);
+  color: var(--text-muted);
+  text-align: center;
+}
+
 /* Callouts */
 .callout {
   display: flex;

@@ -60,12 +60,30 @@
     <blockquote>A landing zone is a pre-provisioned, policy-governed environment that a workload can be deployed into on day one — with identity, networking, security, and cost controls already in place.</blockquote>
 
     <h2>Reference architecture</h2>
-    <p>Start with the picture. The diagram below shows the management group hierarchy, the platform subscriptions that provide shared services, and the workload (application) subscriptions where teams actually build.</p>
+    <p>Start with the picture. Below is the Cloud Adoption Framework’s conceptual Azure landing zone reference architecture, shown for both supported networking topologies. It maps the management group hierarchy, the <strong>platform</strong> subscriptions that provide shared services (identity, management, connectivity), and the <strong>application</strong> landing zone subscriptions where workload teams build.</p>
 
-    <figure class="figure">
-      <img src="../assets/diagrams/landing-zone-subscriptions.svg"
-           alt="Azure Landing Zone hierarchy showing the root and intermediate management groups, platform subscriptions for identity, management, and connectivity, and separate landing zone subscriptions for production and non-production workloads." />
-      <figcaption>Management group hierarchy with separated platform and workload subscriptions.</figcaption>
+    <figure class="figure diagram-tabs">
+      <div class="diagram-tabs__bar" role="tablist" aria-label="Networking topology">
+        <button class="diagram-tabs__btn is-active" role="tab" id="tab-hubspoke" aria-selected="true" aria-controls="panel-hubspoke" tabindex="0" type="button">Hub &amp; spoke</button>
+        <button class="diagram-tabs__btn" role="tab" id="tab-vwan" aria-selected="false" aria-controls="panel-vwan" tabindex="-1" type="button">Virtual WAN</button>
+      </div>
+
+      <div class="diagram-tabs__panel" id="panel-hubspoke" role="tabpanel" aria-labelledby="tab-hubspoke">
+        <a href="../assets/diagrams/alz-hub-spoke.svg" target="_blank" rel="noopener">
+          <img src="../assets/diagrams/alz-hub-spoke.svg"
+               alt="Azure landing zone conceptual reference architecture using a hub-and-spoke network topology: a management group hierarchy with platform subscriptions (identity, management, connectivity hub) and application landing zone subscriptions peered into the hub." />
+        </a>
+      </div>
+
+      <div class="diagram-tabs__panel" id="panel-vwan" role="tabpanel" aria-labelledby="tab-vwan" hidden>
+        <a href="../assets/diagrams/alz-virtual-wan.svg" target="_blank" rel="noopener">
+          <img src="../assets/diagrams/alz-virtual-wan.svg" loading="lazy"
+               alt="Azure landing zone conceptual reference architecture using an Azure Virtual WAN network topology: a management group hierarchy with platform subscriptions and application landing zone subscriptions connected through Microsoft-managed virtual hubs." />
+        </a>
+      </div>
+
+      <p class="diagram-tabs__hint">Tip: select a tab to switch topology; click a diagram to open it full size.</p>
+      <figcaption>Azure landing zone conceptual reference architecture. Source: Microsoft <a href="https://learn.microsoft.com/azure/cloud-adoption-framework/ready/landing-zone/" target="_blank" rel="noopener">Cloud Adoption Framework</a> (CC BY 4.0).</figcaption>
     </figure>
 
     <h2>The four design areas that matter most</h2>
